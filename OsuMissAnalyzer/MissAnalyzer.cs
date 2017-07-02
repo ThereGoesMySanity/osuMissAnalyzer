@@ -23,7 +23,8 @@ namespace OsuMissAnalyzer
 		Replay r;
 		Beatmap b;
 		int missNo;
-		bool ring = false;
+		bool ring;
+
 		[STAThread]
 		public static void Main(string[] args)
 		{
@@ -31,7 +32,7 @@ namespace OsuMissAnalyzer
 		}
 		public MissAnalyzer(string replayFile, string beatmap)
 		{
-			this.Text = "Miss Analyzer";
+			Text = "Miss Analyzer";
 			Size = new Size(size, size + 40);
 			img = new Bitmap(size, size);
 			g = Graphics.FromImage(img);
@@ -77,10 +78,6 @@ namespace OsuMissAnalyzer
 			re = new ReplayAnalyzer(b, r);
 			missNo = 0;
 		}
-		public void Form_Load(object sender, EventArgs e)
-		{
-
-		}
 		protected override void OnKeyDown(KeyEventArgs e)
 		{
 			base.OnKeyDown(e);
@@ -98,6 +95,14 @@ namespace OsuMissAnalyzer
 				case System.Windows.Forms.Keys.T:
 					ring = !ring;
 					break;
+				case System.Windows.Forms.Keys.P:
+					for (int i = 0; i < re.misses.Count; i++)
+					{
+						drawMiss(i);
+						img.Save(r.Filename.Substring(0,r.Filename.Length-4) + "." + i + ".png", 
+						         System.Drawing.Imaging.ImageFormat.Png);
+					}
+					break;
 			}
 		}
 		protected override void OnPaint(PaintEventArgs e)
@@ -107,42 +112,46 @@ namespace OsuMissAnalyzer
 			{
 				return;
 			}
-			float radius = (float)re.misses[missNo].Radius;
-			Pen circle = new Pen(Color.Gray, (float)(radius * 2));
+			gOut.DrawImage(drawMiss(missNo), 0, 0, size, size);
+		}
+		private Bitmap drawMiss(int missNum)
+		{
+
+			float radius = (float)re.misses[missNum].Radius;
+			Pen circle = new Pen(Color.Gray, radius * 2);
 			circle.EndCap = System.Drawing.Drawing2D.LineCap.Round;
 			circle.LineJoin = System.Drawing.Drawing2D.LineJoin.Round;
 			Pen p = new Pen(Color.White);
 			g.FillRectangle(p.Brush, 0, 0, size, size);
-			Rectangle bounds = new Rectangle((re.misses[missNo].Location - new Point2(size / 2, size / 2)).ToPoint(),
+			Rectangle bounds = new Rectangle((re.misses[missNum].Location - new Point2(size / 2, size / 2)).ToPoint(),
 											 new Size(size, size));
 			int i, j, y, z;
-			for (i = r.ReplayFrames.Count(x => x.Time <= re.misses[missNo].StartTime);
+			for (i = r.ReplayFrames.Count(x => x.Time <= re.misses[missNum].StartTime);
 				 i > 0 && bounds.Contains(r.ReplayFrames[i].Point); i--) { }
-			for (j = r.ReplayFrames.Count(x => x.Time <= re.misses[missNo].StartTime);
+			for (j = r.ReplayFrames.Count(x => x.Time <= re.misses[missNum].StartTime);
 				 j < r.ReplayFrames.Count - 1 && bounds.Contains(r.ReplayFrames[j].Point); j++) { }
-			for (y = b.HitObjects.Count(x => x.StartTime <= re.misses[missNo].StartTime) - 1;
+			for (y = b.HitObjects.Count(x => x.StartTime <= re.misses[missNum].StartTime) - 1;
 				 y >= 0 && bounds.Contains(b.HitObjects[y].Location.ToPoint()); y--) { }
-			for (z = b.HitObjects.Count(x => x.StartTime <= re.misses[missNo].StartTime) - 1;
+			for (z = b.HitObjects.Count(x => x.StartTime <= re.misses[missNum].StartTime) - 1;
 				 z < b.HitObjects.Count && bounds.Contains(b.HitObjects[z].Location.ToPoint()); z++) { }
 
-			if (re.misses[missNo].Type == HitObjectType.Slider)
-			{
-				SliderObject slider = (SliderObject)re.misses[missNo];
-				Point[] pt = new Point[sliderGranularity];
-				for (int x = 0; x < sliderGranularity; x++)
-				{
-					pt[x] = Point.Subtract(slider.PositionAtDistance
-					                       		(x * 1f * slider.PixelLength / sliderGranularity).toPoint(), 
-					                       (Size)bounds.Location);
-					Console.WriteLine(pt[x]);
-				}
-				circle.Color = Color.LemonChiffon;
-				Console.WriteLine(pt.Length);
-				g.DrawLines(circle, pt);
-			}
 			p.Color = Color.Gray;
 			for (int q = z - 1; q > y; q--)
 			{
+				if (b.HitObjects[q].Type == HitObjectType.Slider)
+				{
+					SliderObject slider = (SliderObject)b.HitObjects[q];
+					Point[] pt = new Point[sliderGranularity];
+					for (int x = 0; x < sliderGranularity; x++)
+					{
+						pt[x] = Point.Subtract(slider.PositionAtDistance
+													   (x * 1f * slider.PixelLength / sliderGranularity).toPoint(),
+											   (Size)bounds.Location);
+						Console.WriteLine(pt[x]);
+					}
+					circle.Color = Color.LemonChiffon;
+					g.DrawLines(circle, pt);
+				}
 				int c = 200 - (q - y) * 10;
 				p.Color = Color.FromArgb(c, c, c);
 				if (ring)
@@ -163,7 +172,7 @@ namespace OsuMissAnalyzer
 			{
 				Point p1 = Point.Subtract(r.ReplayFrames[k].Point, (Size)bounds.Location);
 				Point p2 = Point.Subtract(r.ReplayFrames[k + 1].Point, (Size)bounds.Location);
-				p.Color = getHitColor(b.OverallDifficulty, (int)(re.misses[missNo].StartTime - r.ReplayFrames[k].Time));
+				p.Color = getHitColor(b.OverallDifficulty, (int)(re.misses[missNum].StartTime - r.ReplayFrames[k].Time));
 				g.DrawLine(p, p1, p2);
 				if (re.getKey(k == 0 ? ReplayAPI.Keys.None : r.ReplayFrames[k - 1].Keys, r.ReplayFrames[k].Keys) > 0)
 				{
@@ -173,11 +182,10 @@ namespace OsuMissAnalyzer
 
 			p.Color = Color.Black;
 			Font f = new Font(FontFamily.GenericSansSerif, 12);
-			g.DrawString("Miss " + (missNo+1) + " of " + re.misses.Count, f, p.Brush, 0, 0);
-			TimeSpan ts = TimeSpan.FromMilliseconds(re.misses[missNo].StartTime);
+			g.DrawString("Miss " + (missNum + 1) + " of " + re.misses.Count, f, p.Brush, 0, 0);
+			TimeSpan ts = TimeSpan.FromMilliseconds(re.misses[missNum].StartTime);
 			g.DrawString("Time: " + ts.ToString(@"mm\:ss\.fff"), f, p.Brush, 0, size - f.Height);
-
-			gOut.DrawImage(img, 0, 0, size, size);
+			return img;
 		}
 		private static float getHitWindow(float od, int hit)
 		{
