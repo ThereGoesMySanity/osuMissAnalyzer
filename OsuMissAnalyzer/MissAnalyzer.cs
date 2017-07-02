@@ -17,7 +17,8 @@ namespace OsuMissAnalyzer
 	{
 		const int sliderGranularity = 10;
 		const int size = 320;
-		Graphics g;
+		Bitmap img;
+		Graphics g, gOut;
 		ReplayAnalyzer re;
 		Replay r;
 		Beatmap b;
@@ -32,7 +33,9 @@ namespace OsuMissAnalyzer
 		{
 			this.Text = "Miss Analyzer";
 			Size = new Size(size, size + 40);
-			g = Graphics.FromHwnd(Handle);
+			img = new Bitmap(size, size);
+			g = Graphics.FromImage(img);
+			gOut = Graphics.FromHwnd(Handle);
 
 			FormBorderStyle = FormBorderStyle.FixedSingle;
 			if (replayFile == null)
@@ -124,7 +127,6 @@ namespace OsuMissAnalyzer
 
 			if (re.misses[missNo].Type == HitObjectType.Slider)
 			{
-				//TODO: Get sliders to work
 				SliderObject slider = (SliderObject)re.misses[missNo];
 				Point[] pt = new Point[sliderGranularity];
 				for (int x = 0; x < sliderGranularity; x++)
@@ -168,11 +170,14 @@ namespace OsuMissAnalyzer
 					g.DrawEllipse(p, new Rectangle(Point.Subtract(p1, new Size(3, 3)), new Size(6, 6)));
 				}
 			}
+
 			p.Color = Color.Black;
 			Font f = new Font(FontFamily.GenericSansSerif, 12);
 			g.DrawString("Miss " + (missNo+1) + " of " + re.misses.Count, f, p.Brush, 0, 0);
 			TimeSpan ts = TimeSpan.FromMilliseconds(re.misses[missNo].StartTime);
 			g.DrawString("Time: " + ts.ToString(@"mm\:ss\.fff"), f, p.Brush, 0, size - f.Height);
+
+			gOut.DrawImage(img, 0, 0, size, size);
 		}
 		private static float getHitWindow(float od, int hit)
 		{
