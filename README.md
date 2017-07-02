@@ -1,6 +1,8 @@
 # osu! Miss Analyzer
 A program to analyze misses in an osu! replay.
 
+Credit for the beatmap and replay parsing and analysis code goes to [firedigger](https://github.com/firedigger) from his [osu! replay analyzer](https://github.com/firedigger/osuReplayAnalyzer).
+
 ## How To Use
 
 Run the program. It'll ask you to select a replay file and beatmap.
