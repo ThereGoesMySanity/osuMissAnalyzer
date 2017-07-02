@@ -99,8 +99,10 @@ namespace OsuMissAnalyzer
 					for (int i = 0; i < re.misses.Count; i++)
 					{
 						drawMiss(i);
-						img.Save(r.Filename.Substring(0,r.Filename.Length-4) + "." + i + ".png", 
-						         System.Drawing.Imaging.ImageFormat.Png);
+						img.Save(r.Filename.Substring(r.Filename.LastIndexOf("\\")+1, 
+						                              r.Filename.Length - 5 - r.Filename.LastIndexOf("\\")) 
+						         + "." + i + ".png",
+								 System.Drawing.Imaging.ImageFormat.Png);
 					}
 					break;
 			}
@@ -114,9 +116,15 @@ namespace OsuMissAnalyzer
 			}
 			gOut.DrawImage(drawMiss(missNo), 0, 0, size, size);
 		}
+
+		/// <summary>
+		/// Draws the miss.
+		/// </summary>
+		/// <returns>A Bitmap containing the drawing</returns>
+		/// <param name="missNum">Index of the miss as it shows up in r.misses.</param>
 		private Bitmap drawMiss(int missNum)
 		{
-
+			bool hr = r.Mods.HasFlag(Mods.HardRock);
 			float radius = (float)re.misses[missNum].Radius;
 			Pen circle = new Pen(Color.Gray, radius * 2);
 			circle.EndCap = System.Drawing.Drawing2D.LineCap.Round;
@@ -144,10 +152,9 @@ namespace OsuMissAnalyzer
 					Point[] pt = new Point[sliderGranularity];
 					for (int x = 0; x < sliderGranularity; x++)
 					{
-						pt[x] = Point.Subtract(slider.PositionAtDistance
-													   (x * 1f * slider.PixelLength / sliderGranularity).toPoint(),
-											   (Size)bounds.Location);
-						Console.WriteLine(pt[x]);
+						pt[x] = pSub(slider.PositionAtDistance
+											   (x * 1f * slider.PixelLength / sliderGranularity).toPoint(),
+											   (Size)bounds.Location, hr);
 					}
 					circle.Color = Color.LemonChiffon;
 					g.DrawLines(circle, pt);
@@ -156,22 +163,22 @@ namespace OsuMissAnalyzer
 				p.Color = Color.FromArgb(c, c, c);
 				if (ring)
 				{
-					g.DrawEllipse(p, new RectangleF(Point.Subtract(b.HitObjects[q].Location.ToPoint(),
-									  (Size)Point.Add(bounds.Location, new SizeF(radius, radius).ToSize())),
-									  new SizeF(radius * 2, radius * 2)));
+					g.DrawEllipse(p, new RectangleF(Point.Subtract(
+										pSub(b.HitObjects[q].Location.ToPoint(), (Size)bounds.Location, hr),
+										new SizeF(radius, radius).ToSize()), new SizeF(radius * 2, radius * 2)));
 				}
 				else
 				{
-					g.FillEllipse(p.Brush, new RectangleF(Point.Subtract(b.HitObjects[q].Location.ToPoint(),
-									  (Size)Point.Add(bounds.Location, new SizeF(radius, radius).ToSize())),
-									  new SizeF(radius * 2, radius * 2)));
+					g.FillEllipse(p.Brush, new RectangleF(Point.Subtract(
+										pSub(b.HitObjects[q].Location.ToPoint(), (Size)bounds.Location, hr),
+										new SizeF(radius, radius).ToSize()), new SizeF(radius * 2, radius * 2)));
 				}
 			}
 
 			for (int k = i; k < j - 1; k++)
 			{
-				Point p1 = Point.Subtract(r.ReplayFrames[k].Point, (Size)bounds.Location);
-				Point p2 = Point.Subtract(r.ReplayFrames[k + 1].Point, (Size)bounds.Location);
+				Point p1 = pSub(r.ReplayFrames[k].Point, bounds.Location, hr);
+				Point p2 = pSub(r.ReplayFrames[k + 1].Point, bounds.Location, hr);
 				p.Color = getHitColor(b.OverallDifficulty, (int)(re.misses[missNum].StartTime - r.ReplayFrames[k].Time));
 				g.DrawLine(p, p1, p2);
 				if (re.getKey(k == 0 ? ReplayAPI.Keys.None : r.ReplayFrames[k - 1].Keys, r.ReplayFrames[k].Keys) > 0)
@@ -187,6 +194,12 @@ namespace OsuMissAnalyzer
 			g.DrawString("Time: " + ts.ToString(@"mm\:ss\.fff"), f, p.Brush, 0, size - f.Height);
 			return img;
 		}
+		/// <summary>
+		/// Gets the hit window.
+		/// </summary>
+		/// <returns>The hit window in ms.</returns>
+		/// <param name="od">OD of the map.</param>
+		/// <param name="hit">Hit value (300, 100, or 50).</param>
 		private static float getHitWindow(float od, int hit)
 		{
 			switch (hit)
@@ -201,6 +214,13 @@ namespace OsuMissAnalyzer
 					throw new ArgumentOutOfRangeException(nameof(hit), hit, "Hit value is not 300, 100, or 50");
 			}
 		}
+		/// <summary>
+		/// Gets the color associated with the hit window.
+		/// Blue for 300s, green for 100s, purple for 50s.
+		/// </summary>
+		/// <returns>The hit color.</returns>
+		/// <param name="od">OD of the map.</param>
+		/// <param name="ms">Hit timing in ms (can be negative).</param>
 		private static Color getHitColor(float od, int ms)
 		{
 			if (Math.Abs(ms) < getHitWindow(od, 300)) return Color.SkyBlue;
@@ -208,6 +228,12 @@ namespace OsuMissAnalyzer
 			if (Math.Abs(ms) < getHitWindow(od, 50)) return Color.Purple;
 			return Color.Black;
 		}
+		/// <summary>
+		/// Returns a string representation of the given byte array in hexadecimal
+		/// </summary>
+		/// <returns>A string representation of the hexadecimal value of the given byte array</returns>
+		/// <param name="bytes">The byte array to be converted.</param>
+		/// <param name="upperCase">Whether or not to make the letter characters of the string uppercase.</param>
 		public static string ToHex(byte[] bytes, bool upperCase)
 		{
 			StringBuilder result = new StringBuilder(bytes.Length * 2);
@@ -216,6 +242,43 @@ namespace OsuMissAnalyzer
 				result.Append(bytes[i].ToString(upperCase ? "X2" : "x2"));
 
 			return result.ToString();
+		}
+
+		/// <summary>
+		/// Flips point about the center of the screen if the Hard Rock mod is on, does nothing otherwise.
+		/// </summary>
+		/// <returns>A possibly-flipped pooint.</returns>
+		/// <param name="p">The point to be flipped.</param>
+		/// <param name="hr">Whether or not Hard Rock is on.</param>
+		private Point flip(Point p, bool hr)
+		{
+			if (!hr) return p;
+			p.Y = size - p.Y;
+			return p;
+		}
+
+		/// <summary>
+		/// Subtracts two points and flips them if hr is <c>true</c>.
+		/// </summary>
+		/// <returns>The difference between p1 and p2, possibly also flipped.</returns>
+		/// <param name="p1">The first point.</param>
+		/// <param name="p2">The point to be subtracted</param>
+		/// <param name="hr">Whether or not Hard Rock is on.</param>
+		private Point pSub(Point p1, Point p2, bool hr)
+		{
+			return pSub(p1, (Size)p2, hr);
+		}
+		/// <summary>
+		/// Subtracts two points and flips them if hr is <c>true</c>.
+		/// </summary>
+		/// <returns>The difference between p1 and p2, possibly also flipped.</returns>
+		/// <param name="p1">The first point.</param>
+		/// <param name="p2">The size to be subtracted</param>
+		/// <param name="hr">Whether or not Hard Rock is on.</param>
+		private Point pSub(Point p1, Size p2, bool hr)
+		{
+			Point p = Point.Subtract(p1, p2);
+			return flip(p, hr);
 		}
 	}
 }
