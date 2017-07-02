@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">x86</Platform>
+    <ProjectGuid>{93419898-7E68-4D72-9C6C-713406723C29}</ProjectGuid>
+    <OutputType>Exe</OutputType>
+    <RootNamespace>OsuMissAnalyzer</RootNamespace>
+    <AssemblyName>OsuMissAnalyzer</AssemblyName>
+    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|x86' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug</OutputPath>
+    <DefineConstants>DEBUG;</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <PlatformTarget>x86</PlatformTarget>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|x86' ">
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release</OutputPath>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <PlatformTarget>x86</PlatformTarget>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="MissAnalyzer.cs" />
+    <Compile Include="BMAPI\Colour.cs" />
+    <Compile Include="BMAPI\Point2.cs" />
+    <Compile Include="BMAPI\v1\Beatmap.cs" />
+    <Compile Include="BMAPI\v1\Combo.cs" />
+    <Compile Include="BMAPI\v1\Enums.cs" />
+    <Compile Include="BMAPI\v1\TimingPoint.cs" />
+    <Compile Include="BMAPI\v1\Events\BackgroundColourEvent.cs" />
+    <Compile Include="BMAPI\v1\Events\BreakEvent.cs" />
+    <Compile Include="BMAPI\v1\Events\ContentEvent.cs" />
+    <Compile Include="BMAPI\v1\Events\EventBase.cs" />
+    <Compile Include="BMAPI\v1\HitObjects\CircleObject.cs" />
+    <Compile Include="BMAPI\v1\HitObjects\SliderObject.cs" />
+    <Compile Include="BMAPI\v1\HitObjects\SpinnerObject.cs" />
+    <Compile Include="Curves\Bezier.cs" />
+    <Compile Include="Curves\Catmull.cs" />
+    <Compile Include="Curves\Circle.cs" />
+    <Compile Include="Curves\Curve.cs" />
+    <Compile Include="Curves\Line.cs" />
+    <Compile Include="ReplayAPI\Enums.cs" />
+    <Compile Include="ReplayAPI\ExtensionMethods.cs" />
+    <Compile Include="ReplayAPI\LifeFrame.cs" />
+    <Compile Include="ReplayAPI\LZMACoder.cs" />
+    <Compile Include="ReplayAPI\Replay.cs" />
+    <Compile Include="ReplayAPI\ReplayFrame.cs" />
+    <Compile Include="ReplayAPI\LMZA\CommandLineParser.cs" />
+    <Compile Include="ReplayAPI\LMZA\CRC.cs" />
+    <Compile Include="ReplayAPI\LMZA\ICoder.cs" />
+    <Compile Include="ReplayAPI\LMZA\IMatchFinder.cs" />
+    <Compile Include="ReplayAPI\LMZA\InBuffer.cs" />
+    <Compile Include="ReplayAPI\LMZA\LzBinTree.cs" />
+    <Compile Include="ReplayAPI\LMZA\LzInWindow.cs" />
+    <Compile Include="ReplayAPI\LMZA\LzmaBase.cs" />
+    <Compile Include="ReplayAPI\LMZA\LzmaDecoder.cs" />
+    <Compile Include="ReplayAPI\LMZA\LzmaEncoder.cs" />
+    <Compile Include="ReplayAPI\LMZA\LzOutWindow.cs" />
+    <Compile Include="ReplayAPI\LMZA\OutBuffer.cs" />
+    <Compile Include="ReplayAPI\LMZA\RangeCoder.cs" />
+    <Compile Include="ReplayAPI\LMZA\RangeCoderBit.cs" />
+    <Compile Include="ReplayAPI\LMZA\RangeCoderBitTree.cs" />
+    <Compile Include="HitFrame.cs" />
+    <Compile Include="Utils.cs" />
+    <Compile Include="Vector2.cs" />
+    <Compile Include="ReplayAnalyzer.cs" />
+    <Compile Include="ClickFrame.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <Reference Include="System.Windows.Forms" />
+    <Reference Include="System" />
+    <Reference Include="System.Drawing" />
+    <Reference Include="System.Drawing.Design" />
+  </ItemGroup>
+  <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
+</Project>

@@ -1,0 +1,68 @@
+osu file format v14
+
+[General]
+AudioFilename: eromanga.mp3
+AudioLeadIn: 0
+PreviewTime: 54263
+Countdown: 0
+SampleSet: Soft
+StackLeniency: 0.7
+Mode: 0
+LetterboxInBreaks: 0
+WidescreenStoryboard: 1
+
+[Editor]
+DistanceSpacing: 1
+BeatDivisor: 4
+GridSize: 4
+TimelineZoom: 1.5
+
+[Metadata]
+Title:Hitorigoto -TV MIX-
+TitleUnicode:ヒトリゴト -TV MIX-
+Artist:ClariS
+ArtistUnicode:ClariS
+Creator:Doormat
+Version:test
+Source:エロマンガ先生
+Tags:xxdeathx Little CloudSplash16 StarrStyx Kencho eromanga sensei ero manga eromanga-sensei eromangasensei opening tv size
+BeatmapID:0
+BeatmapSetID:596704
+
+[Difficulty]
+HPDrainRate:6
+CircleSize:4
+OverallDifficulty:8.5
+ApproachRate:9
+SliderMultiplier:1.7
+SliderTickRate:1
+
+[Events]
+//Background and Video events
+0,0,"eromanga.png",0,0
+//Break Periods
+//Storyboard Layer 0 (Background)
+//Storyboard Layer 1 (Fail)
+//Storyboard Layer 2 (Pass)
+//Storyboard Layer 3 (Foreground)
+//Storyboard Sound Samples
+
+[TimingPoints]
+536,363.636363636364,4,2,1,80,1,0
+23808,-100,4,2,1,60,0,0
+35445,-125,4,2,1,50,0,0
+41263,-100,4,2,1,60,0,0
+54354,-90.9090909090909,4,2,1,80,0,1
+65899,-90.9090909090909,4,2,1,80,0,0
+65990,-90.9090909090909,4,2,1,80,0,1
+86354,-100,4,2,1,70,0,0
+
+
+[Colours]
+Combo1 : 52,164,178
+Combo2 : 254,194,206
+Combo3 : 179,220,233
+Combo4 : 235,142,173
+
+[HitObjects]
+256,188,536,1,0,0:0:0:0:
