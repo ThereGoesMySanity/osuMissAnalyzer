@@ -54,6 +54,10 @@ namespace OsuMissAnalyzer
 					r = new Replay(fd.FileName, true, false);
 					b = new Beatmap(fd2.FileName);
 				}
+				else
+				{
+					Environment.Exit(1);
+				}
 			}
 			else if (beatmap == null)
 			{
@@ -76,6 +80,11 @@ namespace OsuMissAnalyzer
 				b = new Beatmap(beatmap);
 			}
 			re = new ReplayAnalyzer(b, r);
+
+			if (re.misses.Count == 0)
+			{
+				Environment.Exit(1);
+			}
 			missNo = 0;
 		}
 		protected override void OnKeyDown(KeyEventArgs e)
@@ -110,10 +119,6 @@ namespace OsuMissAnalyzer
 		protected override void OnPaint(PaintEventArgs e)
 		{
 			base.OnPaint(e);
-			if (re.misses.Count == 0)
-			{
-				return;
-			}
 			gOut.DrawImage(drawMiss(missNo), 0, 0, size, size);
 		}
 
