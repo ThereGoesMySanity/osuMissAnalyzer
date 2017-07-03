@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Drawing;
 using System.Windows.Forms;
-using System.Security.Cryptography;
 using osuDodgyMomentsFinder;
 using ReplayAPI;
 using BMAPI.v1;
@@ -222,7 +221,8 @@ namespace OsuMissAnalyzer
 			for (int q = z - 1; q > y; q--)
 			{
 				int c = Math.Min(255, 100 + (int)(Math.Abs(b.HitObjects[q].StartTime - re.misses[missNum].StartTime) / 10));
-				if (b.HitObjects[q].Type == HitObjectType.Slider && c < 255)
+				if (c == 255) continue;
+				if (b.HitObjects[q].Type == HitObjectType.Slider)
 				{
 					SliderObject slider = (SliderObject)b.HitObjects[q];
 					Point[] pt = new Point[sliderGranularity];

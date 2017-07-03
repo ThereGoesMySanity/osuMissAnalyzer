@@ -77,8 +77,8 @@ namespace BMAPI.v1
                 p_CircleSize = value;
                 foreach(CircleObject hO in HitObjects)
                 {
-					hO.Radius = (float)(54 - 4.4 * value);
-					//hO.Radius = (float)(52 - 4.5 * value);
+					//hO.Radius = (float)(54 - 4.4 * value);
+					hO.Radius = (float)(54.42 - 4.48 * value);
                 }
             }
         }
