@@ -50,7 +50,7 @@ To add these to options.cfg, add a new line formatted `<Setting Name>=<Value>`
 
 You can also run it from the command line with this format: `osuMissAnalyzer.exe [<replay> [<beatmap
 
-##AutoHotKey script
+## AutoHotKey script
 
 The [AutoHotKey script](https://github.com/ThereGoesMySanity/osuMissAnalyzer/blob/missAnalyzer/OsuMissAnalyzer/OsuMiss.ahk) in the repository lets you view your last saved replay.
 
