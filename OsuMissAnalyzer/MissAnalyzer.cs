@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Drawing;
-using System.Windows.Forms;
 using osuDodgyMomentsFinder;
 using ReplayAPI;
 using BMAPI.v1;
@@ -9,10 +8,11 @@ using System.IO;
 using System.Text;
 using BMAPI.v1.HitObjects;
 using System.Linq;
+using Gtk;
 
 namespace OsuMissAnalyzer
 {
-	public class MissAnalyzer : Form
+	public class MissAnalyzer : Gtk.DrawingArea
 	{
 		const int sliderGranularity = 10;
 		const int size = 320;
@@ -22,12 +22,15 @@ namespace OsuMissAnalyzer
 		ReplayAnalyzer re;
 		Replay r;
 		Beatmap b;
+		Window w;
 		int missNo;
 		bool ring;
 
 		[STAThread]
 		public static void Main(string[] args)
 		{
+			Application.Init();
+
 			MissAnalyzer m;
 			if (args.Length > 0 && args[0].EndsWith(".osr"))
 			{
@@ -52,7 +55,12 @@ namespace OsuMissAnalyzer
 					m = new MissAnalyzer(null, null);
 				}
 			}
-			Application.Run(m);
+			m.w = new Window("Miss Analyzer");
+			m.w.Add(m);
+			m.w.Resizable = false;
+			m.w.ActivateFocus();
+			m.w.ShowAll();
+			Application.Run();
 		}
 		public MissAnalyzer(string replayFile, string beatmap)
 		{
@@ -61,21 +69,19 @@ namespace OsuMissAnalyzer
 				File.Create("options.cfg");
 			}
 			options = new Options("options.cfg");
-			Text = "Miss Analyzer";
 			if (options.Settings.ContainsKey("Size"))
 			{
 				int i = Convert.ToInt32(options.Settings["Size"]);
-				Size = new Size(i, i + 40);
+				SetSizeRequest(i, i + 40);
 			}
 			else
 			{
-				Size = new Size(size, size + 40);
+				SetSizeRequest(size, size + 40);
 			}
 			img = new Bitmap(size, size);
 			g = Graphics.FromImage(img);
 			gOut = Graphics.FromHwnd(Handle);
 
-			FormBorderStyle = FormBorderStyle.FixedSingle;
 			if (replayFile == null)
 			{
 				loadReplay();
@@ -111,11 +117,11 @@ namespace OsuMissAnalyzer
 
 		private void loadReplay()
 		{
-			using (OpenFileDialog fd = new OpenFileDialog())
+			using (FileChooserDialog fd = new FileChooserDialog("Choose replay file", w, FileChooserAction.Open))
 			{
-				fd.Title = "Choose replay file";
-				fd.Filter = "osu! replay files (*.osr)|*.osr";
-				DialogResult d = fd.ShowDialog();
+				fd.Filter = new FileFilter();
+				fd.Filter.AddPattern("osu! replay files|*.osu");
+				int d = fd.Run();
 				if (d == DialogResult.OK)
 				{
 					r = new Replay(fd.FileName, true, false);
@@ -144,24 +150,24 @@ namespace OsuMissAnalyzer
 			}
 		}
 
-		protected override void OnKeyDown(KeyEventArgs e)
+		protected override bool OnKeyPressEvent(Gdk.EventKey e)
 		{
-			base.OnKeyDown(e);
-			Invalidate();
-			switch (e.KeyCode)
+			
+			QueueDraw();
+			switch (e.Key)
 			{
-				case System.Windows.Forms.Keys.Right:
+				case Gdk.Key.Right:
 					if (missNo == re.misses.Count - 1) break;
 					missNo++;
 					break;
-				case System.Windows.Forms.Keys.Left:
+				case Gdk.Key.Left:
 					if (missNo == 0) break;
 					missNo--;
 					break;
-				case System.Windows.Forms.Keys.T:
+				case Gdk.Key.T:
 					ring = !ring;
 					break;
-				case System.Windows.Forms.Keys.P:
+				case Gdk.Key.P:
 					for (int i = 0; i < re.misses.Count; i++)
 					{
 						drawMiss(i);
@@ -171,11 +177,11 @@ namespace OsuMissAnalyzer
 								 System.Drawing.Imaging.ImageFormat.Png);
 					}
 					break;
-				case System.Windows.Forms.Keys.R:
+				case Gdk.Key.R:
 					loadReplay();
 					loadBeatmap();
 					re = new ReplayAnalyzer(b, r);
-					Invalidate();
+					QueueDraw();
 					missNo = 0;
 					if (r == null || b == null)
 					{
@@ -183,10 +189,11 @@ namespace OsuMissAnalyzer
 					}
 					break;
 			}
+			return base.OnKeyPressEvent(e);
 		}
 		protected override void OnPaint(PaintEventArgs e)
 		{
-			base.OnPaint(e);
+			base.Display
 			gOut.DrawImage(drawMiss(missNo), 0, 0, size, size);
 		}
 
@@ -255,7 +262,7 @@ namespace OsuMissAnalyzer
 			{
 				Point p1 = pSub(r.ReplayFrames[k].Point, bounds.Location, hr);
 				Point p2 = pSub(r.ReplayFrames[k + 1].Point, bounds.Location, hr);
-				p.Color = getHitColor(b.OverallDifficulty, (int)(re.misses[missNum].StartTime - r.ReplayFrames[k].Time));
+				p.Color = getHitColor(b.OverallDifficulty, (int)(re.misses[missNum].StartTime - r.ReplayFrames[k].Time));	
 				g.DrawLine(p, p1, p2);
 				if (re.getKey(k == 0 ? ReplayAPI.Keys.None : r.ReplayFrames[k - 1].Keys, r.ReplayFrames[k].Keys) > 0)
 				{
