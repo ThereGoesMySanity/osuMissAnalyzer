@@ -1,4 +1,5 @@
-﻿#NoEnv
+﻿;Credit for script goes to Snow
+#NoEnv
 SetWorkingDir %A_ScriptDir%
 #SingleInstance, Force
 RegRead,OsuDirRaw,HKEY_LOCAL_MACHINE\SOFTWARE\Classes\osu!\DefaultIcon ;/Found this registry key, give dir of osu
