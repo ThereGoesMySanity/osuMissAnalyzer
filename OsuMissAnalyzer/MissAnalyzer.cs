@@ -55,19 +55,10 @@ namespace OsuMissAnalyzer
 			FormBorderStyle = FormBorderStyle.FixedSingle;
 			if (replayFile == null)
 			{
-				using (OpenFileDialog fd = new OpenFileDialog())
+				loadReplay();
+				if (r == null)
 				{
-					fd.Title = "Choose replay file";
-					fd.Filter = "osu! replay files (*.osr)|*.osr";
-					DialogResult d = fd.ShowDialog();
-					if (d == DialogResult.OK)
-					{
-						r = new Replay(fd.FileName, true, false);
-					}
-					else
-					{
-						Environment.Exit(1);
-					}
+					Environment.Exit(1);
 				}
 			}
 			else
@@ -76,23 +67,10 @@ namespace OsuMissAnalyzer
 			}
 			if (beatmap == null)
 			{
-				b = getBeatmapFromHash(Directory.GetCurrentDirectory());
-				if (b == null && options.Settings.ContainsKey("SongsDir"))
-				{
-					b = getBeatmapFromHash(options.Settings["SongsDir"]);
-				}
+				loadBeatmap();
 				if (b == null)
 				{
-					using (OpenFileDialog fd2 = new OpenFileDialog())
-					{
-						fd2.Title = "Choose beatmap";
-						fd2.Filter = "osu! beatmaps (*.osu)|*.osu";
-						DialogResult d2 = fd2.ShowDialog();
-						if (d2 == DialogResult.OK)
-						{
-							b = new Beatmap(fd2.FileName);
-						}
-					}
+					Environment.Exit(1);
 				}
 			}
 			else
@@ -107,6 +85,42 @@ namespace OsuMissAnalyzer
 			}
 			missNo = 0;
 		}
+
+		private void loadReplay()
+		{
+			using (OpenFileDialog fd = new OpenFileDialog())
+			{
+				fd.Title = "Choose replay file";
+				fd.Filter = "osu! replay files (*.osr)|*.osr";
+				DialogResult d = fd.ShowDialog();
+				if (d == DialogResult.OK)
+				{
+					r = new Replay(fd.FileName, true, false);
+				}
+			}
+		}
+		private void loadBeatmap()
+		{
+			b = getBeatmapFromHash(Directory.GetCurrentDirectory());
+			if (b == null && options.Settings.ContainsKey("SongsDir"))
+			{
+				b = getBeatmapFromHash(options.Settings["SongsDir"]);
+			}
+			if (b == null)
+			{
+				using (OpenFileDialog fd2 = new OpenFileDialog())
+				{
+					fd2.Title = "Choose beatmap";
+					fd2.Filter = "osu! beatmaps (*.osu)|*.osu";
+					DialogResult d2 = fd2.ShowDialog();
+					if (d2 == DialogResult.OK)
+					{
+						b = new Beatmap(fd2.FileName);
+					}
+				}
+			}
+		}
+
 		protected override void OnKeyDown(KeyEventArgs e)
 		{
 			base.OnKeyDown(e);
@@ -132,6 +146,17 @@ namespace OsuMissAnalyzer
 													  r.Filename.Length - 5 - r.Filename.LastIndexOf("\\"))
 								 + "." + i + ".png",
 								 System.Drawing.Imaging.ImageFormat.Png);
+					}
+					break;
+				case System.Windows.Forms.Keys.R:
+					loadReplay();
+					loadBeatmap();
+					re = new ReplayAnalyzer(b, r);
+					Invalidate();
+					missNo = 0;
+					if (r == null || b == null)
+					{
+						Environment.Exit(1);
 					}
 					break;
 			}
@@ -186,7 +211,7 @@ namespace OsuMissAnalyzer
 					g.DrawLines(circle, pt);
 				}
 
-				p.Color = Color.FromArgb(c == 100 ? c+50 : c, c, c);
+				p.Color = Color.FromArgb(c == 100 ? c + 50 : c, c, c);
 				if (ring)
 				{
 					g.DrawEllipse(p, new RectangleF(Point.Subtract(

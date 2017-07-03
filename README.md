@@ -23,6 +23,7 @@ After you select both of these, it'll analyze the misses and display them in an 
 | Left | Previous miss |
 | T | Draw outlines only |
 | P | Save images for each miss |
+| R | Select new replay|
 
 Outlines only example:
 
