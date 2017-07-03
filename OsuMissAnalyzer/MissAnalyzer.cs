@@ -32,6 +32,7 @@ namespace OsuMissAnalyzer
 			MissAnalyzer m;
 			if (args.Length > 0 && args[0].EndsWith(".osr"))
 			{
+				Console.WriteLine(args[0]);
 				if (args.Length > 1 && args[1].EndsWith(".osu"))
 				{
 					m = new MissAnalyzer(args[0], args[1]);
@@ -124,7 +125,7 @@ namespace OsuMissAnalyzer
 		}
 		private void loadBeatmap()
 		{
-			b = getBeatmapFromHash(Directory.GetCurrentDirectory());
+			b = getBeatmapFromHash(Directory.GetCurrentDirectory(), false);
 			if (b == null && options.Settings.ContainsKey("SongsDir"))
 			{
 				b = getBeatmapFromHash(options.Settings["SongsDir"]);
@@ -197,6 +198,7 @@ namespace OsuMissAnalyzer
 		/// <param name="missNum">Index of the miss as it shows up in r.misses.</param>
 		private Bitmap drawMiss(int missNum)
 		{
+			//TODO: Add scale
 			bool hr = r.Mods.HasFlag(Mods.HardRock);
 			float radius = (float)re.misses[missNum].Radius;
 			Pen circle = new Pen(Color.Gray, radius * 2);
@@ -355,10 +357,10 @@ namespace OsuMissAnalyzer
 			return flip(p, hr);
 		}
 
-		private Beatmap getBeatmapFromHash(string dir)
+		private Beatmap getBeatmapFromHash(string dir, bool recurse = true)
 		{
-			foreach (string s in Directory.GetFiles(dir,
-						"*.osu", SearchOption.AllDirectories))
+			foreach (string s in Directory.GetFiles(dir, "*.osu",
+											recurse ? SearchOption.AllDirectories : SearchOption.TopDirectoryOnly))
 			{
 				if (Beatmap.MD5FromFile(s) == r.MapHash)
 				{
