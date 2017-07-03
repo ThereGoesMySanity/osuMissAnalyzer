@@ -29,7 +29,30 @@ namespace OsuMissAnalyzer
 		[STAThread]
 		public static void Main(string[] args)
 		{
-			Application.Run(new MissAnalyzer(args.Length > 0 ? args[0] : null, args.Length > 2 ? args[1] : null));
+			MissAnalyzer m;
+			if (args.Length > 0 && args[0].EndsWith(".osr"))
+			{
+				if (args.Length > 1 && args[1].EndsWith(".osu"))
+				{
+					m = new MissAnalyzer(args[0], args[1]);
+				}
+				else
+				{
+					m = new MissAnalyzer(args[0], null);
+				}
+			}
+			else
+			{
+				if (args.Length > 1 && args[1].EndsWith(".osr"))
+				{
+					m = new MissAnalyzer(args[1], null);
+				}
+				else
+				{
+					m = new MissAnalyzer(null, null);
+				}
+			}
+			Application.Run(m);
 		}
 		public MissAnalyzer(string replayFile, string beatmap)
 		{
