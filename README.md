@@ -48,4 +48,10 @@ To add these to options.cfg, add a new line formatted `<Setting Name>=<Value>`
 
 ## Alternate Usage
 
-You can also run it from the command line with this format: `osuMissAnalyzer.exe [<replay> [<beatmap>]]`
+You can also run it from the command line with this format: `osuMissAnalyzer.exe [<replay> [<beatmap
+
+##AutoHotKey script
+
+The [AutoHotKey script](https://github.com/ThereGoesMySanity/osuMissAnalyzer/blob/missAnalyzer/OsuMissAnalyzer/OsuMiss.ahk) in the repository lets you view your last saved replay.
+
+The way it works is that after you complete a map, scroll down and click "Save replay" and exit the score screen. Then, if you have the script running, you can hit Alt+R and it'll open that replay. Make sure the script file is in the same directory as the OsuMissAnalyzer.exe.
