@@ -15,6 +15,8 @@ After you select both of these, it'll analyze the misses and display them in an 
 |-|-|
 | *Cookiezi's first Blue Zenith choke* | *Cookiezi's second Blue Zenith choke* |
 
+Not shown: In the newest update, the color of the missed hitcircle is tinted red.
+
 The colored lines represent what the accuracy of the hit would be if you clicked when the cursor was at that point. The circle is also colored to reflect what the accuracy would be.
 
 This is standard osu! coloring (300 is blue, 100 is green, 50 is purple).
