@@ -17,6 +17,7 @@ namespace OsuMissAnalyzer
 	{
 		const int sliderGranularity = 10;
 		const int size = 320;
+		Options options;
 		Bitmap img;
 		Graphics g, gOut;
 		ReplayAnalyzer re;
@@ -32,8 +33,21 @@ namespace OsuMissAnalyzer
 		}
 		public MissAnalyzer(string replayFile, string beatmap)
 		{
+			if (!File.Exists("options.cfg"))
+			{
+				File.Create("options.cfg");
+			}
+			options = new Options("options.cfg");
 			Text = "Miss Analyzer";
-			Size = new Size(size, size + 40);
+			if (options.Settings.ContainsKey("Size"))
+			{
+				int i = Convert.ToInt32(options.Settings["Size"]);
+				Size = new Size(i, i + 40);
+			}
+			else
+			{
+				Size = new Size(size, size + 40);
+			}
 			img = new Bitmap(size, size);
 			g = Graphics.FromImage(img);
 			gOut = Graphics.FromHwnd(Handle);
@@ -41,42 +55,48 @@ namespace OsuMissAnalyzer
 			FormBorderStyle = FormBorderStyle.FixedSingle;
 			if (replayFile == null)
 			{
-				OpenFileDialog fd = new OpenFileDialog();
-				fd.Title = "Choose replay file";
-				fd.Filter = "osu! replay files (*.osr)|*.osr";
-				DialogResult d = fd.ShowDialog();
-				OpenFileDialog fd2 = new OpenFileDialog();
-				fd2.Title = "Choose beatmap";
-				fd2.Filter = "osu! beatmaps (*.osu)|*.osu";
-				DialogResult d2 = fd2.ShowDialog();
-				if (d == DialogResult.OK && d2 == DialogResult.OK)
+				using (OpenFileDialog fd = new OpenFileDialog())
 				{
-					r = new Replay(fd.FileName, true, false);
-					b = new Beatmap(fd2.FileName);
-				}
-				else
-				{
-					Environment.Exit(1);
-				}
-			}
-			else if (beatmap == null)
-			{
-				r = new Replay(replayFile, true, false);
-				MD5 md5 = MD5.Create();
-				foreach (string s in Directory.GetFiles(Directory.GetCurrentDirectory(),
-														"*.osu", SearchOption.TopDirectoryOnly))
-				{
-					byte[] hash = md5.ComputeHash(new FileStream(s, FileMode.Open));
-					if (ToHex(hash, false) == r.MapHash)
+					fd.Title = "Choose replay file";
+					fd.Filter = "osu! replay files (*.osr)|*.osr";
+					DialogResult d = fd.ShowDialog();
+					if (d == DialogResult.OK)
 					{
-						b = new Beatmap(s);
-						break;
+						r = new Replay(fd.FileName, true, false);
+					}
+					else
+					{
+						Environment.Exit(1);
 					}
 				}
 			}
 			else
 			{
 				r = new Replay(replayFile, true, false);
+			}
+			if (beatmap == null)
+			{
+				b = getBeatmapFromHash(Directory.GetCurrentDirectory());
+				if (b == null && options.Settings.ContainsKey("SongsDir"))
+				{
+					b = getBeatmapFromHash(options.Settings["SongsDir"]);
+				}
+				if (b == null)
+				{
+					using (OpenFileDialog fd2 = new OpenFileDialog())
+					{
+						fd2.Title = "Choose beatmap";
+						fd2.Filter = "osu! beatmaps (*.osu)|*.osu";
+						DialogResult d2 = fd2.ShowDialog();
+						if (d2 == DialogResult.OK)
+						{
+							b = new Beatmap(fd2.FileName);
+						}
+					}
+				}
+			}
+			else
+			{
 				b = new Beatmap(beatmap);
 			}
 			re = new ReplayAnalyzer(b, r);
@@ -108,9 +128,9 @@ namespace OsuMissAnalyzer
 					for (int i = 0; i < re.misses.Count; i++)
 					{
 						drawMiss(i);
-						img.Save(r.Filename.Substring(r.Filename.LastIndexOf("\\")+1, 
-						                              r.Filename.Length - 5 - r.Filename.LastIndexOf("\\")) 
-						         + "." + i + ".png",
+						img.Save(r.Filename.Substring(r.Filename.LastIndexOf("\\") + 1,
+													  r.Filename.Length - 5 - r.Filename.LastIndexOf("\\"))
+								 + "." + i + ".png",
 								 System.Drawing.Imaging.ImageFormat.Png);
 					}
 					break;
@@ -151,7 +171,8 @@ namespace OsuMissAnalyzer
 			p.Color = Color.Gray;
 			for (int q = z - 1; q > y; q--)
 			{
-				if (b.HitObjects[q].Type == HitObjectType.Slider)
+				int c = Math.Min(255, 100 + (int)(Math.Abs(b.HitObjects[q].StartTime - re.misses[missNum].StartTime) / 10));
+				if (b.HitObjects[q].Type == HitObjectType.Slider && c < 255)
 				{
 					SliderObject slider = (SliderObject)b.HitObjects[q];
 					Point[] pt = new Point[sliderGranularity];
@@ -164,8 +185,8 @@ namespace OsuMissAnalyzer
 					circle.Color = Color.LemonChiffon;
 					g.DrawLines(circle, pt);
 				}
-				int c = 200 - (q - y) * 10;
-				p.Color = Color.FromArgb(c, c, c);
+
+				p.Color = Color.FromArgb(c == 100 ? c+50 : c, c, c);
 				if (ring)
 				{
 					g.DrawEllipse(p, new RectangleF(Point.Subtract(
@@ -284,6 +305,19 @@ namespace OsuMissAnalyzer
 		{
 			Point p = Point.Subtract(p1, p2);
 			return flip(p, hr);
+		}
+
+		private Beatmap getBeatmapFromHash(string dir)
+		{
+			foreach (string s in Directory.GetFiles(dir,
+						"*.osu", SearchOption.AllDirectories))
+			{
+				if (Beatmap.MD5FromFile(s) == r.MapHash)
+				{
+					return new Beatmap(s);
+				}
+			}
+			return null;
 		}
 	}
 }

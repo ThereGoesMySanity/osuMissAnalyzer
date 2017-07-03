@@ -108,11 +108,11 @@ namespace BMAPI.v1
         private readonly List<string> WriteBuffer = new List<string>();
         private readonly Dictionary<string, int> SectionLength = new Dictionary<string, int>();
 
-        /// <summary>
-        /// Creates a new Beatmap object
-        /// </summary>
-        /// <param name="beatmapFile">The beatmap file to open</param>
-        public Beatmap(string beatmapFile = "")
+		/// <summary>
+		/// Creates a new Beatmap object
+		/// </summary>
+		/// <param name="beatmapFile">The beatmap file to open</param>
+		public Beatmap(string beatmapFile = "")
         {
             Thread.CurrentThread.CurrentCulture = new CultureInfo("en-US", false);
 
@@ -135,7 +135,7 @@ namespace BMAPI.v1
             recalculateStackCoordinates();
         }
 
-        private void Parse(string bm)
+		private void Parse(string bm)
         {
             FileInfo ffii = new FileInfo(bm);
             Info.Folder = ffii.DirectoryName;
@@ -655,7 +655,7 @@ namespace BMAPI.v1
             return "";
         }
 
-        private string MD5FromFile(string fileName)
+        public static string MD5FromFile(string fileName)
         {
             using(MD5 md5 = MD5.Create())
             {
