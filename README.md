@@ -33,7 +33,7 @@ Outlines only example:
 
 In options.cfg, you can define various settings that impact the program.
 
-To add these to options.cfg, add a new line formatted \<Setting Name>=\<Value>
+To add these to options.cfg, add a new line formatted `<Setting Name>=<Value>`
 
 | Setting | Description |
 |-|-|
