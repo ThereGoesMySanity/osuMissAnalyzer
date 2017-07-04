@@ -92,6 +92,10 @@ namespace BMAPI
 		{
 			return new Point((int)X, (int)Y);
 		}
+		internal PointF ToPointF()
+		{
+			return new PointF(X, Y);
+		}
 
         public static Point2 operator /(float Left, Point2 Right)
         {

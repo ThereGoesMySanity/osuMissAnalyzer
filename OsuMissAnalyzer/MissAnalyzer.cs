@@ -14,8 +14,10 @@ namespace OsuMissAnalyzer
 {
 	public class MissAnalyzer : Form
 	{
+		const int arrowLength = 10;
 		const int sliderGranularity = 10;
 		const int size = 320;
+		float scale;
 		Options options;
 		Bitmap img;
 		Graphics g, gOut;
@@ -205,8 +207,8 @@ namespace OsuMissAnalyzer
 			circle.LineJoin = System.Drawing.Drawing2D.LineJoin.Round;
 			Pen p = new Pen(Color.White);
 			g.FillRectangle(p.Brush, 0, 0, size, size);
-			Rectangle bounds = new Rectangle((re.misses[missNum].Location - new Point2(size / 2, size / 2)).ToPoint(),
-											 new Size(size, size));
+			RectangleF bounds = Scale(new RectangleF((re.misses[missNum].Location - new Point2(size / 2, size / 2)).ToPointF(),
+													 new Size(size, size)), scale);
 			int i, j, y, z;
 			for (i = r.ReplayFrames.Count(x => x.Time <= re.misses[missNum].StartTime);
 				 i > 0 && bounds.Contains(r.ReplayFrames[i].Point); i--) { }
@@ -225,12 +227,12 @@ namespace OsuMissAnalyzer
 				if (b.HitObjects[q].Type == HitObjectType.Slider)
 				{
 					SliderObject slider = (SliderObject)b.HitObjects[q];
-					Point[] pt = new Point[sliderGranularity];
+					PointF[] pt = new PointF[sliderGranularity];
 					for (int x = 0; x < sliderGranularity; x++)
 					{
 						pt[x] = pSub(slider.PositionAtDistance
 											   (x * 1f * slider.PixelLength / sliderGranularity).toPoint(),
-											   (Size)bounds.Location, hr);
+						             new SizeF(bounds.Location), hr);
 					}
 					circle.Color = Color.LemonChiffon;
 					g.DrawLines(circle, pt);
@@ -239,27 +241,32 @@ namespace OsuMissAnalyzer
 				p.Color = Color.FromArgb(c == 100 ? c + 50 : c, c, c);
 				if (ring)
 				{
-					g.DrawEllipse(p, new RectangleF(Point.Subtract(
-										pSub(b.HitObjects[q].Location.ToPoint(), (Size)bounds.Location, hr),
+					g.DrawEllipse(p, new RectangleF(PointF.Subtract(
+						pSub(b.HitObjects[q].Location.ToPointF(), new SizeF(bounds.Location), hr),
 										new SizeF(radius, radius).ToSize()), new SizeF(radius * 2, radius * 2)));
 				}
 				else
 				{
-					g.FillEllipse(p.Brush, new RectangleF(Point.Subtract(
-										pSub(b.HitObjects[q].Location.ToPoint(), (Size)bounds.Location, hr),
+					g.FillEllipse(p.Brush, new RectangleF(PointF.Subtract(
+						pSub(b.HitObjects[q].Location.ToPointF(), new SizeF(bounds.Location), hr),
 										new SizeF(radius, radius).ToSize()), new SizeF(radius * 2, radius * 2)));
 				}
 			}
 
 			for (int k = i; k < j - 1; k++)
 			{
-				Point p1 = pSub(r.ReplayFrames[k].Point, bounds.Location, hr);
-				Point p2 = pSub(r.ReplayFrames[k + 1].Point, bounds.Location, hr);
+				PointF p1 = pSub(r.ReplayFrames[k].Point, bounds.Location, hr);
+				PointF p2 = pSub(r.ReplayFrames[k + 1].Point, bounds.Location, hr);
+				Vector2 v1 = new Vector2(p2.X-p1.X, p2.Y-p1.Y);
+				v1.Normalize();
+				v1 *= Math.Sqrt(2) * arrowLength / 2;
+				PointF p3 = new PointF((float)(v1.X + v1.Y), (float)(v1.Y - v1.X));
+				PointF p4 = new PointF((float)(v1.X - v1.Y), (float)(v1.X + v1.Y));
 				p.Color = getHitColor(b.OverallDifficulty, (int)(re.misses[missNum].StartTime - r.ReplayFrames[k].Time));
 				g.DrawLine(p, p1, p2);
 				if (re.getKey(k == 0 ? ReplayAPI.Keys.None : r.ReplayFrames[k - 1].Keys, r.ReplayFrames[k].Keys) > 0)
 				{
-					g.DrawEllipse(p, new Rectangle(Point.Subtract(p1, new Size(3, 3)), new Size(6, 6)));
+					g.DrawEllipse(p, new RectangleF(PointF.Subtract(p1, new Size(3, 3)), new Size(6, 6)));
 				}
 			}
 
@@ -326,7 +333,7 @@ namespace OsuMissAnalyzer
 		/// <returns>A possibly-flipped pooint.</returns>
 		/// <param name="p">The point to be flipped.</param>
 		/// <param name="hr">Whether or not Hard Rock is on.</param>
-		private Point flip(Point p, bool hr)
+		private PointF flip(PointF p, bool hr)
 		{
 			if (!hr) return p;
 			p.Y = size - p.Y;
@@ -340,9 +347,9 @@ namespace OsuMissAnalyzer
 		/// <param name="p1">The first point.</param>
 		/// <param name="p2">The point to be subtracted</param>
 		/// <param name="hr">Whether or not Hard Rock is on.</param>
-		private Point pSub(Point p1, Point p2, bool hr)
+		private PointF pSub(PointF p1, PointF p2, bool hr)
 		{
-			return pSub(p1, (Size)p2, hr);
+			return pSub(p1, new SizeF(p2), hr);
 		}
 		/// <summary>
 		/// Subtracts two points and flips them if hr is <c>true</c>.
@@ -351,10 +358,21 @@ namespace OsuMissAnalyzer
 		/// <param name="p1">The first point.</param>
 		/// <param name="p2">The size to be subtracted</param>
 		/// <param name="hr">Whether or not Hard Rock is on.</param>
-		private Point pSub(Point p1, Size p2, bool hr)
+		private PointF pSub(PointF p1, SizeF p2, bool hr)
 		{
-			Point p = Point.Subtract(p1, p2);
+			PointF p = PointF.Subtract(p1, p2);
 			return flip(p, hr);
+		}
+
+		private PointF Scale(PointF p, float s)
+		{
+			return new PointF(p.X * s, p.Y * s);
+		}
+
+		private RectangleF Scale(RectangleF rect, float s)
+		{
+			SizeF sz = new SizeF(Scale(rect.Size.ToPointF(), s));
+			return new RectangleF(PointF.Subtract(rect.Location, SizeF.Subtract(rect.Size, sz)), sz);
 		}
 
 		private Beatmap getBeatmapFromHash(string dir, bool recurse = true)
