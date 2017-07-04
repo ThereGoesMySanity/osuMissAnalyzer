@@ -65,15 +65,7 @@ namespace OsuMissAnalyzer
 			}
 			options = new Options("options.cfg");
 			Text = "Miss Analyzer";
-			if (options.Settings.ContainsKey("Size"))
-			{
-				int i = Convert.ToInt32(options.Settings["Size"]);
-				Size = new Size(i, i + 40);
-			}
-			else
-			{
-				Size = new Size(size, size + 40);
-			}
+			Size = new Size(size, size + 40);
 			img = new Bitmap(size, size);
 			g = Graphics.FromImage(img);
 			gOut = Graphics.FromHwnd(Handle);
