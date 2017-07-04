@@ -15,7 +15,7 @@ After you select both of these, it'll analyze the misses and display them in an 
 |-|-|
 | *Cookiezi's first Blue Zenith choke* | *Cookiezi's second Blue Zenith choke* |
 
-Not shown: In the newest update, the color of the missed hitcircle is tinted red.
+Not shown: In the newest update, the color of the missed hitcircle is tinted red and there are arrows to indicate the direction of movement.
 
 The colored lines represent what the accuracy of the hit would be if you clicked when the cursor was at that point. The circle is also colored to reflect what the accuracy would be.
 
@@ -25,6 +25,9 @@ This is standard osu! coloring (300 is blue, 100 is green, 50 is purple).
 
 | Key | Action|
 |-|-|
+|Up|Zoom in|
+|Down|Zoom out|
+|Mouse wheel|Zoom in/out|
 | Right | Next miss |
 | Left | Previous miss |
 | T | Draw outlines only |
@@ -44,14 +47,13 @@ To add these to options.cfg, add a new line formatted `<Setting Name>=<Value>`
 | Setting | Description |
 |-|-|
 |SongsDir|Specify osu!'s songs dir.|
-|Size| Specify the width/height of the window.|
 
 ## Alternate Usage
 
-You can also run it from the command line with this format: `osuMissAnalyzer.exe [<replay> [<beatmap
+You can also run it from the command line with this format: `osuMissAnalyzer.exe [<replay> [<beatmap>]]`
 
 ## AutoHotKey script
 
-The [AutoHotKey script](https://github.com/ThereGoesMySanity/osuMissAnalyzer/blob/missAnalyzer/OsuMissAnalyzer/OsuMiss.ahk) in the repository lets you view your most recent replay.
+The AutoHotKey script lets you view your most recent replay.
 
 The way it works is that after you complete a map, if you have the script running, you can hit Alt+R and it'll open that replay. Make sure the script file is in the same directory as the OsuMissAnalyzer.exe.
