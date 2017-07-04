@@ -14,9 +14,10 @@ namespace OsuMissAnalyzer
 {
 	public class MissAnalyzer : Form
 	{
-		const int arrowLength = 10;
+		const int arrowLength = 4;
 		const int sliderGranularity = 10;
 		const int size = 320;
+		const int maxTime = 1000;
 		float scale;
 		Options options;
 		Bitmap img;
@@ -109,6 +110,7 @@ namespace OsuMissAnalyzer
 				Environment.Exit(1);
 			}
 			missNo = 0;
+			scale = 1;
 		}
 
 		private void loadReplay()
@@ -146,12 +148,31 @@ namespace OsuMissAnalyzer
 			}
 		}
 
+		private void ScaleChange(int i)
+		{
+			scale += 0.1f * i;
+		}
+
+		protected override void OnMouseWheel(MouseEventArgs e)
+		{
+			base.OnMouseWheel(e);
+			Invalidate();
+			ScaleChange(Math.Sign(e.Delta));
+		}
+
 		protected override void OnKeyDown(KeyEventArgs e)
 		{
+
 			base.OnKeyDown(e);
 			Invalidate();
 			switch (e.KeyCode)
 			{
+				case System.Windows.Forms.Keys.Up:
+					ScaleChange(1);
+					break;
+				case System.Windows.Forms.Keys.Down:
+					ScaleChange(-1);
+					break;
 				case System.Windows.Forms.Keys.Right:
 					if (missNo == re.misses.Count - 1) break;
 					missNo++;
@@ -199,40 +220,43 @@ namespace OsuMissAnalyzer
 		/// <param name="missNum">Index of the miss as it shows up in r.misses.</param>
 		private Bitmap drawMiss(int missNum)
 		{
-			//TODO: Add scale
 			bool hr = r.Mods.HasFlag(Mods.HardRock);
-			float radius = (float)re.misses[missNum].Radius;
-			Pen circle = new Pen(Color.Gray, radius * 2);
+			CircleObject miss = re.misses[missNum];
+			float radius = (float)miss.Radius;
+			Pen circle = new Pen(Color.Gray, radius * 2 / scale);
 			circle.EndCap = System.Drawing.Drawing2D.LineCap.Round;
 			circle.LineJoin = System.Drawing.Drawing2D.LineJoin.Round;
 			Pen p = new Pen(Color.White);
 			g.FillRectangle(p.Brush, 0, 0, size, size);
-			RectangleF bounds = Scale(new RectangleF((re.misses[missNum].Location - new Point2(size / 2, size / 2)).ToPointF(),
-													 new Size(size, size)), scale);
+			RectangleF bounds = new RectangleF((miss.Location - new Point2(size * scale / 2, size * scale / 2)).ToPointF(),
+											   new SizeF(size * scale, size * scale));
+			
 			int i, j, y, z;
-			for (i = r.ReplayFrames.Count(x => x.Time <= re.misses[missNum].StartTime);
-				 i > 0 && bounds.Contains(r.ReplayFrames[i].Point); i--) { }
-			for (j = r.ReplayFrames.Count(x => x.Time <= re.misses[missNum].StartTime);
-				 j < r.ReplayFrames.Count - 1 && bounds.Contains(r.ReplayFrames[j].Point); j++) { }
-			for (y = b.HitObjects.Count(x => x.StartTime <= re.misses[missNum].StartTime) - 1;
-				 y >= 0 && bounds.Contains(b.HitObjects[y].Location.ToPoint()); y--) { }
-			for (z = b.HitObjects.Count(x => x.StartTime <= re.misses[missNum].StartTime) - 1;
-				 z < b.HitObjects.Count && bounds.Contains(b.HitObjects[z].Location.ToPoint()); z++) { }
-
+			for (y = b.HitObjects.Count(x => x.StartTime <= miss.StartTime) - 1;
+				 y >= 0 && bounds.Contains(b.HitObjects[y].Location.ToPointF())
+				 && miss.StartTime - b.HitObjects[y].StartTime < maxTime; y--) { }
+			for (z = b.HitObjects.Count(x => x.StartTime <= miss.StartTime) - 1;
+				 z < b.HitObjects.Count && bounds.Contains(b.HitObjects[z].Location.ToPointF())
+				 && b.HitObjects[z].StartTime - miss.StartTime < maxTime; z++) { }
+			for (i = r.ReplayFrames.Count(x => x.Time <= b.HitObjects[y + 1].StartTime);
+				 i > 0 && bounds.Contains(r.ReplayFrames[i].Point)
+				 && miss.StartTime - r.ReplayFrames[i].Time < maxTime; i--) { }
+			for (j = r.ReplayFrames.Count(x => x.Time <= b.HitObjects[z - 1].StartTime);
+				 j < r.ReplayFrames.Count - 1 && bounds.Contains(r.ReplayFrames[j].Point)
+				 && r.ReplayFrames[j].Time - miss.StartTime < maxTime; j++) { }
 			p.Color = Color.Gray;
 			for (int q = z - 1; q > y; q--)
 			{
-				int c = Math.Min(255, 100 + (int)(Math.Abs(b.HitObjects[q].StartTime - re.misses[missNum].StartTime) / 10));
-				if (c == 255) continue;
+				int c = Math.Min(255, 100 + (int)(Math.Abs(b.HitObjects[q].StartTime - miss.StartTime) * 100 / maxTime));
 				if (b.HitObjects[q].Type == HitObjectType.Slider)
 				{
 					SliderObject slider = (SliderObject)b.HitObjects[q];
 					PointF[] pt = new PointF[sliderGranularity];
 					for (int x = 0; x < sliderGranularity; x++)
 					{
-						pt[x] = pSub(slider.PositionAtDistance
-											   (x * 1f * slider.PixelLength / sliderGranularity).toPoint(),
-						             new SizeF(bounds.Location), hr);
+						pt[x] = ScaleToRect(
+							pSub(slider.PositionAtDistance(x * 1f * slider.PixelLength / sliderGranularity).toPoint(),
+								 bounds, hr), bounds);
 					}
 					circle.Color = Color.LemonChiffon;
 					g.DrawLines(circle, pt);
@@ -241,39 +265,50 @@ namespace OsuMissAnalyzer
 				p.Color = Color.FromArgb(c == 100 ? c + 50 : c, c, c);
 				if (ring)
 				{
-					g.DrawEllipse(p, new RectangleF(PointF.Subtract(
-						pSub(b.HitObjects[q].Location.ToPointF(), new SizeF(bounds.Location), hr),
-										new SizeF(radius, radius).ToSize()), new SizeF(radius * 2, radius * 2)));
+					g.DrawEllipse(p, ScaleToRect(new RectangleF(PointF.Subtract(
+						pSub(b.HitObjects[q].Location.ToPointF(), bounds, hr),
+						new SizeF(radius, radius).ToSize()), new SizeF(radius * 2, radius * 2)), bounds));
 				}
 				else
 				{
-					g.FillEllipse(p.Brush, new RectangleF(PointF.Subtract(
-						pSub(b.HitObjects[q].Location.ToPointF(), new SizeF(bounds.Location), hr),
-										new SizeF(radius, radius).ToSize()), new SizeF(radius * 2, radius * 2)));
+					g.FillEllipse(p.Brush, ScaleToRect(new RectangleF(PointF.Subtract(
+						pSub(b.HitObjects[q].Location.ToPointF(), bounds, hr),
+						new SizeF(radius, radius).ToSize()), new SizeF(radius * 2, radius * 2)), bounds));
 				}
 			}
-
-			for (int k = i; k < j - 1; k++)
+			float distance = 10.0001f;
+			for (int k = i; k < j; k++)
 			{
-				PointF p1 = pSub(r.ReplayFrames[k].Point, bounds.Location, hr);
-				PointF p2 = pSub(r.ReplayFrames[k + 1].Point, bounds.Location, hr);
-				Vector2 v1 = new Vector2(p2.X-p1.X, p2.Y-p1.Y);
-				v1.Normalize();
-				v1 *= Math.Sqrt(2) * arrowLength / 2;
-				PointF p3 = new PointF((float)(v1.X + v1.Y), (float)(v1.Y - v1.X));
-				PointF p4 = new PointF((float)(v1.X - v1.Y), (float)(v1.X + v1.Y));
-				p.Color = getHitColor(b.OverallDifficulty, (int)(re.misses[missNum].StartTime - r.ReplayFrames[k].Time));
-				g.DrawLine(p, p1, p2);
+				PointF p1 = pSub(r.ReplayFrames[k].Point, bounds, hr);
+				PointF p2 = pSub(r.ReplayFrames[k + 1].Point, bounds, hr);
+				p.Color = getHitColor(b.OverallDifficulty, (int)(miss.StartTime - r.ReplayFrames[k].Time));
+				g.DrawLine(p, ScaleToRect(p1, bounds), ScaleToRect(p2, bounds));
+				if (distance > 10 && Math.Abs(miss.StartTime - r.ReplayFrames[k+1].Time) > 50)
+				{
+					Point2 v1 = new Point2(p1.X - p2.X, p1.Y - p2.Y);
+					v1.Normalize();
+					v1 *= (float)(Math.Sqrt(2) * arrowLength / 2);
+					PointF p3 = PointF.Add(p2, new SizeF(v1.X + v1.Y, v1.Y - v1.X));
+					PointF p4 = PointF.Add(p2, new SizeF(v1.X - v1.Y, v1.X + v1.Y));
+					g.DrawLine(p, ScaleToRect(p2, bounds), ScaleToRect(p3, bounds));
+					g.DrawLine(p, ScaleToRect(p2, bounds), ScaleToRect(p4, bounds));
+					distance = 0;
+				}
+				else
+				{
+					distance += (float)Math.Sqrt((p1.X + p2.X) * (p1.X + p2.X) + (p1.Y * p2.Y) * (p1.Y * p2.Y));
+				}
 				if (re.getKey(k == 0 ? ReplayAPI.Keys.None : r.ReplayFrames[k - 1].Keys, r.ReplayFrames[k].Keys) > 0)
 				{
-					g.DrawEllipse(p, new RectangleF(PointF.Subtract(p1, new Size(3, 3)), new Size(6, 6)));
+					g.DrawEllipse(p, ScaleToRect(new RectangleF(PointF.Subtract(p1, new Size(3, 3)), new Size(6, 6)),
+												 bounds));
 				}
 			}
 
 			p.Color = Color.Black;
 			Font f = new Font(FontFamily.GenericSansSerif, 12);
 			g.DrawString("Miss " + (missNum + 1) + " of " + re.misses.Count, f, p.Brush, 0, 0);
-			TimeSpan ts = TimeSpan.FromMilliseconds(re.misses[missNum].StartTime);
+			TimeSpan ts = TimeSpan.FromMilliseconds(miss.StartTime);
 			g.DrawString("Time: " + ts.ToString(@"mm\:ss\.fff"), f, p.Brush, 0, size - f.Height);
 			return img;
 		}
@@ -332,47 +367,54 @@ namespace OsuMissAnalyzer
 		/// </summary>
 		/// <returns>A possibly-flipped pooint.</returns>
 		/// <param name="p">The point to be flipped.</param>
+		/// <param name="s">The height of the rectangle it's being flipped in</param>
 		/// <param name="hr">Whether or not Hard Rock is on.</param>
-		private PointF flip(PointF p, bool hr)
+		private PointF flip(PointF p, float s, bool hr)
 		{
 			if (!hr) return p;
-			p.Y = size - p.Y;
+			p.Y = s - p.Y;
 			return p;
 		}
-
 		/// <summary>
-		/// Subtracts two points and flips them if hr is <c>true</c>.
+		/// Changes origin to top right of rect and flips p if hr is <c>true</c>.
 		/// </summary>
-		/// <returns>The difference between p1 and p2, possibly also flipped.</returns>
-		/// <param name="p1">The first point.</param>
-		/// <param name="p2">The point to be subtracted</param>
+		/// <returns>A point relative to rect</returns>
+		/// <param name="p1">The point.</param>
+		/// <param name="rect">The bounding rectangle to subtract from</param>
 		/// <param name="hr">Whether or not Hard Rock is on.</param>
-		private PointF pSub(PointF p1, PointF p2, bool hr)
+		private PointF pSub(PointF p1, RectangleF rect, bool hr)
 		{
-			return pSub(p1, new SizeF(p2), hr);
+			PointF p = PointF.Subtract(p1, new SizeF(rect.Location));
+			return flip(p, rect.Width, hr);
 		}
 		/// <summary>
-		/// Subtracts two points and flips them if hr is <c>true</c>.
+		/// Scales point p by scale factor s.
 		/// </summary>
-		/// <returns>The difference between p1 and p2, possibly also flipped.</returns>
-		/// <param name="p1">The first point.</param>
-		/// <param name="p2">The size to be subtracted</param>
-		/// <param name="hr">Whether or not Hard Rock is on.</param>
-		private PointF pSub(PointF p1, SizeF p2, bool hr)
-		{
-			PointF p = PointF.Subtract(p1, p2);
-			return flip(p, hr);
-		}
-
+		/// <returns>The scaled point.</returns>
+		/// <param name="p">Point to be scaled.</param>
+		/// <param name="s">Scale.</param>
 		private PointF Scale(PointF p, float s)
 		{
 			return new PointF(p.X * s, p.Y * s);
 		}
-
+		private SizeF Scale(SizeF p, float s)
+		{
+			return new SizeF(p.Width * s, p.Height * s);
+		}
 		private RectangleF Scale(RectangleF rect, float s)
 		{
-			SizeF sz = new SizeF(Scale(rect.Size.ToPointF(), s));
-			return new RectangleF(PointF.Subtract(rect.Location, SizeF.Subtract(rect.Size, sz)), sz);
+			return new RectangleF(Scale(rect.Location, s), Scale(rect.Size, s));
+		}
+		private PointF ScaleToRect(PointF p, RectangleF rect, float sz = size)
+		{
+			return Scale(p, sz / rect.Width);
+		}
+
+		private RectangleF ScaleToRect(RectangleF p, RectangleF rect, float sz = size)
+		{
+			return new RectangleF(PointF.Subtract(ScaleToRect(PointF.Add(p.Location, Scale(p.Size, 0.5f)), rect),
+												  Scale(p.Size, 0.5f * sz / rect.Width)),
+								  Scale(p.Size, sz / rect.Width));
 		}
 
 		private Beatmap getBeatmapFromHash(string dir, bool recurse = true)
