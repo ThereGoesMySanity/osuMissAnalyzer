@@ -84,5 +84,8 @@
     <Reference Include="System.Drawing.Design" />
     <Reference Include="Mono.Posix, Version=2.0.0.0, Culture=neutral, PublicKeyToken=0738eb9f132ed756" />
   </ItemGroup>
+  <ItemGroup>
+    <None Include="OsuMiss.ahk" />
+  </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
 </Project>
