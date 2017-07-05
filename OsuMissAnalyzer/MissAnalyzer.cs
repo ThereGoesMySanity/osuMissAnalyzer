@@ -252,7 +252,6 @@ namespace OsuMissAnalyzer
 					circle.Color = Color.LemonChiffon;
 					g.DrawLines(circle, pt);
 				}
-
 				p.Color = Color.FromArgb(c == 100 ? c + 50 : c, c, c);
 				if (ring)
 				{
