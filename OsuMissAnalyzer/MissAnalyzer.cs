@@ -267,7 +267,7 @@ namespace OsuMissAnalyzer
 						new SizeF(radius, radius).ToSize()), new SizeF(radius * 2, radius * 2)), bounds));
 				}
 			}
-			float distance = 10.0001f;
+			float distance = 11;
 			for (int k = i; k < j; k++)
 			{
 				PointF p1 = pSub(flip(r.ReplayFrames[k].Point, 384), bounds, hr);
@@ -287,7 +287,7 @@ namespace OsuMissAnalyzer
 				}
 				else
 				{
-					distance += (float)Math.Sqrt((p1.X + p2.X) * (p1.X + p2.X) + (p1.Y * p2.Y) * (p1.Y * p2.Y));
+					distance += (float)Math.Sqrt((p1.X - p2.X) * (p1.X - p2.X) + (p1.Y - p2.Y) * (p1.Y - p2.Y));
 				}
 				if (ReplayAnalyzer.getKey(k == 0 ? ReplayAPI.Keys.None : r.ReplayFrames[k - 1].Keys, r.ReplayFrames[k].Keys) > 0)
 				{
