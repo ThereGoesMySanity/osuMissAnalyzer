@@ -34,20 +34,24 @@ namespace OsuMissAnalyzer
             MissAnalyzer m;
             Console.Title = "MissAnalyser";
             Console.Write("Starting MissAnalyser... ");
-            if (args.Length > 0 && args[0].EndsWith(".osr"))
-            {
-                Console.WriteLine("\nFound [{0}]", args[0]);
-                if (args.Length > 1 && args[1].EndsWith(".osu"))
-                {
-                    Console.WriteLine("\nFound [{0}]", args[1]);
-                    m = new MissAnalyzer(args[0], args[1]);
-                }
-                else
-                {
-                    m = new MissAnalyzer(args[0], null);
-                }
-            }
-            else
+			if (args.Length > 0 && args[0].EndsWith(".osr"))
+			{
+				Console.WriteLine("\nFound [{0}]", args[0]);
+				if (args.Length > 1 && args[1].EndsWith(".osu"))
+				{
+					Console.WriteLine("\nFound [{0}]", args[1]);
+					m = new MissAnalyzer(args[0], args[1]);
+				}
+				else
+				{
+					m = new MissAnalyzer(args[0], null);
+				}
+			}
+			else if (args.Length > 1 && args[1].EndsWith(".osr"))  //Necessary to support drag & drop
+			{
+				m = new MissAnalyzer(args[1], null);
+			}
+			else
             {
                 m = new MissAnalyzer(null, null);
             }
@@ -155,6 +159,7 @@ namespace OsuMissAnalyzer
         private void ScaleChange(int i)
         {
             scale += 0.1f*i;
+			if (scale < 0.1) scale = 0.1f;
         }
 
         protected override void OnMouseWheel(MouseEventArgs e)
@@ -312,7 +317,7 @@ namespace OsuMissAnalyzer
                 }
                 else
                 {
-                    distance += (float) Math.Sqrt((p1.X + p2.X)*(p1.X + p2.X) + (p1.Y*p2.Y)*(p1.Y*p2.Y));
+					distance += (float)Math.Sqrt((p1.X - p2.X) * (p1.X - p2.X) + (p1.Y - p2.Y) * (p1.Y - p2.Y));
                 }
                 if (re.getKey(k == 0 ? ReplayAPI.Keys.None : r.ReplayFrames[k - 1].Keys, r.ReplayFrames[k].Keys) > 0)
                 {
@@ -443,7 +448,7 @@ namespace OsuMissAnalyzer
 
         private Beatmap getBeatmapFromHash(string dir, bool recurse = true)
         {
-            Console.Write("\nSearching beatmap... Can be long, depend of many beatmap you have");
+            Console.Write("\nSearching beatmap... Can take a while, depending on how many beatmaps you have");
             foreach (string s in Directory.GetFiles(dir, "*.osu",
                 recurse ? SearchOption.AllDirectories : SearchOption.TopDirectoryOnly))
             {
