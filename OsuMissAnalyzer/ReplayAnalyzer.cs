@@ -182,7 +182,7 @@ namespace osuDodgyMomentsFinder
 			}
 		}
 
-		public Keys getKey(Keys last, Keys current)
+		public static Keys getKey(Keys last, Keys current)
 		{
 			Keys res = Keys.None;
 			if (!last.HasFlag(Keys.M1) && current.HasFlag(Keys.M1) && !current.HasFlag(Keys.K1))

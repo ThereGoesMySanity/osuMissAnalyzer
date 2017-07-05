@@ -22,10 +22,9 @@ namespace OsuMissAnalyzer
 		Options options;
 		Bitmap img;
 		Graphics g, gOut;
-		ReplayAnalyzer re;
 		Replay r;
 		Beatmap b;
-		int missNo;
+		int noteNo;
 		bool ring;
 
 		[STAThread]
@@ -95,13 +94,12 @@ namespace OsuMissAnalyzer
 			{
 				b = new Beatmap(beatmap);
 			}
-			re = new ReplayAnalyzer(b, r);
 
-			if (re.misses.Count == 0)
+			if (b.HitObjects.Count == 0)
 			{
 				Environment.Exit(1);
 			}
-			missNo = 0;
+			noteNo = 0;
 			scale = 1;
 		}
 
@@ -166,20 +164,20 @@ namespace OsuMissAnalyzer
 					ScaleChange(-1);
 					break;
 				case System.Windows.Forms.Keys.Right:
-					if (missNo == re.misses.Count - 1) break;
-					missNo++;
+					if (noteNo == b.HitObjects.Count - 1) break;
+					noteNo++;
 					break;
 				case System.Windows.Forms.Keys.Left:
-					if (missNo == 0) break;
-					missNo--;
+					if (noteNo == 0) break;
+					noteNo--;
 					break;
 				case System.Windows.Forms.Keys.T:
 					ring = !ring;
 					break;
 				case System.Windows.Forms.Keys.P:
-					for (int i = 0; i < re.misses.Count; i++)
+					for (int i = 0; i < b.HitObjects.Count; i++)
 					{
-						drawMiss(i);
+						drawNote(i);
 						img.Save(r.Filename.Substring(r.Filename.LastIndexOf("\\") + 1,
 													  r.Filename.Length - 5 - r.Filename.LastIndexOf("\\"))
 								 + "." + i + ".png",
@@ -189,9 +187,8 @@ namespace OsuMissAnalyzer
 				case System.Windows.Forms.Keys.R:
 					loadReplay();
 					loadBeatmap();
-					re = new ReplayAnalyzer(b, r);
 					Invalidate();
-					missNo = 0;
+					noteNo = 0;
 					if (r == null || b == null)
 					{
 						Environment.Exit(1);
@@ -202,44 +199,44 @@ namespace OsuMissAnalyzer
 		protected override void OnPaint(PaintEventArgs e)
 		{
 			base.OnPaint(e);
-			gOut.DrawImage(drawMiss(missNo), 0, 0, size, size);
+			gOut.DrawImage(drawNote(noteNo), 0, 0, size, size);
 		}
 
 		/// <summary>
 		/// Draws the miss.
 		/// </summary>
 		/// <returns>A Bitmap containing the drawing</returns>
-		/// <param name="missNum">Index of the miss as it shows up in r.misses.</param>
-		private Bitmap drawMiss(int missNum)
+		/// <param name="noteNum">Index of the miss as it shows up in r.misses.</param>
+		private Bitmap drawNote(int noteNum)
 		{
 			bool hr = r.Mods.HasFlag(Mods.HardRock);
-			CircleObject miss = re.misses[missNum];
-			float radius = (float)miss.Radius;
+			CircleObject note = b.HitObjects[noteNum];
+			float radius = (float)note.Radius;
 			Pen circle = new Pen(Color.Gray, radius * 2 / scale);
 			circle.EndCap = System.Drawing.Drawing2D.LineCap.Round;
 			circle.LineJoin = System.Drawing.Drawing2D.LineJoin.Round;
 			Pen p = new Pen(Color.White);
 			g.FillRectangle(p.Brush, 0, 0, size, size);
-			RectangleF bounds = new RectangleF((miss.Location - new Point2(size * scale / 2, size * scale / 2)).ToPointF(),
+			RectangleF bounds = new RectangleF((note.Location - new Point2(size * scale / 2, size * scale / 2)).ToPointF(),
 											   new SizeF(size * scale, size * scale));
 			
 			int i, j, y, z;
-			for (y = b.HitObjects.Count(x => x.StartTime <= miss.StartTime) - 1;
+			for (y = b.HitObjects.Count(x => x.StartTime <= note.StartTime) - 1;
 				 y >= 0 && bounds.Contains(b.HitObjects[y].Location.ToPointF())
-				 && miss.StartTime - b.HitObjects[y].StartTime < maxTime; y--) { }
-			for (z = b.HitObjects.Count(x => x.StartTime <= miss.StartTime) - 1;
+				 && note.StartTime - b.HitObjects[y].StartTime < maxTime; y--) { }
+			for (z = b.HitObjects.Count(x => x.StartTime <= note.StartTime) - 1;
 				 z < b.HitObjects.Count && bounds.Contains(b.HitObjects[z].Location.ToPointF())
-				 && b.HitObjects[z].StartTime - miss.StartTime < maxTime; z++) { }
+				 && b.HitObjects[z].StartTime - note.StartTime < maxTime; z++) { }
 			for (i = r.ReplayFrames.Count(x => x.Time <= b.HitObjects[y + 1].StartTime);
 				 i > 0 && bounds.Contains(r.ReplayFrames[i].Point)
-				 && miss.StartTime - r.ReplayFrames[i].Time < maxTime; i--) { }
+				 && note.StartTime - r.ReplayFrames[i].Time < maxTime; i--) { }
 			for (j = r.ReplayFrames.Count(x => x.Time <= b.HitObjects[z - 1].StartTime);
 				 j < r.ReplayFrames.Count - 1 && bounds.Contains(r.ReplayFrames[j].Point)
-				 && r.ReplayFrames[j].Time - miss.StartTime < maxTime; j++) { }
+				 && r.ReplayFrames[j].Time - note.StartTime < maxTime; j++) { }
 			p.Color = Color.Gray;
 			for (int q = z - 1; q > y; q--)
 			{
-				int c = Math.Min(255, 100 + (int)(Math.Abs(b.HitObjects[q].StartTime - miss.StartTime) * 100 / maxTime));
+				int c = Math.Min(255, 100 + (int)(Math.Abs(b.HitObjects[q].StartTime - note.StartTime) * 100 / maxTime));
 				if (b.HitObjects[q].Type == HitObjectType.Slider)
 				{
 					SliderObject slider = (SliderObject)b.HitObjects[q];
@@ -271,11 +268,11 @@ namespace OsuMissAnalyzer
 			float distance = 10.0001f;
 			for (int k = i; k < j; k++)
 			{
-				PointF p1 = pSub(r.ReplayFrames[k].Point, bounds, hr);
-				PointF p2 = pSub(r.ReplayFrames[k + 1].Point, bounds, hr);
-				p.Color = getHitColor(b.OverallDifficulty, (int)(miss.StartTime - r.ReplayFrames[k].Time));
+				PointF p1 = pSub(r.ReplayFrames[k].Point, bounds, false);
+				PointF p2 = pSub(r.ReplayFrames[k + 1].Point, bounds, false);
+				p.Color = getHitColor(b.OverallDifficulty, (int)(note.StartTime - r.ReplayFrames[k].Time));
 				g.DrawLine(p, ScaleToRect(p1, bounds), ScaleToRect(p2, bounds));
-				if (distance > 10 && Math.Abs(miss.StartTime - r.ReplayFrames[k+1].Time) > 50)
+				if (distance > 10 && Math.Abs(note.StartTime - r.ReplayFrames[k+1].Time) > 50)
 				{
 					Point2 v1 = new Point2(p1.X - p2.X, p1.Y - p2.Y);
 					v1.Normalize();
@@ -290,7 +287,7 @@ namespace OsuMissAnalyzer
 				{
 					distance += (float)Math.Sqrt((p1.X + p2.X) * (p1.X + p2.X) + (p1.Y * p2.Y) * (p1.Y * p2.Y));
 				}
-				if (re.getKey(k == 0 ? ReplayAPI.Keys.None : r.ReplayFrames[k - 1].Keys, r.ReplayFrames[k].Keys) > 0)
+				if (ReplayAnalyzer.getKey(k == 0 ? ReplayAPI.Keys.None : r.ReplayFrames[k - 1].Keys, r.ReplayFrames[k].Keys) > 0)
 				{
 					g.DrawEllipse(p, ScaleToRect(new RectangleF(PointF.Subtract(p1, new Size(3, 3)), new Size(6, 6)),
 												 bounds));
@@ -299,8 +296,8 @@ namespace OsuMissAnalyzer
 
 			p.Color = Color.Black;
 			Font f = new Font(FontFamily.GenericSansSerif, 12);
-			g.DrawString("Miss " + (missNum + 1) + " of " + re.misses.Count, f, p.Brush, 0, 0);
-			TimeSpan ts = TimeSpan.FromMilliseconds(miss.StartTime);
+			g.DrawString("Object " + (noteNum + 1) + " of " + b.HitObjects.Count, f, p.Brush, 0, 0);
+			TimeSpan ts = TimeSpan.FromMilliseconds(note.StartTime);
 			g.DrawString("Time: " + ts.ToString(@"mm\:ss\.fff"), f, p.Brush, 0, size - f.Height);
 			return img;
 		}
