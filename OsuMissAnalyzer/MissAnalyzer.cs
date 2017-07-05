@@ -141,6 +141,8 @@ namespace OsuMissAnalyzer
 		private void ScaleChange(int i)
 		{
 			scale += 0.1f * i;
+			if (scale < 0.1f) scale = 0.1f;
+			Console.WriteLine(scale);
 		}
 
 		protected override void OnMouseWheel(MouseEventArgs e)
@@ -221,17 +223,17 @@ namespace OsuMissAnalyzer
 											   new SizeF(size * scale, size * scale));
 			
 			int i, j, y, z;
-			for (y = b.HitObjects.Count(x => x.StartTime <= note.StartTime) - 1;
-				 y >= 0 && bounds.Contains(b.HitObjects[y].Location.ToPointF())
+			for (y = noteNum; y >= 0 && bounds.Contains(b.HitObjects[y].Location.ToPointF())
 				 && note.StartTime - b.HitObjects[y].StartTime < maxTime; y--) { }
-			for (z = b.HitObjects.Count(x => x.StartTime <= note.StartTime) - 1;
-				 z < b.HitObjects.Count && bounds.Contains(b.HitObjects[z].Location.ToPointF())
+			for (z = noteNum; z < b.HitObjects.Count && bounds.Contains(b.HitObjects[z].Location.ToPointF())
 				 && b.HitObjects[z].StartTime - note.StartTime < maxTime; z++) { }
+			if (z == 0) z = 1;
+			if (y == 0) y = -1;
 			for (i = r.ReplayFrames.Count(x => x.Time <= b.HitObjects[y + 1].StartTime);
-				 i > 0 && bounds.Contains(r.ReplayFrames[i].Point)
+			     i > 0 && bounds.Contains(flip(r.ReplayFrames[i].Point, 384))
 				 && note.StartTime - r.ReplayFrames[i].Time < maxTime; i--) { }
 			for (j = r.ReplayFrames.Count(x => x.Time <= b.HitObjects[z - 1].StartTime);
-				 j < r.ReplayFrames.Count - 1 && bounds.Contains(r.ReplayFrames[j].Point)
+			     j < r.ReplayFrames.Count - 1 && bounds.Contains(flip(r.ReplayFrames[j].Point, 384))
 				 && r.ReplayFrames[j].Time - note.StartTime < maxTime; j++) { }
 			p.Color = Color.Gray;
 			for (int q = z - 1; q > y; q--)
@@ -268,8 +270,8 @@ namespace OsuMissAnalyzer
 			float distance = 10.0001f;
 			for (int k = i; k < j; k++)
 			{
-				PointF p1 = pSub(r.ReplayFrames[k].Point, bounds, false);
-				PointF p2 = pSub(r.ReplayFrames[k + 1].Point, bounds, false);
+				PointF p1 = pSub(flip(r.ReplayFrames[k].Point, 384), bounds, hr);
+				PointF p2 = pSub(flip(r.ReplayFrames[k + 1].Point, 384), bounds, hr);
 				p.Color = getHitColor(b.OverallDifficulty, (int)(note.StartTime - r.ReplayFrames[k].Time));
 				g.DrawLine(p, ScaleToRect(p1, bounds), ScaleToRect(p2, bounds));
 				if (distance > 10 && Math.Abs(note.StartTime - r.ReplayFrames[k+1].Time) > 50)
@@ -358,7 +360,7 @@ namespace OsuMissAnalyzer
 		/// <param name="p">The point to be flipped.</param>
 		/// <param name="s">The height of the rectangle it's being flipped in</param>
 		/// <param name="hr">Whether or not Hard Rock is on.</param>
-		private PointF flip(PointF p, float s, bool hr)
+		private PointF flip(PointF p, float s, bool hr = true)
 		{
 			if (!hr) return p;
 			p.Y = s - p.Y;
