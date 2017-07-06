@@ -6,7 +6,6 @@ using ReplayAPI;
 using BMAPI.v1;
 using BMAPI;
 using System.IO;
-using System.Text;
 using BMAPI.v1.HitObjects;
 using System.Linq;
 using Newtonsoft.Json.Linq;
