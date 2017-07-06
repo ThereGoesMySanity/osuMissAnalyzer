@@ -306,6 +306,7 @@ namespace OsuMissAnalyzer
 			CircleObject miss = re.misses[missNum];
 			float radius = (float)miss.Radius;
 			Pen circle = new Pen(Color.Gray, radius * 2 / scale);
+			circle.StartCap = System.Drawing.Drawing2D.LineCap.Round;
 			circle.EndCap = System.Drawing.Drawing2D.LineCap.Round;
 			circle.LineJoin = System.Drawing.Drawing2D.LineJoin.Round;
 			Pen p = new Pen(Color.White);
