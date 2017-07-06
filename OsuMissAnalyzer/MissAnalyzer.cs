@@ -138,7 +138,7 @@ namespace OsuMissAnalyzer
 
 		private void loadBeatmap()
 		{
-			b = getBeatmapFromHash(Directory.GetCurrentDirectory(), false, false);
+			b = getBeatmapFromHash(Directory.GetCurrentDirectory(), false);
 			if (b == null && options.Settings.ContainsKey("SongsDir"))
 			{
 				b = getBeatmapFromHash(options.Settings["SongsDir"]);
@@ -158,7 +158,7 @@ namespace OsuMissAnalyzer
 			}
 		}
 
-		private Beatmap getBeatmapFromHash(string dir, bool recurse = true, bool songsDir = true)
+		private Beatmap getBeatmapFromHash(string dir, bool songsDir = true)
 		{
 			Console.Write("\nChecking API Key...");
 			JArray j = JArray.Parse("[]");
