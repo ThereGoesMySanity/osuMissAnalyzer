@@ -145,14 +145,14 @@ namespace OsuMissAnalyzer
 			}
 			if (b == null)
 			{
-				using (OpenFileDialog fd2 = new OpenFileDialog())
+				using (OpenFileDialog fd = new OpenFileDialog())
 				{
-					fd2.Title = "Choose beatmap";
-					fd2.Filter = "osu! beatmaps (*.osu)|*.osu";
-					DialogResult d2 = fd2.ShowDialog();
-					if (d2 == DialogResult.OK)
+					fd.Title = "Choose beatmap";
+					fd.Filter = "osu! beatmaps (*.osu)|*.osu";
+					DialogResult d = fd.ShowDialog();
+					if (d == DialogResult.OK)
 					{
-						b = new Beatmap(fd2.FileName);
+						b = new Beatmap(fd.FileName);
 					}
 				}
 			}
