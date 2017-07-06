@@ -11,6 +11,7 @@ using BMAPI.v1.HitObjects;
 using System.Linq;
 using Newtonsoft.Json.Linq;
 using System.Net;
+using System.Diagnostics;
 
 namespace OsuMissAnalyzer
 {
@@ -34,14 +35,13 @@ namespace OsuMissAnalyzer
 		public static void Main(string[] args)
 		{
 			MissAnalyzer m;
-			Console.Title = "MissAnalyser";
-			Console.Write("Starting MissAnalyser... ");
+			Debug.Print("Starting MissAnalyser... ");
 			if (args.Length > 0 && args[0].EndsWith(".osr"))
 			{
-				Console.WriteLine("\nFound [{0}]", args[0]);
+				Debug.Print("Found [{0}]", args[0]);
 				if (args.Length > 1 && args[1].EndsWith(".osu"))
 				{
-					Console.WriteLine("\nFound [{0}]", args[1]);
+					Debug.Print("Found [{0}]", args[1]);
 					m = new MissAnalyzer(args[0], args[1]);
 				}
 				else
@@ -66,10 +66,11 @@ namespace OsuMissAnalyzer
 			{
 				File.Create("options.cfg").Close();
 				Console.ForegroundColor = ConsoleColor.Green;
-				Console.Write("\n\nCreating options.cfg... ");
-				Console.Write("\n- In options.cfg, you can define various settings that impact the program. ");
-				Console.Write("\n- To add these to options.cfg, add a new line formatted <Setting Name>=<Value> ");
-				Console.Write("\n- Available settings : SongsDir | Value = Specify osu!'s songs dir.");
+				Debug.Print("\nCreating options.cfg... ");
+				Debug.Print("- In options.cfg, you can define various settings that impact the program. ");
+				Debug.Print("- To add these to options.cfg, add a new line formatted <Setting Name>=<Value> ");
+				Debug.Print("- Available settings : SongsDir | Value = Specify osu!'s songs dir.");
+				Debug.Print("-                       APIKey  | Value = Your osu! API key (https://osu.ppy.sh/api/");
 				Console.ResetColor();
 			}
 			options = new Options("options.cfg");
@@ -87,12 +88,12 @@ namespace OsuMissAnalyzer
 				{
 					Environment.Exit(1);
 				}
-				Console.WriteLine("\nLoading Replay file... [{0}]", r);
+				Debug.Print("Loading Replay file... [{0}]", r);
 			}
 			else
 			{
 				r = new Replay(replayFile, true, false);
-				Console.WriteLine("\nLoading Replay file... [{0}]", r);
+				Debug.Print("Loading Replay file... [{0}]", r);
 			}
 			if (beatmap == null)
 			{
@@ -101,20 +102,20 @@ namespace OsuMissAnalyzer
 				{
 					Environment.Exit(1);
 				}
-				Console.WriteLine("\nLoading Beatmap file... [{0}]", b);
+				Debug.Print("Loading Beatmap file... [{0}]", b);
 			}
 			else
 			{
 				b = new Beatmap(beatmap);
-				Console.WriteLine("\nLoading Beatmap file... [{0}]", b);
+				Debug.Print("Loading Beatmap file... [{0}]", b);
 			}
-			Console.Write("\nAnalyse... ");
+			Debug.Print("Analyzing... ");
 			re = new ReplayAnalyzer(b, r);
 
 			if (re.misses.Count == 0)
 			{
 				Console.ForegroundColor = ConsoleColor.Red;
-				Console.Write("\nThere is no miss in this replay. ");
+				Debug.Print("There is no miss in this replay. ");
 				Console.ReadLine();
 				Environment.Exit(1);
 			}
@@ -160,11 +161,11 @@ namespace OsuMissAnalyzer
 
 		private Beatmap getBeatmapFromHash(string dir, bool songsDir = true)
 		{
-			Console.Write("\nChecking API Key...");
+			Debug.Print("\nChecking API Key...");
 			JArray j = JArray.Parse("[]");
 			if (options.Settings.ContainsKey("APIKey"))
 			{
-				Console.Write("\nFound API key, searching for beatmap...");
+				Debug.Print("Found API key, searching for beatmap...");
 
 				using (WebClient w = new WebClient())
 				{
@@ -175,7 +176,7 @@ namespace OsuMissAnalyzer
 			}
 			else
 			{
-				Console.Write("\nNo API key found, searching manually. It could take a while...");
+				Debug.Print("No API key found, searching manually. It could take a while...");
 			}
 			if (songsDir)
 			{
@@ -200,7 +201,7 @@ namespace OsuMissAnalyzer
 
 		private Beatmap readFolder(string folder, string id)
 		{
-			foreach (string file in Directory.GetFiles(folder))
+			foreach (string file in Directory.GetFiles(folder, "*.osu"))
 			{
 				using (StreamReader f = new StreamReader(file))
 				{
