@@ -27,8 +27,9 @@ namespace OsuMissAnalyzer
 		private ReplayAnalyzer re;
 		private Replay r;
 		private Beatmap b;
-		private int missNo;
+		private int number;
 		private bool ring;
+		private bool all;
 
 		[STAThread]
 		public static void Main(string[] args)
@@ -118,7 +119,7 @@ namespace OsuMissAnalyzer
 				Console.ReadLine();
 				Environment.Exit(1);
 			}
-			missNo = 0;
+			number = 0;
 			scale = 1;
 		}
 
@@ -255,12 +256,12 @@ namespace OsuMissAnalyzer
 					ScaleChange(-1);
 					break;
 				case System.Windows.Forms.Keys.Right:
-					if (missNo == re.misses.Count - 1) break;
-					missNo++;
+					if (number == re.misses.Count - 1) break;
+					number++;
 					break;
 				case System.Windows.Forms.Keys.Left:
-					if (missNo == 0) break;
-					missNo--;
+					if (number == 0) break;
+					number--;
 					break;
 				case System.Windows.Forms.Keys.T:
 					ring = !ring;
@@ -268,7 +269,8 @@ namespace OsuMissAnalyzer
 				case System.Windows.Forms.Keys.P:
 					for (int i = 0; i < re.misses.Count; i++)
 					{
-						drawMiss(i);
+						if (all) drawMiss(b.HitObjects.IndexOf(re.misses[i]));
+						else drawMiss(i);
 						img.Save(r.Filename.Substring(r.Filename.LastIndexOf("\\") + 1,
 								 r.Filename.Length - 5 - r.Filename.LastIndexOf("\\"))
 								 + "." + i + ".png",
@@ -280,10 +282,22 @@ namespace OsuMissAnalyzer
 					loadBeatmap();
 					re = new ReplayAnalyzer(b, r);
 					Invalidate();
-					missNo = 0;
+					number = 0;
 					if (r == null || b == null)
 					{
 						Environment.Exit(1);
+					}
+					break;
+				case System.Windows.Forms.Keys.A:
+					if (all)
+					{
+						all = false;
+						number = re.misses.Count(x => x.StartTime < b.HitObjects[number].StartTime);
+					}
+					else
+					{
+						all = true;
+						number = b.HitObjects.IndexOf(re.misses[number]);
 					}
 					break;
 			}
@@ -292,18 +306,20 @@ namespace OsuMissAnalyzer
 		protected override void OnPaint(PaintEventArgs e)
 		{
 			base.OnPaint(e);
-			gOut.DrawImage(drawMiss(missNo), 0, 0, size, size);
+			gOut.DrawImage(drawMiss(number), 0, 0, size, size);
 		}
 
 		/// <summary>
 		/// Draws the miss.
 		/// </summary>
 		/// <returns>A Bitmap containing the drawing</returns>
-		/// <param name="missNum">Index of the miss as it shows up in r.misses.</param>
-		private Bitmap drawMiss(int missNum)
+		/// <param name="num">Index of the miss as it shows up in r.misses.</param>
+		private Bitmap drawMiss(int num)
 		{
 			bool hr = r.Mods.HasFlag(Mods.HardRock);
-			CircleObject miss = re.misses[missNum];
+			CircleObject miss;
+			if (all) miss = b.HitObjects[num];
+			else miss = re.misses[num];
 			float radius = (float)miss.Radius;
 			Pen circle = new Pen(Color.Gray, radius * 2 / scale);
 			circle.StartCap = System.Drawing.Drawing2D.LineCap.Round;
@@ -402,7 +418,8 @@ namespace OsuMissAnalyzer
 
 			p.Color = Color.Black;
 			Font f = new Font(FontFamily.GenericSansSerif, 12);
-			g.DrawString("Miss " + (missNum + 1) + " of " + re.misses.Count, f, p.Brush, 0, 0);
+			if (all) g.DrawString("Object " + (num + 1) + " of " + b.HitObjects.Count, f, p.Brush, 0, 0);
+			else g.DrawString("Miss " + (num + 1) + " of " + re.misses.Count, f, p.Brush, 0, 0);
 			TimeSpan ts = TimeSpan.FromMilliseconds(miss.StartTime);
 			g.DrawString("Time: " + ts.ToString(@"mm\:ss\.fff"), f, p.Brush, 0, size - f.Height);
 			return img;

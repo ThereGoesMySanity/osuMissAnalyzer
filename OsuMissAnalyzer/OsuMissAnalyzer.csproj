@@ -18,6 +18,16 @@
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
     <PlatformTarget>x86</PlatformTarget>
+    <CustomCommands>
+      <CustomCommands>
+        <Command>
+          <type>AfterBuild</type>
+          <command>"D:\Program Files (x86)\Microsoft\ILMerge\ILMerge.exe" /lib:"C:\Windows\Microsoft.NET\Framework\v4.0.30319" /targetplatform:"v4,C:\Windows\Microsoft.NET\Framework\v4.0.30319" /out:MissAnalyzer.exe OsuMissAnalyzer.exe Newtonsoft.Json.dll</command>
+          <workingdir>${TargetDir}</workingdir>
+          <externalConsole>True</externalConsole>
+        </Command>
+      </CustomCommands>
+    </CustomCommands>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|x86' ">
     <Optimize>true</Optimize>
@@ -25,6 +35,16 @@
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
     <PlatformTarget>x86</PlatformTarget>
+    <CustomCommands>
+      <CustomCommands>
+        <Command>
+          <type>AfterBuild</type>
+          <command>"D:\Program Files (x86)\Microsoft\ILMerge\ILMerge.exe" /lib:"C:\Windows\Microsoft.NET\Framework\v4.0.30319" /targetplatform:"v4,C:\Windows\Microsoft.NET\Framework\v4.0.30319" /out:MissAnalyzer.exe OsuMissAnalyzer.exe Newtonsoft.Json.dll</command>
+          <workingdir>${TargetDir}</workingdir>
+          <externalConsole>True</externalConsole>
+        </Command>
+      </CustomCommands>
+    </CustomCommands>
   </PropertyGroup>
   <PropertyGroup>
     <StartupObject />
