@@ -11,11 +11,11 @@ namespace ReplayAPI
         public float TimeInSeconds { get { return Time / 1000f; } }
         public float X { get; set; }
         public float Y { get; set; }
-		public Point Point
+		public PointF PointF
 		{
 			get
 			{
-				return new Point((int)X, (int)Y);
+				return new PointF(X, Y);
 			}
 		}
         public Keys Keys { get; set; }

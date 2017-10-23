@@ -11,6 +11,7 @@ using System.Linq;
 using Newtonsoft.Json.Linq;
 using System.Net;
 using System.Diagnostics;
+using System.Threading;
 
 namespace OsuMissAnalyzer
 {
@@ -75,7 +76,7 @@ namespace OsuMissAnalyzer
 			}
 			options = new Options("options.cfg");
 			Text = "Miss Analyzer";
-			Size = new Size(size, size + 40);
+			Size = new Size(size, size + SystemInformation.CaptionHeight);
 			img = new Bitmap(size, size);
 			g = Graphics.FromImage(img);
 			gOut = Graphics.FromHwnd(Handle);
@@ -177,6 +178,8 @@ namespace OsuMissAnalyzer
 			else
 			{
 				Debug.Print("No API key found, searching manually. It could take a while...");
+				Thread t = new Thread(() => 
+				               MessageBox.Show("No API key found, searching manually. It could take a while..."));
 			}
 			if (songsDir)
 			{
@@ -344,13 +347,13 @@ namespace OsuMissAnalyzer
 			{
 			}
 			for (i = r.ReplayFrames.Count(x => x.Time <= b.HitObjects[y + 1].StartTime);
-				i > 0 && bounds.Contains(r.ReplayFrames[i].Point)
+				i > 0 && bounds.Contains(r.ReplayFrames[i].PointF)
 				&& miss.StartTime - r.ReplayFrames[i].Time < maxTime;
 				i--)
 			{
 			}
 			for (j = r.ReplayFrames.Count(x => x.Time <= b.HitObjects[z - 1].StartTime);
-				j < r.ReplayFrames.Count - 1 && bounds.Contains(r.ReplayFrames[j].Point)
+				j < r.ReplayFrames.Count - 1 && bounds.Contains(r.ReplayFrames[j].PointF)
 				&& r.ReplayFrames[j].Time - miss.StartTime < maxTime;
 				j++)
 			{
@@ -390,8 +393,8 @@ namespace OsuMissAnalyzer
 			float distance = 10.0001f;
 			for (int k = i; k < j; k++)
 			{
-				PointF p1 = pSub(r.ReplayFrames[k].Point, bounds, hr);
-				PointF p2 = pSub(r.ReplayFrames[k + 1].Point, bounds, hr);
+				PointF p1 = pSub(r.ReplayFrames[k].PointF, bounds, hr);
+				PointF p2 = pSub(r.ReplayFrames[k + 1].PointF, bounds, hr);
 				p.Color = getHitColor(b.OverallDifficulty, (int)(miss.StartTime - r.ReplayFrames[k].Time));
 				g.DrawLine(p, ScaleToRect(p1, bounds), ScaleToRect(p2, bounds));
 				if (distance > 10 && Math.Abs(miss.StartTime - r.ReplayFrames[k + 1].Time) > 50)
