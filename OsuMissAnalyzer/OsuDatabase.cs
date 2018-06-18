@@ -1,20 +1,17 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
+﻿using System.IO;
 using System.Text;
-using System.Threading.Tasks;
 using BMAPI.v1;
 
 namespace OsuMissAnalyzer
 {
     class OsuDatabase : BinaryReader
     {
-        private string osuDir, databaseFile;
-        public OsuDatabase(string dir, string file)
-            : base(new FileStream(Path.Combine(dir, file), FileMode.Open))
+        private Options options;
+        private string databaseFile;
+        public OsuDatabase(Options o, string file)
+            : base(new FileStream(Path.Combine(o.Settings["OsuDir"], file), FileMode.Open))
         {
-            osuDir = dir;
+            options = o;
             databaseFile = file;
         }
         public Beatmap GetBeatmap(string mapHash)
@@ -48,7 +45,15 @@ namespace OsuMissAnalyzer
                 string folder = ReadULEBString();
                 if (mode == 0 && hash == mapHash)
                 {
-                    string path = Path.Combine(osuDir, folder, file);
+                    string path = "";
+                    if(options.Settings.ContainsKey("SongsDir"))
+                    {
+                        path = Path.Combine(options.Settings["SongsDir"], folder, file);
+                    }
+                    else
+                    {
+                        path = Path.Combine(options.Settings["OsuDir"], "Songs", folder, file);
+                    }
                     return new Beatmap(path);
                 }
                 Skip(18);
@@ -59,7 +64,7 @@ namespace OsuMissAnalyzer
         {
             if (ReadByte() == 0) return "";
             int l = Read7BitEncodedInt();
-            return System.Text.Encoding.UTF8.GetString(ReadBytes(l));
+            return Encoding.UTF8.GetString(ReadBytes(l));
         }
         private void SkipULEBString ()
         {

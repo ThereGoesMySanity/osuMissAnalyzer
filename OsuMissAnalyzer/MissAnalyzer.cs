@@ -75,7 +75,7 @@ namespace OsuMissAnalyzer
 			options = new Options("options.cfg");
             if(options.Settings.ContainsKey("OsuDir"))
             {
-                database = new OsuDatabase(options.Settings["OsuDir"], "osu!.db");
+                database = new OsuDatabase(options, "osu!.db");
             }
 			Text = "Miss Analyzer";
 			Size = new Size(size, size + SystemInformation.CaptionHeight);
