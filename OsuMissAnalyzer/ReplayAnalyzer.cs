@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using BMAPI;
@@ -141,8 +142,11 @@ namespace osuDodgyMomentsFinder
 
 					if (pressedKey > 0 && Math.Abs(frame.Time - note.StartTime) <= hitTimeWindow)
 					{
-						if (note.ContainsPoint(new Point2(frame.X, frame.Y)))
+                        Point2 point = new Point2(frame.X, frame.Y);
+                        if (note.ContainsPoint(point))
 						{
+                            Debug.Print("Hit note, combo:" + combo);
+                            Debug.Print(note.Location + " " + point + " " + note.Radius);
 							noteAttemptedHitFlag = true;
 							++combo;
 							frame.combo = combo;

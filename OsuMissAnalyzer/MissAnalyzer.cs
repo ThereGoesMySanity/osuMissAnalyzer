@@ -105,10 +105,11 @@ namespace OsuMissAnalyzer
 			{
 				b = new Beatmap(beatmap);
 			}
-            Debug.Print("Loaded beatmap {0}", r.Filename);
+            Debug.Print("Loaded beatmap {0}", b.Filename);
             Debug.Print("Analyzing... ");
+            Debug.Print(r.ReplayFrames.Count.ToString());
 			re = new ReplayAnalyzer(b, r);
-
+            
 			if (re.misses.Count == 0)
 			{
 				Console.ForegroundColor = ConsoleColor.Red;

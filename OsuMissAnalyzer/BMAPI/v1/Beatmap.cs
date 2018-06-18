@@ -77,7 +77,7 @@ namespace BMAPI.v1
                 p_CircleSize = value;
                 foreach(CircleObject hO in HitObjects)
                 {
-					hO.Radius = ((1.0f - 0.7f*(value - 5.0f) / 5.0f) / 2.0f) * 128.0f;
+					hO.Radius = ((1.0f - 0.7f*(value - 5.0f) / 5.0f) / 2.0f) * 64.0f;
                 }
             }
         }

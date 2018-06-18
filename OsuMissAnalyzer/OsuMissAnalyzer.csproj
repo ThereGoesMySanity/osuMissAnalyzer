@@ -108,6 +108,9 @@
     <Reference Include="System.Drawing.Design" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="options.cfg">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
     <None Include="OsuMiss.ahk" />
     <None Include="packages.config" />
   </ItemGroup>
