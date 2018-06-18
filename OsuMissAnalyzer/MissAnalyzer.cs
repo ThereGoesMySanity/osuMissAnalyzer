@@ -73,7 +73,7 @@ namespace OsuMissAnalyzer
                 Console.ResetColor();
 			}
 			options = new Options("options.cfg");
-            if(options.Settings.ContainsKey("OsuDir"))
+            if(options.Settings.ContainsKey("osudir"))
             {
                 database = new OsuDatabase(options, "osu!.db");
             }
@@ -146,15 +146,15 @@ namespace OsuMissAnalyzer
                 b = getBeatmapFromHash(Directory.GetCurrentDirectory(), false);
                 if (b == null)
                 {
-                    if (options.Settings.ContainsKey("SongsDir"))
+                    if (options.Settings.ContainsKey("songsdir"))
                     {
-                        b = getBeatmapFromHash(options.Settings["SongsDir"]);
+                        b = getBeatmapFromHash(options.Settings["songsdir"]);
                     }
-                    else if (options.Settings.ContainsKey("OsuDir")
-                      && File.Exists(Path.Combine(options.Settings["OsuDir"], "Songs"))
+                    else if (options.Settings.ContainsKey("osudir")
+                      && File.Exists(Path.Combine(options.Settings["osudir"], "Songs"))
                       )
                     {
-                        b = getBeatmapFromHash(Path.Combine(options.Settings["OsuDir"], "Songs"));
+                        b = getBeatmapFromHash(Path.Combine(options.Settings["osudir"], "Songs"));
                     }
                     else
                     {
@@ -177,14 +177,14 @@ namespace OsuMissAnalyzer
 		{
 			Debug.Print("\nChecking API Key...");
 			JArray j = JArray.Parse("[]");
-			if (options.Settings.ContainsKey("APIKey"))
+			if (options.Settings.ContainsKey("apikey"))
 			{
 				Debug.Print("Found API key, searching for beatmap...");
 
 				using (WebClient w = new WebClient())
 				{
 					j = JArray.Parse(w.DownloadString("https://osu.ppy.sh/api/get_beatmaps" +
-															"?k=" + options.Settings["APIKey"] +
+															"?k=" + options.Settings["apikey"] +
 															"&h=" + r.MapHash));
 				}
 			}

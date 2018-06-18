@@ -13,8 +13,8 @@ namespace OsuMissAnalyzer
 			{
 				while (!f.EndOfStream)
 				{
-					string s = f.ReadLine();
-					Settings.Add(s.Split(new char[]{ '=' }, 2)[0], s.Split(new char[] { '=' }, 2)[1]);
+					string[] s = f.ReadLine().Split(new char[] { '=' }, 2);
+					Settings.Add(s[0].ToLower(), s[1]);
 				}
 			}
 		}

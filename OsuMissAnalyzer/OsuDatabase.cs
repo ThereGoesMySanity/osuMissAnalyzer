@@ -9,7 +9,7 @@ namespace OsuMissAnalyzer
         private Options options;
         private string databaseFile;
         public OsuDatabase(Options o, string file)
-            : base(new FileStream(Path.Combine(o.Settings["OsuDir"], file), FileMode.Open))
+            : base(new FileStream(Path.Combine(o.Settings["osudir"], file), FileMode.Open))
         {
             options = o;
             databaseFile = file;
@@ -46,13 +46,13 @@ namespace OsuMissAnalyzer
                 if (mode == 0 && hash == mapHash)
                 {
                     string path = "";
-                    if(options.Settings.ContainsKey("SongsDir"))
+                    if(options.Settings.ContainsKey("songsdir"))
                     {
-                        path = Path.Combine(options.Settings["SongsDir"], folder, file);
+                        path = Path.Combine(options.Settings["songsdir"], folder, file);
                     }
                     else
                     {
-                        path = Path.Combine(options.Settings["OsuDir"], "Songs", folder, file);
+                        path = Path.Combine(options.Settings["osudir"], "Songs", folder, file);
                     }
                     return new Beatmap(path);
                 }
