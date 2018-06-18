@@ -40,3 +40,4 @@ Thumbs.db
 *.dotCover
 
 options.cfg
+/.vs/OsuMissAnalyzer/v15/Server/sqlite3

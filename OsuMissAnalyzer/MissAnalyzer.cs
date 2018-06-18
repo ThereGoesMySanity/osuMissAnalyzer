@@ -31,33 +31,29 @@ namespace OsuMissAnalyzer
 		private int number;
 		private bool ring;
 		private bool all;
+        private OsuDatabase database;
 
-		[STAThread]
+        [STAThread]
 		public static void Main(string[] args)
 		{
 			MissAnalyzer m;
 			Debug.Print("Starting MissAnalyser... ");
+            String replay = null, beatmap = null;
 			if (args.Length > 0 && args[0].EndsWith(".osr"))
 			{
+                replay = args[0];
 				Debug.Print("Found [{0}]", args[0]);
 				if (args.Length > 1 && args[1].EndsWith(".osu"))
 				{
 					Debug.Print("Found [{0}]", args[1]);
-					m = new MissAnalyzer(args[0], args[1]);
-				}
-				else
-				{
-					m = new MissAnalyzer(args[0], null);
+                    beatmap = args[1];
 				}
 			}
 			else if (args.Length > 1 && args[1].EndsWith(".osr"))  //Necessary to support drag & drop
 			{
-				m = new MissAnalyzer(args[1], null);
+                replay = args[1];
 			}
-			else
-			{
-				m = new MissAnalyzer(null, null);
-			}
+            m = new MissAnalyzer(replay, beatmap);
 			Application.Run(m);
 		}
 
@@ -72,9 +68,15 @@ namespace OsuMissAnalyzer
 				Debug.Print("- To add these to options.cfg, add a new line formatted <Setting Name>=<Value> ");
 				Debug.Print("- Available settings : SongsDir | Value = Specify osu!'s songs dir.");
 				Debug.Print("-                       APIKey  | Value = Your osu! API key (https://osu.ppy.sh/api/");
-				Console.ResetColor();
+                Debug.Print("-                       OsuDir  | Value = Your osu! directory");
+
+                Console.ResetColor();
 			}
 			options = new Options("options.cfg");
+            if(options.Settings.ContainsKey("OsuDir"))
+            {
+                database = new OsuDatabase(options.Settings["OsuDir"], "osu!.db");
+            }
 			Text = "Miss Analyzer";
 			Size = new Size(size, size + SystemInformation.CaptionHeight);
 			img = new Bitmap(size, size);
@@ -82,35 +84,29 @@ namespace OsuMissAnalyzer
 			gOut = Graphics.FromHwnd(Handle);
 
 			FormBorderStyle = FormBorderStyle.FixedSingle;
-			if (replayFile == null)
+            Debug.Print("Loading Replay file...");
+            if (replayFile == null)
 			{
 				loadReplay();
-				if (r == null)
-				{
-					Environment.Exit(1);
-				}
-				Debug.Print("Loading Replay file... [{0}]", r);
+				if (r == null) { Environment.Exit(1); }
 			}
 			else
 			{
 				r = new Replay(replayFile, true, false);
-				Debug.Print("Loading Replay file... [{0}]", r);
 			}
-			if (beatmap == null)
+            Debug.Print("Loaded replay {0}", r.Filename);
+            Debug.Print("Loading Beatmap file...");
+            if (beatmap == null)
 			{
-				loadBeatmap();
-				if (b == null)
-				{
-					Environment.Exit(1);
-				}
-				Debug.Print("Loading Beatmap file... [{0}]", b);
+                loadBeatmap();
+				if (b == null) { Environment.Exit(1); }
 			}
 			else
 			{
 				b = new Beatmap(beatmap);
-				Debug.Print("Loading Beatmap file... [{0}]", b);
 			}
-			Debug.Print("Analyzing... ");
+            Debug.Print("Loaded beatmap {0}", r.Filename);
+            Debug.Print("Analyzing... ");
 			re = new ReplayAnalyzer(b, r);
 
 			if (re.misses.Count == 0)
@@ -140,24 +136,40 @@ namespace OsuMissAnalyzer
 
 		private void loadBeatmap()
 		{
-			b = getBeatmapFromHash(Directory.GetCurrentDirectory(), false);
-			if (b == null && options.Settings.ContainsKey("SongsDir"))
-			{
-				b = getBeatmapFromHash(options.Settings["SongsDir"]);
-			}
-			if (b == null)
-			{
-				using (OpenFileDialog fd = new OpenFileDialog())
-				{
-					fd.Title = "Choose beatmap";
-					fd.Filter = "osu! beatmaps (*.osu)|*.osu";
-					DialogResult d = fd.ShowDialog();
-					if (d == DialogResult.OK)
-					{
-						b = new Beatmap(fd.FileName);
-					}
-				}
-			}
+            if (database != null)
+            {
+                b = database.GetBeatmap(r.MapHash);
+            }
+            else
+            {
+                b = getBeatmapFromHash(Directory.GetCurrentDirectory(), false);
+                if (b == null)
+                {
+                    if (options.Settings.ContainsKey("SongsDir"))
+                    {
+                        b = getBeatmapFromHash(options.Settings["SongsDir"]);
+                    }
+                    else if (options.Settings.ContainsKey("OsuDir")
+                      && File.Exists(Path.Combine(options.Settings["OsuDir"], "Songs"))
+                      )
+                    {
+                        b = getBeatmapFromHash(Path.Combine(options.Settings["OsuDir"], "Songs"));
+                    }
+                    else
+                    {
+                        using (OpenFileDialog fd = new OpenFileDialog())
+                        {
+                            fd.Title = "Choose beatmap";
+                            fd.Filter = "osu! beatmaps (*.osu)|*.osu";
+                            DialogResult d = fd.ShowDialog();
+                            if (d == DialogResult.OK)
+                            {
+                                b = new Beatmap(fd.FileName);
+                            }
+                        }
+                    }
+                }
+            }
 		}
 
 		private Beatmap getBeatmapFromHash(string dir, bool songsDir = true)
