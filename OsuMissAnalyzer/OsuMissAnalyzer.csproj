@@ -22,7 +22,13 @@
       <CustomCommands>
         <Command>
           <type>AfterBuild</type>
-          <command>"D:\Program Files (x86)\Microsoft\ILMerge\ILMerge.exe" /lib:"C:\Windows\Microsoft.NET\Framework\v4.0.30319" /targetplatform:"v4,C:\Windows\Microsoft.NET\Framework\v4.0.30319" /out:MissAnalyzer.exe OsuMissAnalyzer.exe Newtonsoft.Json.dll</command>
+          <command>mono /opt/ILRepack.2.0.15/tools/ILRepack.exe /lib:"/usr/lib/mono/4.5" /targetplatform:"v4,/usr/lib/mono/4.5" /out:MissAnalyzer.exe OsuMissAnalyzer.exe Newtonsoft.Json.dll</command>
+          <workingdir>${TargetDir}</workingdir>
+          <externalConsole>True</externalConsole>
+        </Command>
+        <Command>
+          <type>AfterBuild</type>
+          <command>mkbundle -o MissAnalyzer OsuMissAnalyzer.exe Newtonsoft.Json.dll -L /usr/lib/mono/4.5</command>
           <workingdir>${TargetDir}</workingdir>
           <externalConsole>True</externalConsole>
         </Command>
@@ -39,7 +45,13 @@
       <CustomCommands>
         <Command>
           <type>AfterBuild</type>
-          <command>"D:\Program Files (x86)\Microsoft\ILMerge\ILMerge.exe" /lib:"C:\Windows\Microsoft.NET\Framework\v4.0.30319" /targetplatform:"v4,C:\Windows\Microsoft.NET\Framework\v4.0.30319" /out:MissAnalyzer.exe OsuMissAnalyzer.exe Newtonsoft.Json.dll</command>
+          <command>mono /opt/ILRepack.2.0.15/tools/ILRepack.exe /lib:"/usr/lib/mono/4.5" /targetplatform:"v4,/usr/lib/mono/4.5" /out:MissAnalyzer.exe OsuMissAnalyzer.exe Newtonsoft.Json.dll</command>
+          <workingdir>${TargetDir}</workingdir>
+          <externalConsole>True</externalConsole>
+        </Command>
+        <Command>
+          <type>AfterBuild</type>
+          <command>mkbundle -o MissAnalyzer OsuMissAnalyzer.exe Newtonsoft.Json.dll -L /usr/lib/mono/4.5</command>
           <workingdir>${TargetDir}</workingdir>
           <externalConsole>True</externalConsole>
         </Command>
