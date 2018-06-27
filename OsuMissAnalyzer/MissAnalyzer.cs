@@ -222,12 +222,14 @@ namespace OsuMissAnalyzer
 				using (StreamReader f = new StreamReader(file))
 				{
 					string line = f.ReadLine();
+                    if (line == null)
+                        continue;
 					while (!f.EndOfStream
 						   && !line.StartsWith("BeatmapID"))
 					{
 						line = f.ReadLine();
 					}
-					if (line.StartsWith("BeatmapID"))
+					if (line.StartsWith("BeatmapID") && id != null)
 					{
 						if (line.Substring(10) == id)
 						{
