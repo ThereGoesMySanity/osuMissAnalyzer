@@ -10,8 +10,7 @@ done < "options.cfg"
 if [ -n "$OsuDir" -a -z "$SongsDir" ]; then
     SongsDir="$OsuDir/Songs"
 fi
-unset -v latest
-for file in "$SongsDir/*"; do
-    [[ $file -nt $latest ]] && latest=$file
-done
-./OsuMissAnalyzer $file
+latest=`ls -t "$OsuDir/Data/r/"*.osr | head -1`
+echo $SongsDir
+echo $latest
+./OsuMissAnalyzer $latest
