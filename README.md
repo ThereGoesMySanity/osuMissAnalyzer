@@ -46,7 +46,7 @@ To add these to options.cfg, add a new line formatted `<Setting Name>=<Value>`
 
 | Setting | Description |
 |-|-|
-|SongsDir|Specify osu!'s songs dir.|
+|OsuDir|Specify the osu! game directory|
 |APIKey|osu! API key (adding it makes locating beatmaps super fast)|
 
 ## Alternate Usage
