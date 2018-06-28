@@ -415,17 +415,22 @@ namespace OsuMissAnalyzer
 				if (distance > 10 && Math.Abs(miss.StartTime - r.ReplayFrames[k + 1].Time) > 50)
 				{
 					Point2 v1 = new Point2(p1.X - p2.X, p1.Y - p2.Y);
-					v1.Normalize();
-					v1 *= (float)(Math.Sqrt(2) * arrowLength / 2);
-					PointF p3 = PointF.Add(p2, new SizeF(v1.X + v1.Y, v1.Y - v1.X));
-					PointF p4 = PointF.Add(p2, new SizeF(v1.X - v1.Y, v1.X + v1.Y));
-					g.DrawLine(p, ScaleToRect(p2, bounds), ScaleToRect(p3, bounds));
-					g.DrawLine(p, ScaleToRect(p2, bounds), ScaleToRect(p4, bounds));
+					if (v1.Length > 0) {
+    					v1.Normalize();
+    					v1 *= (float)(Math.Sqrt(2) * arrowLength / 2);
+    					PointF p3 = PointF.Add(p2, new SizeF(v1.X + v1.Y, v1.Y - v1.X));
+    					PointF p4 = PointF.Add(p2, new SizeF(v1.X - v1.Y, v1.X + v1.Y));
+    					p2 = ScaleToRect(p2, bounds);
+    					p3 = ScaleToRect(p3, bounds);
+    					p4 = ScaleToRect(p4, bounds);
+    					g.DrawLine(p, p2, p3);
+    					g.DrawLine(p, p2, p4);
+				    }
 					distance = 0;
 				}
 				else
 				{
-					distance += (float)Math.Sqrt((p1.X - p2.X) * (p1.X - p2.X) + (p1.Y - p2.Y) * (p1.Y - p2.Y));
+					distance += new Point2(p1.X-p2.X, p1.Y-p2.Y).Length;
 				}
 				if (re.getKey(k == 0 ? ReplayAPI.Keys.None : r.ReplayFrames[k - 1].Keys, r.ReplayFrames[k].Keys) > 0)
 				{
@@ -529,7 +534,8 @@ namespace OsuMissAnalyzer
 
 		private PointF ScaleToRect(PointF p, RectangleF rect, float sz = size)
 		{
-			return Scale(p, sz / rect.Width);
+			PointF ret = Scale(p, sz / rect.Width);
+			return ret;
 		}
 
 		private RectangleF ScaleToRect(RectangleF p, RectangleF rect, float sz = size)

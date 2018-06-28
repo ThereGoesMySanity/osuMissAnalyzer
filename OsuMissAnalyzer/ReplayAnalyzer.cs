@@ -145,8 +145,6 @@ namespace osuDodgyMomentsFinder
                         Point2 point = new Point2(frame.X, frame.Y);
                         if (note.ContainsPoint(point))
 						{
-                            Debug.Print("Hit note, combo:" + combo);
-                            Debug.Print(note.Location + " " + point + " " + note.Radius);
 							noteAttemptedHitFlag = true;
 							++combo;
 							frame.combo = combo;

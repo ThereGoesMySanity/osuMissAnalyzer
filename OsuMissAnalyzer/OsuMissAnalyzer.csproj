@@ -18,22 +18,6 @@
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
     <PlatformTarget>x86</PlatformTarget>
-    <CustomCommands>
-      <CustomCommands>
-        <Command>
-          <type>AfterBuild</type>
-          <command>mono /opt/ILRepack.2.0.15/tools/ILRepack.exe /lib:"/usr/lib/mono/4.5" /targetplatform:"v4,/usr/lib/mono/4.5" /out:MissAnalyzer.exe OsuMissAnalyzer.exe Newtonsoft.Json.dll</command>
-          <workingdir>${TargetDir}</workingdir>
-          <externalConsole>True</externalConsole>
-        </Command>
-        <Command>
-          <type>AfterBuild</type>
-          <command>mkbundle -o MissAnalyzer OsuMissAnalyzer.exe Newtonsoft.Json.dll -L /usr/lib/mono/4.5</command>
-          <workingdir>${TargetDir}</workingdir>
-          <externalConsole>True</externalConsole>
-        </Command>
-      </CustomCommands>
-    </CustomCommands>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|x86' ">
     <Optimize>true</Optimize>
@@ -47,13 +31,16 @@
           <type>AfterBuild</type>
           <command>mono /opt/ILRepack.2.0.15/tools/ILRepack.exe /lib:"/usr/lib/mono/4.5" /targetplatform:"v4,/usr/lib/mono/4.5" /out:MissAnalyzer.exe OsuMissAnalyzer.exe Newtonsoft.Json.dll</command>
           <workingdir>${TargetDir}</workingdir>
-          <externalConsole>True</externalConsole>
         </Command>
         <Command>
           <type>AfterBuild</type>
           <command>mkbundle -o MissAnalyzer OsuMissAnalyzer.exe Newtonsoft.Json.dll -L /usr/lib/mono/4.5</command>
           <workingdir>${TargetDir}</workingdir>
-          <externalConsole>True</externalConsole>
+        </Command>
+        <Command>
+          <type>AfterBuild</type>
+          <command>cp MissAnalyz* ~/MissAnalyzer/</command>
+          <workingdir>${TargetDir}</workingdir>
         </Command>
       </CustomCommands>
     </CustomCommands>
@@ -120,7 +107,9 @@
     <Reference Include="System.Drawing.Design" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="options.cfg" />
+    <None Include="options.cfg">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
     <None Include="OsuMiss.ahk" />
     <None Include="packages.config" />
   </ItemGroup>
