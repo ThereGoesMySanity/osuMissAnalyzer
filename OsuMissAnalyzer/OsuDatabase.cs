@@ -21,7 +21,6 @@ namespace OsuMissAnalyzer
             uint num = ReadUInt32();
             for(uint i = 0; i < num; i++)
             {
-                Skip(4);
                 for(int j = 0; j < 7; j++)
                 {
                     SkipULEBString();
