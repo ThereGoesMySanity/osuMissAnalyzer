@@ -16,11 +16,13 @@ namespace OsuMissAnalyzer
         }
         public Beatmap GetBeatmap(string mapHash)
         {
-            Skip(17);
+            uint version = ReadUInt32();
+            Skip(13);
             SkipULEBString();
             uint num = ReadUInt32();
             for(uint i = 0; i < num; i++)
             {
+                if(version < 20191106) Skip(4);
                 for(int j = 0; j < 7; j++)
                 {
                     SkipULEBString();
