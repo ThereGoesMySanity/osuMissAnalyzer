@@ -140,7 +140,10 @@ namespace osuDodgyMomentsFinder
 					if (frame.Time - note.StartTime > hitTimeWindow)
 						break;
 
-					if (pressedKey > 0 && Math.Abs(frame.Time - note.StartTime) <= hitTimeWindow)
+					if (pressedKey > 0 && Math.Abs(frame.Time - note.StartTime) <= 
+									(frame.Time > note.StartTime 
+										&& note is SliderObject s? 
+									Math.Min(hitTimeWindow, s.duration / s.RepeatCount) : hitTimeWindow))
 					{
                         Point2 point = new Point2(frame.X, frame.Y);
                         if (note.ContainsPoint(point))
