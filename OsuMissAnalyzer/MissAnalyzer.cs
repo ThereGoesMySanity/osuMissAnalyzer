@@ -384,7 +384,7 @@ namespace OsuMissAnalyzer
             {
             }
             for (i = r.ReplayFrames.Count(x => x.Time <= b.HitObjects[y + 1].StartTime);
-                i > 0 && bounds.Contains(r.ReplayFrames[i].PointF)
+                i < r.ReplayFrames.Count && i > 0 && bounds.Contains(r.ReplayFrames[i].PointF)
                 && miss.StartTime - r.ReplayFrames[i].Time < maxTime;
                 i--)
             {
