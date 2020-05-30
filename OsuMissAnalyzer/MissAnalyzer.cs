@@ -129,13 +129,17 @@ namespace OsuMissAnalyzer
 			{
 				if (MessageBox.Show("Analyze latest replay?", "Miss Analyzer", MessageBoxButtons.YesNo, MessageBoxIcon.Question) == DialogResult.Yes)
                 {
-                    r = new Replay(
-							new DirectoryInfo(
-								Path.Combine(options.Settings["osudir"], "Data", "r"))
-							.GetFiles().Where(f => f.Name.EndsWith("osr"))
-							.OrderByDescending(f => f.LastWriteTime)
-							.First().FullName,
-						 true, false);
+                    var dataReplays = new DirectoryInfo(
+                                Path.Combine(options.Settings["osudir"], "Data", "r"))
+                            .GetFiles().Where(f => f.Name.EndsWith("osr"));
+
+                    var savedReplays = new DirectoryInfo(
+                                Path.Combine(options.Settings["osudir"], "Replays"))
+                            .GetFiles().Where(f => f.Name.EndsWith("osr"));
+
+                    IOrderedEnumerable<FileInfo> allReplays = dataReplays.Concat(savedReplays).OrderByDescending(f => f.LastWriteTime);
+
+                    r = new Replay(allReplays.First().FullName, true, false);
                 }
 			}
 			if(r == null)
