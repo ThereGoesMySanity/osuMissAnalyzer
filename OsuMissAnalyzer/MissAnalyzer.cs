@@ -307,10 +307,8 @@ namespace OsuMissAnalyzer
                     {
                         if (all) drawMiss(b.HitObjects.IndexOf(re.misses[i]));
                         else drawMiss(i);
-                        img.Save(r.Filename.Substring(r.Filename.LastIndexOf("\\") + 1,
-                                 r.Filename.Length - 5 - r.Filename.LastIndexOf("\\"))
-                                 + "." + i + ".png",
-                            System.Drawing.Imaging.ImageFormat.Png);
+                        string filename = Path.GetFileNameWithoutExtension(r.Filename) + "." + i + ".png";
+                        img.Save(filename, System.Drawing.Imaging.ImageFormat.Png);
                     }
                     break;
                 case System.Windows.Forms.Keys.R:
