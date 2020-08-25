@@ -12,423 +12,160 @@ using Newtonsoft.Json.Linq;
 using System.Net;
 using System.Diagnostics;
 using System.Threading;
+using OsuMissAnalyzer.Utils;
+using static OsuMissAnalyzer.Utils.MathUtils;
+using OsuMissAnalyzer.UI;
+using System.Collections;
+using System.Collections.Generic;
 
 namespace OsuMissAnalyzer
 {
-	public class MissAnalyzer : Form
-	{
-		private const int arrowLength = 4;
-		private const int sliderGranularity = 10;
-		private const int size = 480;
-		private const int maxTime = 1000;
-		private float scale;
-		private Options options;
-		private Bitmap img;
-		private Graphics g, gOut;
-		private ReplayAnalyzer re;
-		private Replay r;
-		private Beatmap b;
-		private int number;
-		private Rectangle area;
-		private bool ring;
-		private bool all;
+    public class MissAnalyzer
+    {
+        private const int maxTime = 1000;
+        private const int arrowLength = 4;
+        private const int sliderGranularity = 10;
+        public bool HitCircleOutlines { get; private set; } = false;
+        private Options options;
+        private ReplayLoader ReplayLoader;
+        private ReplayAnalyzer ReplayAnalyzer;
+        private Replay Replay => ReplayLoader.Replay;
+        private Beatmap Beatmap => ReplayLoader.Beatmap;
+        private int hitObjIndex = 0;
+        private bool drawAllHitObjects;
         private OsuDatabase database;
+        private float scale = 1;
 
-        [STAThread]
-		public static void Main(string[] args)
-		{
-			MissAnalyzer m;
-			Debug.Print("Starting MissAnalyser... ");
-            String replay = null, beatmap = null;
-			if (args.Length > 0 && args[0].EndsWith(".osr"))
-			{
-                replay = args[0];
-				Debug.Print("Found [{0}]", args[0]);
-				if (args.Length > 1 && args[1].EndsWith(".osu"))
-				{
-					Debug.Print("Found [{0}]", args[1]);
-                    beatmap = args[1];
-				}
-			}
-			else if (args.Length > 1 && args[1].EndsWith(".osr"))  //Necessary to support drag & drop
-			{
-                replay = args[1];
-			}
-            m = new MissAnalyzer(replay, beatmap);
-			Application.Run(m);
-		}
 
-		public MissAnalyzer(string replayFile, string beatmap)
-		{
-			if (!File.Exists("options.cfg"))
-			{
-				File.Create("options.cfg").Close();
-				Console.ForegroundColor = ConsoleColor.Green;
-				Debug.Print("\nCreating options.cfg... ");
-				Debug.Print("- In options.cfg, you can define various settings that impact the program. ");
-				Debug.Print("- To add these to options.cfg, add a new line formatted <Setting Name>=<Value> ");
-				Debug.Print("- Available settings : SongsDir | Value = Specify osu!'s songs dir.");
-				Debug.Print("-                       APIKey  | Value = Your osu! API key (https://osu.ppy.sh/api/");
-                Debug.Print("-                       OsuDir  | Value = Your osu! directory");
-
-                Console.ResetColor();
-			}
-			options = new Options("options.cfg");
-            if(options.Settings.ContainsKey("osudir"))
-            {
-                database = new OsuDatabase(options, "osu!.db");
-            }
-			Text = "Miss Analyzer";
-			Size = new Size(size, size + SystemInformation.CaptionHeight);
-			area = base.ClientRectangle;
-			img = new Bitmap(area.Width, area.Height);
-			g = Graphics.FromImage(img);
-			gOut = Graphics.FromHwnd(Handle);
-
-			FormBorderStyle = FormBorderStyle.FixedSingle;
-            Debug.Print("Loading Replay file...");
-            if (replayFile == null)
-			{
-				loadReplay();
-				if (r == null) { Environment.Exit(1); }
-			}
-			else
-			{
-				r = new Replay(replayFile, true, false);
-			}
-            Debug.Print("Loaded replay {0}", r.Filename);
-            Debug.Print("Loading Beatmap file...");
-            if (beatmap == null)
-			{
-                loadBeatmap();
-				if (b == null) { Environment.Exit(1); }
-			}
-			else
-			{
-				b = new Beatmap(beatmap);
-			}
-            Debug.Print("Loaded beatmap {0}", b.Filename);
-            Debug.Print("Analyzing... ");
-            Debug.Print(r.ReplayFrames.Count.ToString());
-			re = new ReplayAnalyzer(b, r);
-            
-			if (re.misses.Count == 0)
-			{
-				Console.ForegroundColor = ConsoleColor.Red;
-				Debug.Print("There is no miss in this replay. ");
-				Console.ReadLine();
-				Environment.Exit(1);
-			}
-			number = 0;
-			scale = 1;
-		}
-
-		private void loadReplay()
-		{
-			if(options.Settings.ContainsKey("osudir"))
-			{
-				if (MessageBox.Show("Analyze latest replay?", "Miss Analyzer", MessageBoxButtons.YesNo, MessageBoxIcon.Question) == DialogResult.Yes)
-                {
-                    r = new Replay(
-							new DirectoryInfo(
-								Path.Combine(options.Settings["osudir"], "Data", "r"))
-							.GetFiles().Where(f => f.Name.EndsWith("osr"))
-							.OrderByDescending(f => f.LastWriteTime)
-							.First().FullName,
-						 true, false);
-                }
-			}
-			if(r == null)
-			{
-                using (OpenFileDialog fd = new OpenFileDialog())
-                {
-                    fd.Title = "Choose replay file";
-                    fd.Filter = "osu! replay files (*.osr)|*.osr";
-                    DialogResult d = fd.ShowDialog();
-                    if (d == DialogResult.OK)
-                    {
-                        r = new Replay(fd.FileName, true, false);
-                    }
-                }
-			}
+        public MissAnalyzer(ReplayLoader replayLoader)
+        {
+            ReplayLoader = replayLoader;
         }
 
-        private void loadBeatmap()
+        public void ToggleOutlines()
         {
-            if (database != null)
+            HitCircleOutlines = !HitCircleOutlines;
+        }
+
+        public void ToggleDrawAllHitObjects()
+        {
+            if (drawAllHitObjects)
             {
-                b = database.GetBeatmap(r.MapHash);
+                drawAllHitObjects = false;
+                hitObjIndex = ReplayAnalyzer.misses.Count(x => x.StartTime < Beatmap.HitObjects[hitObjIndex].StartTime);
             }
             else
             {
-                b = getBeatmapFromHash(Directory.GetCurrentDirectory(), false);
-                if (b == null)
-                {
-                    if (options.Settings.ContainsKey("songsdir"))
-                    {
-                        b = getBeatmapFromHash(options.Settings["songsdir"]);
-                    }
-                    else if (options.Settings.ContainsKey("osudir")
-                      && File.Exists(Path.Combine(options.Settings["osudir"], "Songs"))
-                      )
-                    {
-                        b = getBeatmapFromHash(Path.Combine(options.Settings["osudir"], "Songs"));
-                    }
-                    else
-                    {
-                        using (OpenFileDialog fd = new OpenFileDialog())
-                        {
-                            fd.Title = "Choose beatmap";
-                            fd.Filter = "osu! beatmaps (*.osu)|*.osu";
-                            DialogResult d = fd.ShowDialog();
-                            if (d == DialogResult.OK)
-                            {
-                                b = new Beatmap(fd.FileName);
-                            }
-                        }
-                    }
-                }
+                drawAllHitObjects = true;
+                hitObjIndex = Beatmap.HitObjects.IndexOf(ReplayAnalyzer.misses[hitObjIndex]);
             }
         }
 
-        private Beatmap getBeatmapFromHash(string dir, bool songsDir = true)
+        public void NextObject()
         {
-            Debug.Print("\nChecking API Key...");
-            JArray j = JArray.Parse("[]");
-            if (options.Settings.ContainsKey("apikey"))
-            {
-                Debug.Print("Found API key, searching for beatmap...");
-
-                using (WebClient w = new WebClient())
-                {
-                    j = JArray.Parse(w.DownloadString("https://osu.ppy.sh/api/get_beatmaps" +
-                                                            "?k=" + options.Settings["apikey"] +
-                                                            "&h=" + r.MapHash));
-                }
-            }
-            else
-            {
-                Debug.Print("No API key found, searching manually. It could take a while...");
-                Thread t = new Thread(() =>
-                               MessageBox.Show("No API key found, searching manually. It could take a while..."));
-            }
-            if (songsDir)
-            {
-                string[] folders;
-
-                if (j.Count > 0) folders = Directory.GetDirectories(dir, j[0]["beatmapset_id"] + "*");
-                else folders = Directory.GetDirectories(dir);
-
-                foreach (string folder in folders)
-                {
-                    Beatmap map = readFolder(folder, j.Count > 0 ? (string)j[0]["beatmap_id"] : null);
-                    if (map != null) return map;
-                }
-            }
-            else
-            {
-                Beatmap map = readFolder(dir, j.Count > 0 ? (string)j[0]["beatmap_id"] : null);
-                if (map != null) return map;
-            }
-            return null;
+            if (drawAllHitObjects ? hitObjIndex < Beatmap.HitObjects.Count - 1 : hitObjIndex < ReplayAnalyzer.misses.Count - 1) hitObjIndex++;
         }
-
-        private Beatmap readFolder(string folder, string id)
+        public void PreviousObject()
         {
-            foreach (string file in Directory.GetFiles(folder, "*.osu"))
-            {
-                using (StreamReader f = new StreamReader(file))
-                {
-                    string line = f.ReadLine();
-                    if (line == null)
-                        continue;
-                    while (!f.EndOfStream
-                           && !line.StartsWith("BeatmapID"))
-                    {
-                        line = f.ReadLine();
-                    }
-                    if (line.StartsWith("BeatmapID") && id != null)
-                    {
-                        if (line.Substring(10) == id)
-                        {
-                            return new Beatmap(file);
-                        }
-                    }
-                    else
-                    {
-                        if (r.MapHash == Beatmap.MD5FromFile(file))
-                        {
-                            return new Beatmap(file);
-                        }
-                    }
-                }
-            }
-            return null;
+            if (hitObjIndex > 0) hitObjIndex--;
         }
 
-        private void ScaleChange(int i)
+        public void ScaleChange(int i)
         {
             scale += 0.1f * i;
             if (scale < 0.1) scale = 0.1f;
         }
 
-        protected override void OnMouseWheel(MouseEventArgs e)
-        {
-            base.OnMouseWheel(e);
-            Invalidate();
-            ScaleChange(Math.Sign(e.Delta));
-        }
-
-        protected override void OnKeyDown(KeyEventArgs e)
-        {
-            base.OnKeyDown(e);
-            Invalidate();
-            switch (e.KeyCode)
-            {
-                case System.Windows.Forms.Keys.Up:
-                    ScaleChange(1);
-                    break;
-                case System.Windows.Forms.Keys.Down:
-                    ScaleChange(-1);
-                    break;
-                case System.Windows.Forms.Keys.Right:
-                    if (number == re.misses.Count - 1) break;
-                    number++;
-                    break;
-                case System.Windows.Forms.Keys.Left:
-                    if (number == 0) break;
-                    number--;
-                    break;
-                case System.Windows.Forms.Keys.T:
-                    ring = !ring;
-                    break;
-                case System.Windows.Forms.Keys.P:
-                    for (int i = 0; i < re.misses.Count; i++)
-                    {
-                        if (all) drawMiss(b.HitObjects.IndexOf(re.misses[i]));
-                        else drawMiss(i);
-                        string filename = Path.GetFileNameWithoutExtension(r.Filename) + "." + i + ".png";
-                        img.Save(filename, System.Drawing.Imaging.ImageFormat.Png);
-                    }
-                    break;
-                case System.Windows.Forms.Keys.R:
-                    loadReplay();
-                    loadBeatmap();
-                    re = new ReplayAnalyzer(b, r);
-                    Invalidate();
-                    number = 0;
-                    if (r == null || b == null)
-                    {
-                        Environment.Exit(1);
-                    }
-                    break;
-                case System.Windows.Forms.Keys.A:
-                    if (all)
-                    {
-                        all = false;
-                        number = re.misses.Count(x => x.StartTime < b.HitObjects[number].StartTime);
-                    }
-                    else
-                    {
-                        all = true;
-                        number = b.HitObjects.IndexOf(re.misses[number]);
-                    }
-                    break;
-            }
-        }
-
-        protected override void OnPaint(PaintEventArgs e)
-        {
-            base.OnPaint(e);
-            gOut.DrawImage(drawMiss(number), area);
-        }
-
+        public Bitmap DrawSelectedHitObject(Rectangle area) { return DrawHitObject(hitObjIndex, area); }
         /// <summary>
         /// Draws the miss.
         /// </summary>
         /// <returns>A Bitmap containing the drawing</returns>
         /// <param name="num">Index of the miss as it shows up in r.misses.</param>
-        private Bitmap drawMiss(int num)
+        private Bitmap DrawHitObject(int num, Rectangle area)
         {
-            bool hr = r.Mods.HasFlag(Mods.HardRock);
-            CircleObject miss;
-            if (all) miss = b.HitObjects[num];
-            else miss = re.misses[num];
-            float radius = (float)miss.Radius;
+            Bitmap img = new Bitmap(area.Width, area.Height);
+            Graphics g = Graphics.FromImage(img);
+
+            bool hr = Replay.Mods.HasFlag(Mods.HardRock);
+            CircleObject hitObject;
+            if (drawAllHitObjects) hitObject = Beatmap.HitObjects[num];
+            else hitObject = ReplayAnalyzer.misses[num];
+            float radius = (float)hitObject.Radius;
             Pen circle = new Pen(Color.Gray, radius * 2 / scale);
             circle.StartCap = System.Drawing.Drawing2D.LineCap.Round;
             circle.EndCap = System.Drawing.Drawing2D.LineCap.Round;
             circle.LineJoin = System.Drawing.Drawing2D.LineJoin.Round;
             Pen p = new Pen(Color.White);
             g.FillRectangle(p.Brush, area);
-            RectangleF bounds = new RectangleF(PointF.Subtract(miss.Location.ToPointF(), Scale(area.Size, scale / 2)),
-                Scale(area.Size, scale));
+            RectangleF bounds = new RectangleF(PointF.Subtract(hitObject.Location.ToPointF(), MathUtils.Scale(area.Size, scale / 2)),
+                MathUtils.Scale(area.Size, scale));
 
             int i, j, y, z;
-            for (y = b.HitObjects.Count(x => x.StartTime <= miss.StartTime) - 1;
-                y >= 0 && bounds.Contains(b.HitObjects[y].Location.ToPointF())
-                && miss.StartTime - b.HitObjects[y].StartTime < maxTime;
+            for (y = Beatmap.HitObjects.Count(x => x.StartTime <= hitObject.StartTime) - 1;
+                y >= 0 && bounds.Contains(Beatmap.HitObjects[y].Location.ToPointF())
+                && hitObject.StartTime - Beatmap.HitObjects[y].StartTime < maxTime;
                 y--)
             {
             }
-            for (z = b.HitObjects.Count(x => x.StartTime <= miss.StartTime) - 1;
-                z < b.HitObjects.Count && bounds.Contains(b.HitObjects[z].Location.ToPointF())
-                && b.HitObjects[z].StartTime - miss.StartTime < maxTime;
+            for (z = Beatmap.HitObjects.Count(x => x.StartTime <= hitObject.StartTime) - 1;
+                z < Beatmap.HitObjects.Count && bounds.Contains(Beatmap.HitObjects[z].Location.ToPointF())
+                && Beatmap.HitObjects[z].StartTime - hitObject.StartTime < maxTime;
                 z++)
             {
             }
-            for (i = r.ReplayFrames.Count(x => x.Time <= b.HitObjects[y + 1].StartTime);
-                i > 0 && bounds.Contains(r.ReplayFrames[i].PointF)
-                && miss.StartTime - r.ReplayFrames[i].Time < maxTime;
+            for (i = Replay.ReplayFrames.Count(x => x.Time <= Beatmap.HitObjects[y + 1].StartTime);
+                i > 0 && bounds.Contains(Replay.ReplayFrames[i].GetPointF())
+                && hitObject.StartTime - Replay.ReplayFrames[i].Time < maxTime;
                 i--)
             {
             }
-            for (j = r.ReplayFrames.Count(x => x.Time <= b.HitObjects[z - 1].StartTime);
-                j < r.ReplayFrames.Count - 1 && bounds.Contains(r.ReplayFrames[j].PointF)
-                && r.ReplayFrames[j].Time - miss.StartTime < maxTime;
+            for (j = Replay.ReplayFrames.Count(x => x.Time <= Beatmap.HitObjects[z - 1].StartTime);
+                j < Replay.ReplayFrames.Count - 1 && bounds.Contains(Replay.ReplayFrames[j].GetPointF())
+                && Replay.ReplayFrames[j].Time - hitObject.StartTime < maxTime;
                 j++)
             {
             }
             p.Color = Color.Gray;
             for (int q = z - 1; q > y; q--)
             {
-                int c = Math.Min(255, 100 + (int)(Math.Abs(b.HitObjects[q].StartTime - miss.StartTime) * 100 / maxTime));
-                if (b.HitObjects[q].Type == HitObjectType.Slider)
+                int c = Math.Min(255, 100 + (int)(Math.Abs(Beatmap.HitObjects[q].StartTime - hitObject.StartTime) * 100 / maxTime));
+                if (Beatmap.HitObjects[q].Type == HitObjectType.Slider)
                 {
-                    SliderObject slider = (SliderObject)b.HitObjects[q];
+                    SliderObject slider = (SliderObject)Beatmap.HitObjects[q];
                     PointF[] pt = new PointF[sliderGranularity];
                     for (int x = 0; x < sliderGranularity; x++)
                     {
                         pt[x] = ScaleToRect(
-                            pSub(slider.PositionAtDistance(x * 1f * slider.PixelLength / sliderGranularity).toPoint(),
-                                bounds, hr), bounds);
+                            pSub(slider.PositionAtDistance(x * 1f * slider.PixelLength / sliderGranularity).ToPoint(),
+                                bounds, hr), bounds, area);
                     }
                     circle.Color = Color.LemonChiffon;
                     g.DrawLines(circle, pt);
                 }
 
                 p.Color = Color.FromArgb(c == 100 ? c + 50 : c, c, c);
-                if (ring)
+                if (HitCircleOutlines)
                 {
                     g.DrawEllipse(p, ScaleToRect(new RectangleF(PointF.Subtract(
-                        pSub(b.HitObjects[q].Location.ToPointF(), bounds, hr),
-                        new SizeF(radius, radius).ToSize()), new SizeF(radius * 2, radius * 2)), bounds));
+                        pSub(Beatmap.HitObjects[q].Location.ToPointF(), bounds, hr),
+                        new SizeF(radius, radius).ToSize()), new SizeF(radius * 2, radius * 2)), bounds, area));
                 }
                 else
                 {
                     g.FillEllipse(p.Brush, ScaleToRect(new RectangleF(PointF.Subtract(
-                        pSub(b.HitObjects[q].Location.ToPointF(), bounds, hr),
-                        new SizeF(radius, radius).ToSize()), new SizeF(radius * 2, radius * 2)), bounds));
+                        pSub(Beatmap.HitObjects[q].Location.ToPointF(), bounds, hr),
+                        new SizeF(radius, radius).ToSize()), new SizeF(radius * 2, radius * 2)), bounds, area));
                 }
             }
             float distance = 10.0001f;
             for (int k = i; k < j; k++)
             {
-                PointF p1 = pSub(r.ReplayFrames[k].PointF, bounds, hr);
-                PointF p2 = pSub(r.ReplayFrames[k + 1].PointF, bounds, hr);
-                p.Color = getHitColor(b.OverallDifficulty, (int)(miss.StartTime - r.ReplayFrames[k].Time));
-                g.DrawLine(p, ScaleToRect(p1, bounds), ScaleToRect(p2, bounds));
-                if (distance > 10 && Math.Abs(miss.StartTime - r.ReplayFrames[k + 1].Time) > 50)
+                PointF p1 = pSub(Replay.ReplayFrames[k].GetPointF(), bounds, hr);
+                PointF p2 = pSub(Replay.ReplayFrames[k + 1].GetPointF(), bounds, hr);
+                p.Color = GetHitColor(Beatmap.OverallDifficulty, (int)(hitObject.StartTime - Replay.ReplayFrames[k].Time));
+                g.DrawLine(p, ScaleToRect(p1, bounds, area), ScaleToRect(p2, bounds, area));
+                if (distance > 10 && Math.Abs(hitObject.StartTime - Replay.ReplayFrames[k + 1].Time) > 50)
                 {
                     Point2 v1 = new Point2(p1.X - p2.X, p1.Y - p2.Y);
                     if (v1.Length > 0)
@@ -437,9 +174,9 @@ namespace OsuMissAnalyzer
                         v1 *= (float)(Math.Sqrt(2) * arrowLength / 2);
                         PointF p3 = PointF.Add(p2, new SizeF(v1.X + v1.Y, v1.Y - v1.X));
                         PointF p4 = PointF.Add(p2, new SizeF(v1.X - v1.Y, v1.X + v1.Y));
-                        p2 = ScaleToRect(p2, bounds);
-                        p3 = ScaleToRect(p3, bounds);
-                        p4 = ScaleToRect(p4, bounds);
+                        p2 = ScaleToRect(p2, bounds, area);
+                        p3 = ScaleToRect(p3, bounds, area);
+                        p4 = ScaleToRect(p4, bounds, area);
                         g.DrawLine(p, p2, p3);
                         g.DrawLine(p, p2, p4);
                     }
@@ -449,21 +186,30 @@ namespace OsuMissAnalyzer
                 {
                     distance += new Point2(p1.X - p2.X, p1.Y - p2.Y).Length;
                 }
-                if (re.getKey(k == 0 ? ReplayAPI.Keys.None : r.ReplayFrames[k - 1].Keys, r.ReplayFrames[k].Keys) > 0)
+                if (ReplayAnalyzer.getKey(k == 0 ? ReplayAPI.Keys.None : Replay.ReplayFrames[k - 1].Keys, Replay.ReplayFrames[k].Keys) > 0)
                 {
                     g.DrawEllipse(p, ScaleToRect(new RectangleF(PointF.Subtract(p1, new Size(3, 3)), new Size(6, 6)),
-                        bounds));
+                        bounds, area));
                 }
             }
 
             p.Color = Color.Black;
             Font f = new Font(FontFamily.GenericSansSerif, 12);
-            g.DrawString(b.ToString(), f, p.Brush, 0, 0);
-            if (all) g.DrawString("Object " + (num + 1) + " of " + b.HitObjects.Count, f, p.Brush, 0, f.Height);
-            else g.DrawString("Miss " + (num + 1) + " of " + re.misses.Count, f, p.Brush, 0, f.Height);
-            TimeSpan ts = TimeSpan.FromMilliseconds(miss.StartTime);
+            g.DrawString(Beatmap.ToString(), f, p.Brush, 0, 0);
+            if (drawAllHitObjects) g.DrawString("Object " + (num + 1) + " of " + Beatmap.HitObjects.Count, f, p.Brush, 0, f.Height);
+            else g.DrawString("Miss " + (num + 1) + " of " + ReplayAnalyzer.misses.Count, f, p.Brush, 0, f.Height);
+            TimeSpan ts = TimeSpan.FromMilliseconds(hitObject.StartTime);
             g.DrawString("Time: " + ts.ToString(@"mm\:ss\.fff"), f, p.Brush, 0, area.Height - f.Height);
             return img;
+        }
+
+        public IEnumerable<Bitmap> DrawAllMisses(Rectangle area)
+        {
+            bool savedAllVal = drawAllHitObjects;
+            drawAllHitObjects = false;
+            var images = Enumerable.Range(0, ReplayAnalyzer.misses.Count).Select(i => DrawHitObject(i, area));
+            drawAllHitObjects = savedAllVal;
+            return images;
         }
 
         /// <summary>
@@ -472,7 +218,7 @@ namespace OsuMissAnalyzer
         /// <returns>The hit window in ms.</returns>
         /// <param name="od">OD of the map.</param>
         /// <param name="hit">Hit value (300, 100, or 50).</param>
-        private static float getHitWindow(float od, int hit)
+        private static float GetHitWindow(float od, int hit)
         {
             switch (hit)
             {
@@ -494,93 +240,12 @@ namespace OsuMissAnalyzer
         /// <returns>The hit color.</returns>
         /// <param name="od">OD of the map.</param>
         /// <param name="ms">Hit timing in ms (can be negative).</param>
-        private static Color getHitColor(float od, int ms)
+        private static Color GetHitColor(float od, int ms)
         {
-            if (Math.Abs(ms) < getHitWindow(od, 300)) return Color.SkyBlue;
-            if (Math.Abs(ms) < getHitWindow(od, 100)) return Color.SpringGreen;
-            if (Math.Abs(ms) < getHitWindow(od, 50)) return Color.Purple;
+            if (Math.Abs(ms) < GetHitWindow(od, 300)) return Color.SkyBlue;
+            if (Math.Abs(ms) < GetHitWindow(od, 100)) return Color.SpringGreen;
+            if (Math.Abs(ms) < GetHitWindow(od, 50)) return Color.Purple;
             return Color.Black;
-        }
-
-        /// <summary>
-        /// Flips point about the center of the screen if the Hard Rock mod is on, does nothing otherwise.
-        /// </summary>
-        /// <returns>A possibly-flipped pooint.</returns>
-        /// <param name="p">The point to be flipped.</param>
-        /// <param name="s">The height of the rectangle it's being flipped in</param>
-        /// <param name="hr">Whether or not Hard Rock is on.</param>
-        private PointF flip(PointF p, float s, bool hr)
-        {
-            if (!hr) return p;
-            p.Y = s - p.Y;
-            return p;
-        }
-
-        /// <summary>
-        /// Changes origin to top right of rect and flips p if hr is <c>true</c>.
-        /// </summary>
-        /// <returns>A point relative to rect</returns>
-        /// <param name="p1">The point.</param>
-        /// <param name="rect">The bounding rectangle to subtract from</param>
-        /// <param name="hr">Whether or not Hard Rock is on.</param>
-        private PointF pSub(PointF p1, RectangleF rect, bool hr)
-        {
-            PointF p = PointF.Subtract(p1, new SizeF(rect.Location));
-            return flip(p, rect.Width, hr);
-        }
-
-        /// <summary>
-        /// Scales point p by scale factor s.
-        /// </summary>
-        /// <returns>The scaled point.</returns>
-        /// <param name="p">Point to be scaled.</param>
-        /// <param name="s">Scale.</param>
-        private PointF Scale(PointF p, float s)
-        {
-            return new PointF(p.X * s, p.Y * s);
-        }
-        private PointF Scale(PointF point, SizeF size)
-        {
-            return new PointF(point.X * size.Width, point.Y * size.Height);
-        }
-        private SizeF Scale(SizeF point, SizeF size)
-        {
-            return new SizeF(point.Width * size.Width, point.Height * size.Height);
-        }
-        private SizeF Div(SizeF one, SizeF two)
-        {
-            return new SizeF(one.Width / two.Width, one.Height / two.Height);
-        }
-
-        private SizeF Scale(SizeF p, float s)
-        {
-            return new SizeF(p.Width * s, p.Height * s);
-        }
-
-        private RectangleF Scale(RectangleF rect, float s)
-        {
-            return new RectangleF(Scale(rect.Location, s), Scale(rect.Size, s));
-        }
-
-        private PointF ScaleToRect(PointF p, RectangleF rect)
-        {
-            return ScaleToRect(p, rect, area.Size);
-        }
-        private PointF ScaleToRect(PointF p, RectangleF rect, SizeF sz)
-        {
-            PointF ret = Scale(p, Div(sz, rect.Size));
-            return ret;
-        }
-
-        private RectangleF ScaleToRect(RectangleF p, RectangleF rect)
-        {
-            return ScaleToRect(p, rect, area.Size);
-        }
-        private RectangleF ScaleToRect(RectangleF p, RectangleF rect, SizeF sz)
-        {
-            return new RectangleF(PointF.Subtract(ScaleToRect(PointF.Add(p.Location, Scale(p.Size, 0.5f)), rect),
-                Scale(p.Size, Scale(Div(sz, rect.Size), 0.5f))),
-                Scale(p.Size, Div(sz, rect.Size)));
         }
     }
 }

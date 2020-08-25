@@ -4,7 +4,7 @@ using BMAPI.v1;
 
 namespace OsuMissAnalyzer
 {
-    class OsuDatabase : BinaryReader
+    public class OsuDatabase : BinaryReader
     {
         private Options options;
         private string databaseFile;
