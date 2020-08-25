@@ -16,6 +16,7 @@ namespace OsuMissAnalyzer
         }
         public Beatmap GetBeatmap(string mapHash)
         {
+            BaseStream.Seek(0, System.IO.SeekOrigin.Begin);
             uint version = ReadUInt32();
             Skip(13);
             SkipULEBString();

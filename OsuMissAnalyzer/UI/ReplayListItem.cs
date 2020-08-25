@@ -5,16 +5,17 @@ using ReplayAPI;
 
 namespace OsuMissAnalyzer.UI
 {
-    public struct ReplayListItem
+    public class ReplayListItem
     {
         public Beatmap beatmap;
         public Replay replay;
 
-        public override string ToString()
+        public string[] ToRows()
         {
-            return (beatmap?.ToString() ?? "Unknown beatmap") + " +" 
-                    + replay.Mods.ToString() + " " 
-                    + TimeUtils.ToLongString(replay.PlayTime - DateTime.Now) + " ago";
+            return new string[] { (beatmap?.ToString() ?? "Unknown beatmap") + " "
+                    + (replay.Mods != 0? "+" + replay.Mods.ToString() + " " : "")
+                    , TimeUtils.ToLongString(DateTime.Now - replay.PlayTime) + " ago"
+                    };
         }
     }
 }

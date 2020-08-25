@@ -59,7 +59,12 @@ namespace OsuMissAnalyzer
                             .Take(5).Select(file => new Replay(file.FullName, true, false))
                             .OrderByDescending(re => re.PlayTime)
                             .Select(re => new ReplayListItem() { replay = re, beatmap = LoadBeatmap(re, false) });
-
+                    var replayListForm = new ListMessageBox();
+                    replayListForm.SetContent(replays.ToList());
+                    if (replayListForm.ShowDialog() == DialogResult.OK && replayListForm.GetResult() != null)
+                    {
+                        r = replayListForm.GetResult().replay;
+                    }
                 }
             }
             if (r == null)

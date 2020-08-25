@@ -44,6 +44,9 @@ namespace OsuMissAnalyzer
 
             Options options = new Options("options.cfg");
             ReplayLoader replayLoader = new ReplayLoader();
+            replayLoader.Load(replay, beatmap);
+            if (replayLoader.Replay == null || replayLoader.Beatmap == null) return;
+
             missAnalyzer = new MissAnalyzer(replayLoader);
             controller = new MissWindowController(missAnalyzer, replayLoader);
             window = new MissWindow(controller);

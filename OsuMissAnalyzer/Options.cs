@@ -17,7 +17,7 @@ namespace OsuMissAnalyzer
 				{
 					string[] s = f.ReadLine().Trim().Split(new char[] { '=' }, 2);
 					if(s[1].Length > 0) Settings.Add(s[0].ToLower(), s[1]);
-					if (s[0].ToLower() == "osudir")
+					if (s[0].ToLower() == "osudir" && s[1].Length > 0)
 					{
 						OsuDb = new OsuDatabase(this, "osu!.db");
 					}
