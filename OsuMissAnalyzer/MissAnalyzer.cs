@@ -26,14 +26,12 @@ namespace OsuMissAnalyzer
         private const int arrowLength = 4;
         private const int sliderGranularity = 10;
         public bool HitCircleOutlines { get; private set; } = false;
-        private Options options;
         private ReplayLoader ReplayLoader;
-        private ReplayAnalyzer ReplayAnalyzer;
+        private ReplayAnalyzer ReplayAnalyzer => ReplayLoader.ReplayAnalyzer;
         private Replay Replay => ReplayLoader.Replay;
         private Beatmap Beatmap => ReplayLoader.Beatmap;
         private int hitObjIndex = 0;
         private bool drawAllHitObjects;
-        private OsuDatabase database;
         private float scale = 1;
 
 

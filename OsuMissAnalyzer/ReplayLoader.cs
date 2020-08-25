@@ -45,6 +45,7 @@ namespace OsuMissAnalyzer
             }
             return true;
         }
+
         public Replay LoadReplay()
         {
             Replay r = null;

@@ -17,40 +17,44 @@ namespace OsuMissAnalyzer.UI
         public void UpdateView()
         {
             View.Image = Model.DrawSelectedHitObject(View.Area);
+            View.Invalidate();
         }
         public void OnKeyDown(KeyEventArgs e)
         {
             switch (e.KeyCode)
             {
-                case System.Windows.Forms.Keys.Up:
+                case Keys.Up:
                     Model.ScaleChange(1);
                     break;
-                case System.Windows.Forms.Keys.Down:
+                case Keys.Down:
                     Model.ScaleChange(-1);
                     break;
-                case System.Windows.Forms.Keys.Right:
+                case Keys.Right:
                     Model.NextObject();
                     break;
-                case System.Windows.Forms.Keys.Left:
+                case Keys.Left:
                     Model.PreviousObject();
                     break;
-                case System.Windows.Forms.Keys.T:
+                case Keys.T:
                     Model.ToggleOutlines();
                     break;
-                case System.Windows.Forms.Keys.P:
+                case Keys.P:
                     Model.DrawAllMisses(View.Area);
                     break;
-                case System.Windows.Forms.Keys.R:
+                case Keys.R:
                     Loader.Load(null, null);
                     break;
-                case System.Windows.Forms.Keys.A:
+                case Keys.A:
+                    Model.ToggleDrawAllHitObjects();
                     break;
             }
+            UpdateView();
         }
 
         public void OnMouseWheel(MouseEventArgs e)
         {
             Model.ScaleChange(Math.Sign(e.Delta));
+            UpdateView();
         }
     }
 }

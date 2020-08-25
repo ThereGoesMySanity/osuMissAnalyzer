@@ -10,7 +10,7 @@ namespace OsuMissAnalyzer.UI
         public MissWindowController Controller { get; }
         public Bitmap Image { get; set; }
 
-        private Graphics gOut;
+        private readonly Graphics gOut;
         private const int size = 480;
         public MissWindow(MissWindowController controller)
         {
@@ -21,17 +21,17 @@ namespace OsuMissAnalyzer.UI
 
             FormBorderStyle = FormBorderStyle.FixedSingle;
             Controller = controller;
+            Controller.View = this;
+            Controller.UpdateView();
         }
         protected override void OnMouseWheel(MouseEventArgs e)
         {
             base.OnMouseWheel(e);
-            Invalidate();
             Controller.OnMouseWheel(e);
         }
         protected override void OnKeyDown(KeyEventArgs e)
         {
             base.OnKeyDown(e);
-            Invalidate();
             Controller.OnKeyDown(e);
         }
 

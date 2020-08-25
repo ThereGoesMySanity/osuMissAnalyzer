@@ -36,6 +36,12 @@ namespace OsuMissAnalyzer.UI
             return null;
         }
 
+        private void SubmitResult()
+        {
+            DialogResult = DialogResult.OK;
+            Close();
+        }
+
         private void ListMessageBox_Load(object sender, EventArgs e)
         {
 
@@ -46,9 +52,18 @@ namespace OsuMissAnalyzer.UI
 
         }
 
-        private void button1_Click(object sender, EventArgs e)
+        private void dataGridView_CellDoubleClick(object sender, DataGridViewCellEventArgs e)
         {
+            SubmitResult();
+        }
 
+        private void dataGridView_KeyDown(object sender, KeyEventArgs e)
+        {
+            if(e.KeyCode == Keys.Enter)
+            {
+                e.Handled = true;
+                SubmitResult();
+            }
         }
     }
 }

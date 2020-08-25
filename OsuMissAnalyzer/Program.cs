@@ -50,7 +50,6 @@ namespace OsuMissAnalyzer
             missAnalyzer = new MissAnalyzer(replayLoader);
             controller = new MissWindowController(missAnalyzer, replayLoader);
             window = new MissWindow(controller);
-            controller.View = window;
             Application.Run(window);
         }
 
