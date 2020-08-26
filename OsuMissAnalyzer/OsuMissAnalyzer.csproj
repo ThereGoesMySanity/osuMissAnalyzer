@@ -51,66 +51,46 @@
   <ItemGroup>
     <Compile Include="OsuDatabase.cs" />
     <Compile Include="MissAnalyzer.cs" />
-    <Compile Include="BMAPI\Colour.cs" />
-    <Compile Include="BMAPI\Point2.cs" />
-    <Compile Include="BMAPI\v1\Beatmap.cs" />
-    <Compile Include="BMAPI\v1\Combo.cs" />
-    <Compile Include="BMAPI\v1\Enums.cs" />
-    <Compile Include="BMAPI\v1\TimingPoint.cs" />
-    <Compile Include="BMAPI\v1\Events\BackgroundColourEvent.cs" />
-    <Compile Include="BMAPI\v1\Events\BreakEvent.cs" />
-    <Compile Include="BMAPI\v1\Events\ContentEvent.cs" />
-    <Compile Include="BMAPI\v1\Events\EventBase.cs" />
-    <Compile Include="BMAPI\v1\HitObjects\CircleObject.cs" />
-    <Compile Include="BMAPI\v1\HitObjects\SliderObject.cs" />
-    <Compile Include="BMAPI\v1\HitObjects\SpinnerObject.cs" />
-    <Compile Include="Curves\Bezier.cs" />
-    <Compile Include="Curves\Catmull.cs" />
-    <Compile Include="Curves\Circle.cs" />
-    <Compile Include="Curves\Curve.cs" />
-    <Compile Include="Curves\Line.cs" />
-    <Compile Include="ReplayAPI\Enums.cs" />
-    <Compile Include="ReplayAPI\ExtensionMethods.cs" />
-    <Compile Include="ReplayAPI\LifeFrame.cs" />
-    <Compile Include="ReplayAPI\LZMACoder.cs" />
-    <Compile Include="ReplayAPI\Replay.cs" />
-    <Compile Include="ReplayAPI\ReplayFrame.cs" />
-    <Compile Include="ReplayAPI\LMZA\CommandLineParser.cs" />
-    <Compile Include="ReplayAPI\LMZA\CRC.cs" />
-    <Compile Include="ReplayAPI\LMZA\ICoder.cs" />
-    <Compile Include="ReplayAPI\LMZA\IMatchFinder.cs" />
-    <Compile Include="ReplayAPI\LMZA\InBuffer.cs" />
-    <Compile Include="ReplayAPI\LMZA\LzBinTree.cs" />
-    <Compile Include="ReplayAPI\LMZA\LzInWindow.cs" />
-    <Compile Include="ReplayAPI\LMZA\LzmaBase.cs" />
-    <Compile Include="ReplayAPI\LMZA\LzmaDecoder.cs" />
-    <Compile Include="ReplayAPI\LMZA\LzmaEncoder.cs" />
-    <Compile Include="ReplayAPI\LMZA\LzOutWindow.cs" />
-    <Compile Include="ReplayAPI\LMZA\OutBuffer.cs" />
-    <Compile Include="ReplayAPI\LMZA\RangeCoder.cs" />
-    <Compile Include="ReplayAPI\LMZA\RangeCoderBit.cs" />
-    <Compile Include="ReplayAPI\LMZA\RangeCoderBitTree.cs" />
-    <Compile Include="HitFrame.cs" />
-    <Compile Include="Utils.cs" />
-    <Compile Include="Vector2.cs" />
-    <Compile Include="ReplayAnalyzer.cs" />
-    <Compile Include="ClickFrame.cs" />
+    <Compile Include="Program.cs" />
+    <Compile Include="ReplayLoader.cs" />
+    <Compile Include="UI\ListMessageBox.Designer.cs">
+      <DependentUpon>ListMessageBox.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Utils/*" />
+    <Compile Include="UI\MissWindow.cs" />
+    <Compile Include="UI\MissWindowController.cs" />
+    <Compile Include="UI\ReplayListItem.cs" />
+    <Compile Include="UI\ListMessageBox.cs">
+      <SubType>Form</SubType>
+    </Compile>
     <Compile Include="Options.cs" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="Newtonsoft.Json, Version=11.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
       <HintPath>..\packages\Newtonsoft.Json.11.0.2\lib\net45\Newtonsoft.Json.dll</HintPath>
     </Reference>
+    <Reference Include="System.Data" />
     <Reference Include="System.Windows.Forms" />
     <Reference Include="System" />
     <Reference Include="System.Drawing" />
     <Reference Include="System.Drawing.Design" />
+    <ProjectReference Include="../osuReplayAnalyzer/osuDodgyMomentsFinder/osuDodgyMomentsFinder.csproj" />
+    <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
     <None Include="options.cfg">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Include="packages.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="UI\ListMessageBox.resx">
+      <DependentUpon>ListMessageBox.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Properties\DataSources\" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
 </Project>

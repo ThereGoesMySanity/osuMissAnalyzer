@@ -1,0 +1,3 @@
+[submodule "osuReplayAnalyzer"]
+	path = osuReplayAnalyzer
+	url = https://github.com/ThereGoesMySanity/osuReplayAnalyzer.git
