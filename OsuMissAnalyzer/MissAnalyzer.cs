@@ -113,7 +113,7 @@ namespace OsuMissAnalyzer
             {
             }
             for (i = Replay.ReplayFrames.Count(x => x.Time <= Beatmap.HitObjects[y + 1].StartTime);
-                i > 0 && bounds.Contains(Replay.ReplayFrames[i].GetPointF())
+                i > 0 && i < Replay.ReplayFrames.Count && bounds.Contains(Replay.ReplayFrames[i].GetPointF())
                 && hitObject.StartTime - Replay.ReplayFrames[i].Time < maxTime;
                 i--)
             {
