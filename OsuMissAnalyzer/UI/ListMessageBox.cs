@@ -13,6 +13,7 @@ namespace OsuMissAnalyzer.UI
     public partial class ListMessageBox : Form
     {
         private List<ReplayListItem> items;
+        private int result = 0;
         public ListMessageBox()
         {
             InitializeComponent();
@@ -30,25 +31,20 @@ namespace OsuMissAnalyzer.UI
         }
         public ReplayListItem GetResult()
         {
-            if (dataGridView.SelectedRows.Count == 1)
-            {
-                return items[dataGridView.SelectedRows[0].Index];
-            }
-            return null;
+            return items[result];
         }
 
         private void SubmitResult()
         {
+            if (dataGridView.SelectedRows.Count == 1)
+            {
+                result = dataGridView.SelectedRows[0].Index;
+            }
             DialogResult = DialogResult.OK;
             Close();
         }
 
         private void ListMessageBox_Load(object sender, EventArgs e)
-        {
-
-        }
-
-        private void listBox1_SelectedIndexChanged(object sender, EventArgs e)
         {
 
         }
