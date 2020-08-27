@@ -16,8 +16,6 @@ namespace OsuMissAnalyzer.UI
         public ListMessageBox()
         {
             InitializeComponent();
-            dataGridView.Columns[0].AutoSizeMode = DataGridViewAutoSizeColumnMode.Fill;
-            dataGridView.Columns[1].AutoSizeMode = DataGridViewAutoSizeColumnMode.AllCells;
         }
 
         public void SetContent(List<ReplayListItem> items)
@@ -28,6 +26,7 @@ namespace OsuMissAnalyzer.UI
             {
                 dataGridView.Rows.Add(item.ToRows());
             }
+            dataGridView.Rows[0].Selected = true;
         }
         public ReplayListItem GetResult()
         {
@@ -63,8 +62,8 @@ namespace OsuMissAnalyzer.UI
         {
             if(e.KeyCode == Keys.Enter)
             {
-                e.Handled = true;
                 SubmitResult();
+                e.Handled = true;
             }
         }
     }
