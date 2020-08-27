@@ -16,6 +16,8 @@ namespace OsuMissAnalyzer.UI
         public ListMessageBox()
         {
             InitializeComponent();
+            dataGridView.Columns[0].AutoSizeMode = DataGridViewAutoSizeColumnMode.Fill;
+            dataGridView.Columns[1].AutoSizeMode = DataGridViewAutoSizeColumnMode.AllCells;
         }
 
         public void SetContent(List<ReplayListItem> items)

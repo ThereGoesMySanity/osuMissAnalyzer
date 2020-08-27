@@ -99,33 +99,33 @@ namespace OsuMissAnalyzer
             RectangleF bounds = new RectangleF(PointF.Subtract(hitObject.Location.ToPointF(), MathUtils.Scale(area.Size, scale / 2)),
                 MathUtils.Scale(area.Size, scale));
 
-            int i, j, y, z;
-            for (y = Beatmap.HitObjects.Count(x => x.StartTime <= hitObject.StartTime) - 1;
-                y >= 0 && bounds.Contains(Beatmap.HitObjects[y].Location.ToPointF())
-                && hitObject.StartTime - Beatmap.HitObjects[y].StartTime < maxTime;
-                y--)
+            int replayFramesStart, replayFramesEnd, hitObjectsStart, hitObjectsEnd;
+            for (hitObjectsStart = Beatmap.HitObjects.Count(x => x.StartTime <= hitObject.StartTime) - 1;
+                hitObjectsStart >= 0 && bounds.Contains(Beatmap.HitObjects[hitObjectsStart].Location.ToPointF())
+                && hitObject.StartTime - Beatmap.HitObjects[hitObjectsStart].StartTime < maxTime;
+                hitObjectsStart--)
             {
             }
-            for (z = Beatmap.HitObjects.Count(x => x.StartTime <= hitObject.StartTime) - 1;
-                z < Beatmap.HitObjects.Count && bounds.Contains(Beatmap.HitObjects[z].Location.ToPointF())
-                && Beatmap.HitObjects[z].StartTime - hitObject.StartTime < maxTime;
-                z++)
+            for (hitObjectsEnd = Beatmap.HitObjects.Count(x => x.StartTime <= hitObject.StartTime) - 1;
+                hitObjectsEnd < Beatmap.HitObjects.Count && bounds.Contains(Beatmap.HitObjects[hitObjectsEnd].Location.ToPointF())
+                && Beatmap.HitObjects[hitObjectsEnd].StartTime - hitObject.StartTime < maxTime;
+                hitObjectsEnd++)
             {
             }
-            for (i = Replay.ReplayFrames.Count(x => x.Time <= Beatmap.HitObjects[y + 1].StartTime);
-                i > 0 && i < Replay.ReplayFrames.Count && bounds.Contains(Replay.ReplayFrames[i].GetPointF())
-                && hitObject.StartTime - Replay.ReplayFrames[i].Time < maxTime;
-                i--)
+            for (replayFramesStart = Replay.ReplayFrames.Count(x => x.Time <= Beatmap.HitObjects[hitObjectsStart + 1].StartTime);
+                replayFramesStart > 1 && replayFramesStart < Replay.ReplayFrames.Count && bounds.Contains(Replay.ReplayFrames[replayFramesStart].GetPointF())
+                && hitObject.StartTime - Replay.ReplayFrames[replayFramesStart].Time < maxTime;
+                replayFramesStart--)
             {
             }
-            for (j = Replay.ReplayFrames.Count(x => x.Time <= Beatmap.HitObjects[z - 1].StartTime);
-                j < Replay.ReplayFrames.Count - 1 && bounds.Contains(Replay.ReplayFrames[j].GetPointF())
-                && Replay.ReplayFrames[j].Time - hitObject.StartTime < maxTime;
-                j++)
+            for (replayFramesEnd = Replay.ReplayFrames.Count(x => x.Time <= Beatmap.HitObjects[hitObjectsEnd - 1].StartTime);
+                replayFramesEnd < Replay.ReplayFrames.Count - 1 && bounds.Contains(Replay.ReplayFrames[replayFramesEnd].GetPointF())
+                && Replay.ReplayFrames[replayFramesEnd].Time - hitObject.StartTime < maxTime;
+                replayFramesEnd++)
             {
             }
             p.Color = Color.Gray;
-            for (int q = z - 1; q > y; q--)
+            for (int q = hitObjectsEnd - 1; q > hitObjectsStart; q--)
             {
                 int c = Math.Min(255, 100 + (int)(Math.Abs(Beatmap.HitObjects[q].StartTime - hitObject.StartTime) * 100 / maxTime));
                 if (Beatmap.HitObjects[q].Type == HitObjectType.Slider)
@@ -157,7 +157,7 @@ namespace OsuMissAnalyzer
                 }
             }
             float distance = 10.0001f;
-            for (int k = i; k < j; k++)
+            for (int k = replayFramesStart; k < replayFramesEnd; k++)
             {
                 PointF p1 = pSub(Replay.ReplayFrames[k].GetPointF(), bounds, hr);
                 PointF p2 = pSub(Replay.ReplayFrames[k + 1].GetPointF(), bounds, hr);
