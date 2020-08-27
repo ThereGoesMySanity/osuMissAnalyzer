@@ -157,7 +157,7 @@ namespace OsuMissAnalyzer
                 }
             }
             float distance = 10.0001f;
-            for (int k = replayFramesStart; k < replayFramesEnd; k++)
+            for (int k = replayFramesStart; k < replayFramesEnd - 2; k++)
             {
                 PointF p1 = pSub(Replay.ReplayFrames[k].GetPointF(), bounds, hr);
                 PointF p2 = pSub(Replay.ReplayFrames[k + 1].GetPointF(), bounds, hr);
