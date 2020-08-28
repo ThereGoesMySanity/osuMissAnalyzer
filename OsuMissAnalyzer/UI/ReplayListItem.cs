@@ -14,7 +14,7 @@ namespace OsuMissAnalyzer.UI
         {
             return new string[] { (beatmap?.ToString() ?? "Unknown beatmap") + " "
                     + (replay.Mods != 0? "+" + replay.Mods.ToString() + " " : "")
-                    , TimeUtils.ToLongString(DateTime.Now - replay.PlayTime) + " ago"
+                    , TimeUtils.ToLongString(DateTime.Now.ToUniversalTime() - replay.PlayTime.ToUniversalTime()) + " ago"
                     };
         }
     }

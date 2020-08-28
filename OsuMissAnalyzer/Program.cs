@@ -43,14 +43,28 @@ namespace OsuMissAnalyzer
             }
 
             Options options = new Options("options.cfg");
-            ReplayLoader replayLoader = new ReplayLoader();
-            replayLoader.Load(replay, beatmap);
-            if (replayLoader.Replay == null || replayLoader.Beatmap == null) return;
+            try
+            {
+                ReplayLoader replayLoader = new ReplayLoader();
+                if (!replayLoader.Load(replay, beatmap)) return;
+                if (replayLoader.Replay == null || replayLoader.Beatmap == null)
+                {
+                    ShowErrorDialog("Couldn't find " + (replayLoader.Replay == null ? "replay" : "beatmap"));
+                }
 
-            missAnalyzer = new MissAnalyzer(replayLoader);
-            controller = new MissWindowController(missAnalyzer, replayLoader);
-            window = new MissWindow(controller);
-            Application.Run(window);
+                missAnalyzer = new MissAnalyzer(replayLoader);
+                controller = new MissWindowController(missAnalyzer, replayLoader);
+                window = new MissWindow(controller);
+                Application.Run(window);
+            } catch (Exception e)
+            {
+                ShowErrorDialog(e.Message);
+                File.WriteAllText("exception.log", e.ToString());
+            }
+        }
+        public static void ShowErrorDialog(string message)
+        {
+            MessageBox.Show(message, "Error");
         }
 
     }

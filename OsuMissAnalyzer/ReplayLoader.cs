@@ -23,13 +23,15 @@ namespace OsuMissAnalyzer
             Debug.Print("Loading Replay file...");
 
             Replay = replayFile == null ? LoadReplay() : new Replay(replayFile, true, false);
-            if (Replay == null) return false;
+            if (Replay == null)
+                return false;
 
             Debug.Print("Loaded replay {0}", Replay.Filename);
             Debug.Print("Loading Beatmap file...");
 
             Beatmap = beatmapFile == null ? LoadBeatmap(Replay) : new Beatmap(beatmapFile);
-            if (Beatmap == null) return false;
+            if (Beatmap == null)
+                return false;
 
             Debug.Print("Loaded beatmap {0}", Beatmap.Filename);
             Debug.Print("Analyzing... ");
@@ -39,8 +41,7 @@ namespace OsuMissAnalyzer
 
             if (ReplayAnalyzer.misses.Count == 0)
             {
-                Debug.Print("There is no miss in this replay. ");
-                Console.ReadLine();
+                Program.ShowErrorDialog("There is no miss in this replay.");
                 return false;
             }
             return true;
@@ -81,6 +82,7 @@ namespace OsuMissAnalyzer
                     }
                 }
             }
+            if (r == null) Program.ShowErrorDialog("Couldn't find replay");
             return r;
         }
 
@@ -91,33 +93,34 @@ namespace OsuMissAnalyzer
             {
                 b = Options.Opts.OsuDb.GetBeatmap(r.MapHash);
             }
-            else
+            if (b == null)
             {
                 b = getBeatmapFromHash(Directory.GetCurrentDirectory(), false);
-                if (b == null)
+            }
+            if (b == null)
+            {
+                if (Options.Opts.Settings.ContainsKey("songsdir"))
                 {
-                    if (Options.Opts.Settings.ContainsKey("songsdir"))
+                    b = getBeatmapFromHash(Options.Opts.Settings["songsdir"]);
+                }
+                else if (Options.Opts.Settings.ContainsKey("osudir")
+                    && File.Exists(Path.Combine(Options.Opts.Settings["osudir"], "Songs"))
+                    )
+                {
+                    b = getBeatmapFromHash(Path.Combine(Options.Opts.Settings["osudir"], "Songs"));
+                }
+            }
+            if (b == null && dialog)
+            {
+                Program.ShowErrorDialog("Couldn't find beatmap automatically");
+                using (OpenFileDialog fd = new OpenFileDialog())
+                {
+                    fd.Title = "Choose beatmap";
+                    fd.Filter = "osu! beatmaps (*.osu)|*.osu";
+                    DialogResult d = fd.ShowDialog();
+                    if (d == DialogResult.OK)
                     {
-                        b = getBeatmapFromHash(Options.Opts.Settings["songsdir"]);
-                    }
-                    else if (Options.Opts.Settings.ContainsKey("osudir")
-                      && File.Exists(Path.Combine(Options.Opts.Settings["osudir"], "Songs"))
-                      )
-                    {
-                        b = getBeatmapFromHash(Path.Combine(Options.Opts.Settings["osudir"], "Songs"));
-                    }
-                    else if (dialog)
-                    {
-                        using (OpenFileDialog fd = new OpenFileDialog())
-                        {
-                            fd.Title = "Choose beatmap";
-                            fd.Filter = "osu! beatmaps (*.osu)|*.osu";
-                            DialogResult d = fd.ShowDialog();
-                            if (d == DialogResult.OK)
-                            {
-                                b = new Beatmap(fd.FileName);
-                            }
-                        }
+                        b = new Beatmap(fd.FileName);
                     }
                 }
             }

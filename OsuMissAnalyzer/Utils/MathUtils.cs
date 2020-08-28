@@ -40,7 +40,7 @@ namespace OsuMissAnalyzer.Utils
         /// <param name="p1">The point.</param>
         /// <param name="rect">The bounding rectangle to subtract from</param>
         /// <param name="hr">Whether or not Hard Rock is on.</param>
-        public static PointF pSub(PointF p1, RectangleF rect, bool hr)
+        public static PointF pSub(PointF p1, RectangleF rect, bool hr = false)
         {
             PointF p = PointF.Subtract(p1, new SizeF(rect.Location));
             return flip(p, rect.Width, hr);
