@@ -1,39 +1,47 @@
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Windows.Forms;
+using Mono.Options;
 using OsuMissAnalyzer.UI;
 
 namespace OsuMissAnalyzer
 {
     public static class Program
     {
+        public static bool headless = false;
         [STAThread]
         public static void Main(string[] args)
         {
             MissAnalyzer missAnalyzer;
             MissWindowController controller;
             MissWindow window;
-
             Debug.Print("Starting MissAnalyser... ");
             String replay = null, beatmap = null;
-            if (args.Length > 0 && args[0].EndsWith(".osr"))
+            List<string> extras;
+            Dictionary<string, string> optList = new Dictionary<string, string>();
+            bool help = false;
+            int getMiss = -1;
+            string optionsFile = "options.cfg";
+
+            var opts = new OptionSet() {
+                { "o|osudir=", "Set osu! directory", o => optList["osudir"] = o},
+                { "c|config=", "Set options.cfg", f => optionsFile = f},
+                { "s|songsdir=", "Set songs directory", s => optList["songsdir"] = s},
+                { "d|daemon", "Run without dialogs", d => headless = d != null},
+                { "h|help", "Displays help", h => help = h != null},
+                { "m|miss=", "Export miss #", (int m) => getMiss = m}
+            };
+            extras = opts.Parse(args);
+            foreach (var arg in extras)
             {
-                replay = args[0];
-                Debug.Print("Found [{0}]", args[0]);
-                if (args.Length > 1 && args[1].EndsWith(".osu"))
-                {
-                    Debug.Print("Found [{0}]", args[1]);
-                    beatmap = args[1];
-                }
+                if (arg.EndsWith(".osu") && File.Exists(arg)) beatmap = arg;
+                if (arg.EndsWith(".osr") && File.Exists(arg)) replay = arg;
             }
-            else if (args.Length > 1 && args[1].EndsWith(".osr"))  //Necessary to support drag & drop
+            if (!File.Exists(optionsFile))
             {
-                replay = args[1];
-            }
-            if (!File.Exists("options.cfg"))
-            {
-                File.Create("options.cfg").Close();
+                File.Create(optionsFile).Close();
                 Debug.Print("\nCreating options.cfg... ");
                 Debug.Print("- In options.cfg, you can define various settings that impact the program. ");
                 Debug.Print("- To add these to options.cfg, add a new line formatted <Setting Name>=<Value> ");
@@ -41,8 +49,14 @@ namespace OsuMissAnalyzer
                 Debug.Print("-                       APIKey  | Value = Your osu! API key (https://osu.ppy.sh/api/");
                 Debug.Print("-                       OsuDir  | Value = Your osu! directory");
             }
+            if (help)
+            {
+                Console.WriteLine("osu! Miss Analyzer");
+                opts.WriteOptionDescriptions(Console.Out);
+                return;
+            }
 
-            Options options = new Options("options.cfg");
+            Options options = new Options("options.cfg", optList);
             try
             {
                 ReplayLoader replayLoader = new ReplayLoader();
@@ -50,6 +64,7 @@ namespace OsuMissAnalyzer
                 if (replayLoader.Replay == null || replayLoader.Beatmap == null)
                 {
                     ShowErrorDialog("Couldn't find " + (replayLoader.Replay == null ? "replay" : "beatmap"));
+                    return;
                 }
 
                 missAnalyzer = new MissAnalyzer(replayLoader);
@@ -64,7 +79,8 @@ namespace OsuMissAnalyzer
         }
         public static void ShowErrorDialog(string message)
         {
-            MessageBox.Show(message, "Error");
+            if (!headless) MessageBox.Show(message, "Error");
+            else Debug.Print(message);
         }
 
     }
