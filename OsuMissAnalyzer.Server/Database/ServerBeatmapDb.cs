@@ -3,6 +3,7 @@ using System.IO;
 using System.Net;
 using BMAPI.v1;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using OsuMissAnalyzer.Core;
 namespace OsuMissAnalyzer.Server.Database
 {
@@ -10,10 +11,14 @@ namespace OsuMissAnalyzer.Server.Database
     {
         string folder;
         Dictionary<string, string> hashes;
+        WebClient webClient;
+        string apiKey;
         public ServerBeatmapDb(string beatmapFolder)
         {
             folder = beatmapFolder;
             hashes = JsonConvert.DeserializeObject<Dictionary<string, string>>(Path.Combine(beatmapFolder, "beatmaps.db"));
+            WebClient w = new WebClient();
+            apiKey = File.ReadAllText("key.dat");
         }
         public void Close()
         {
@@ -28,7 +33,10 @@ namespace OsuMissAnalyzer.Server.Database
         {
             if (!hashes.ContainsKey(mapHash))
             {
-                new FileWebRequest(Path.Combine(folder, "temp.osu"))
+                var j = JArray.Parse(webClient.DownloadString($"https://osu.ppy.sh/api/get_beatmaps?k={apiKey}&h={mapHash}"));
+                string beatmap_id = (string)j[0]["beatmap_id"];
+                webClient.DownloadFile($"https://osu.ppy.sh/osu/{beatmap_id}",Path.Combine(folder, $"{beatmap_id}.osu"));
+                
             }
         }
         public void AddBeatmap(File beatmap)

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using BMAPI.v1;
 using OsuMissAnalyzer.Core;
 
 namespace OsuMissAnalyzer.UI
@@ -27,12 +28,17 @@ namespace OsuMissAnalyzer.UI
 			}
 			Opts = this;
 		}
+		public Beatmap GetBeatmap(string mapHash)
+		{
+			return Database.GetBeatmap(GetSongsFolder(), mapHash);
+		}
+		public string GetSongsFolder() { return Settings.ContainsKey("songsdir")? Settings["songsdir"] : Path.Combine(Settings["osudir"], "Songs"); }
 		private void AddOption(string key, string value)
 		{
 			if (value.Length > 0) Settings.Add(key, value);
-			if (key == "osudir")
+			if (key == "osudir" && File.Exists(Path.Combine(value, "osu!.db")))
 			{
-				Database = new OsuDatabase(this);
+				Database = new OsuDatabase(value, "osu!.db");
 			}
 		}
 	}

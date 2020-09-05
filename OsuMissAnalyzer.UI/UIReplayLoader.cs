@@ -90,7 +90,7 @@ namespace OsuMissAnalyzer.UI
             Beatmap b = null;
             if (Options.Opts.Database != null)
             {
-                b = Options.Opts.Database.GetBeatmap(r.MapHash);
+                b = Options.Opts.GetBeatmap(r.MapHash);
             }
             if (b == null)
             {

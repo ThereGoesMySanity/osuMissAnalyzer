@@ -7,16 +7,13 @@ namespace OsuMissAnalyzer.UI
 {
     public class OsuDatabase : BinaryReader
     {
-        private Options options;
         private string databaseFile;
-        public OsuDatabase(Options o) : this(o, "osu!.db") {}
-        public OsuDatabase(Options o, string file)
-            : base(new FileStream(Path.Combine(o.Settings["osudir"], file), FileMode.Open))
+        public OsuDatabase(string osudir, string file)
+            : base(new FileStream(Path.Combine(osudir, file), FileMode.Open))
         {
-            options = o;
             databaseFile = file;
         }
-        public Beatmap GetBeatmap(string mapHash)
+        public Beatmap GetBeatmap(string songsFolder, string mapHash)
         {
             BaseStream.Seek(0, SeekOrigin.Begin);
             uint version = ReadUInt32();
@@ -49,16 +46,7 @@ namespace OsuMissAnalyzer.UI
                 string folder = ReadULEBString();
                 if (mode == 0 && hash == mapHash)
                 {
-                    string path = "";
-                    if(options.Settings.ContainsKey("songsdir"))
-                    {
-                        path = Path.Combine(options.Settings["songsdir"], folder, file);
-                    }
-                    else
-                    {
-                        path = Path.Combine(options.Settings["osudir"], "Songs", folder, file);
-                    }
-                    return new Beatmap(path);
+                    return new Beatmap(Path.Combine(songsFolder, folder, file));
                 }
                 Skip(18);
             }
