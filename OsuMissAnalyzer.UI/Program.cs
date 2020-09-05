@@ -56,7 +56,7 @@ namespace OsuMissAnalyzer.UI
                 return;
             }
 
-            Options options = new Options("options.cfg", optList, o => new OsuDatabase(o));
+            Options options = new Options("options.cfg", optList);
             try
             {
                 UIReplayLoader replayLoader = new UIReplayLoader();

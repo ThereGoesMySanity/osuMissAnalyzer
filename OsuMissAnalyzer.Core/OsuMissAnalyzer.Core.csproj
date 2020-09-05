@@ -30,12 +30,9 @@
     <StartupObject />
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="OsuDatabase.cs" />
-    <Compile Include="BeatmapDatabase.cs" />
     <Compile Include="MissAnalyzer.cs" />
     <Compile Include="ReplayLoader.cs" />
     <Compile Include="Utils/*" />
-    <Compile Include="Options.cs" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="Newtonsoft.Json, Version=10.0.0.0, Culture=neutral, processorArchitecture=MSIL">

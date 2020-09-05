@@ -31,7 +31,9 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="Program.cs" />
+    <Compile Include="Options.cs" />
     <Compile Include="UIReplayLoader.cs" />
+    <Compile Include="OsuDatabase.cs" />
     <Compile Include="UI\ListMessageBox.Designer.cs">
       <DependentUpon>ListMessageBox.cs</DependentUpon>
     </Compile>

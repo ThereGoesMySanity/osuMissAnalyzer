@@ -1,10 +1,11 @@
 ﻿using System.IO;
 using System.Text;
 using BMAPI.v1;
+using OsuMissAnalyzer.Core;
 
-namespace OsuMissAnalyzer.Core
+namespace OsuMissAnalyzer.UI
 {
-    public class OsuDatabase : BinaryReader, BeatmapDatabase
+    public class OsuDatabase : BinaryReader
     {
         private Options options;
         private string databaseFile;

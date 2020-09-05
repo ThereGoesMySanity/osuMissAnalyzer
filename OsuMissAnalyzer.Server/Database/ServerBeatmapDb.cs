@@ -6,7 +6,7 @@ using Newtonsoft.Json;
 using OsuMissAnalyzer.Core;
 namespace OsuMissAnalyzer.Server.Database
 {
-    public class ServerBeatmapDb : BeatmapDatabase
+    public class ServerBeatmapDb
     {
         string folder;
         Dictionary<string, string> hashes;
