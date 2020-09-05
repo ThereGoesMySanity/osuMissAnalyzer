@@ -2,7 +2,7 @@
 using System.Text;
 using BMAPI.v1;
 
-namespace OsuMissAnalyzer
+namespace OsuMissAnalyzer.Core
 {
     public class OsuDatabase : BinaryReader
     {

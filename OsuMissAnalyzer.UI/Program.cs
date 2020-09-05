@@ -4,9 +4,8 @@ using System.Diagnostics;
 using System.IO;
 using System.Windows.Forms;
 using Mono.Options;
-using OsuMissAnalyzer.UI;
 
-namespace OsuMissAnalyzer
+namespace OsuMissAnalyzer.UI
 {
     public static class Program
     {

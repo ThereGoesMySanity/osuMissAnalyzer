@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.IO;
 
-namespace OsuMissAnalyzer
+namespace OsuMissAnalyzer.Core
 {
 	public class Options
 	{

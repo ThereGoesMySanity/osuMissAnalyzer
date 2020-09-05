@@ -11,7 +11,7 @@ using osuDodgyMomentsFinder;
 using OsuMissAnalyzer.UI;
 using ReplayAPI;
 
-namespace OsuMissAnalyzer
+namespace OsuMissAnalyzer.Core
 {
     public class ReplayLoader
     {

@@ -18,7 +18,7 @@ using OsuMissAnalyzer.UI;
 using System.Collections;
 using System.Collections.Generic;
 
-namespace OsuMissAnalyzer
+namespace OsuMissAnalyzer.Core
 {
     public class MissAnalyzer
     {

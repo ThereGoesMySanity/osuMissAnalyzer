@@ -3,7 +3,7 @@ using BMAPI;
 using osuDodgyMomentsFinder;
 using ReplayAPI;
 
-namespace OsuMissAnalyzer.Utils
+namespace OsuMissAnalyzer.Core.Utils
 {
     public static class MathUtils
     {

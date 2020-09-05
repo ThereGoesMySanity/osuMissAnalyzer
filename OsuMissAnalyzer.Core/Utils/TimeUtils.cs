@@ -1,6 +1,6 @@
 using System;
 
-namespace OsuMissAnalyzer.Utils
+namespace OsuMissAnalyzer.Core.Utils
 {
     public static class TimeUtils
     {
