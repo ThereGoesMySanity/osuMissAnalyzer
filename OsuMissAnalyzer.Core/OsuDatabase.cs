@@ -4,10 +4,11 @@ using BMAPI.v1;
 
 namespace OsuMissAnalyzer.Core
 {
-    public class OsuDatabase : BinaryReader
+    public class OsuDatabase : BinaryReader, BeatmapDatabase
     {
         private Options options;
         private string databaseFile;
+        public OsuDatabase(Options o) : this(o, "osu!.db") {}
         public OsuDatabase(Options o, string file)
             : base(new FileStream(Path.Combine(o.Settings["osudir"], file), FileMode.Open))
         {

@@ -1,5 +1,6 @@
 using System;
 using System.Windows.Forms;
+using OsuMissAnalyzer.Core;
 
 namespace OsuMissAnalyzer.UI
 {
@@ -7,9 +8,9 @@ namespace OsuMissAnalyzer.UI
     {
         public MissAnalyzer Model { get; }
         public MissWindow View { get; set; }
-        public ReplayLoader Loader { get; set; }
+        public UIReplayLoader Loader { get; set; }
 
-        public MissWindowController(MissAnalyzer model, ReplayLoader loader)
+        public MissWindowController(MissAnalyzer model, UIReplayLoader loader)
         {
             Model = model;
             Loader = loader;

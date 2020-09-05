@@ -49,7 +49,7 @@ namespace OsuMissAnalyzer.UI
         public Replay LoadReplay()
         {
             Replay r = null;
-            if (Options.Opts.Settings.ContainsKey("osudir") && !headless)
+            if (Options.Opts.Settings.ContainsKey("osudir"))
             {
                 if (MessageBox.Show("Analyze a recent replay?", "Miss Analyzer", MessageBoxButtons.YesNo, MessageBoxIcon.Question) == DialogResult.Yes)
                 {
@@ -68,7 +68,7 @@ namespace OsuMissAnalyzer.UI
                     }
                 }
             }
-            if (r == null && !headless)
+            if (r == null)
             {
                 using (OpenFileDialog fd = new OpenFileDialog())
                 {
@@ -87,11 +87,10 @@ namespace OsuMissAnalyzer.UI
 
         public Beatmap LoadBeatmap(Replay r, bool dialog = true)
         {
-            dialog &= !headless;
             Beatmap b = null;
-            if (Options.Opts.OsuDb != null)
+            if (Options.Opts.Database != null)
             {
-                b = Options.Opts.OsuDb.GetBeatmap(r.MapHash);
+                b = Options.Opts.Database.GetBeatmap(r.MapHash);
             }
             if (b == null)
             {

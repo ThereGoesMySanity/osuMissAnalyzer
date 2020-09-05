@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Windows.Forms;
 using Mono.Options;
+using OsuMissAnalyzer.Core;
 
 namespace OsuMissAnalyzer.UI
 {
@@ -55,10 +56,10 @@ namespace OsuMissAnalyzer.UI
                 return;
             }
 
-            Options options = new Options("options.cfg", optList);
+            Options options = new Options("options.cfg", optList, o => new OsuDatabase(o));
             try
             {
-                ReplayLoader replayLoader = new ReplayLoader();
+                UIReplayLoader replayLoader = new UIReplayLoader();
                 if (!replayLoader.Load(replay, beatmap)) return;
                 if (replayLoader.Replay == null || replayLoader.Beatmap == null)
                 {

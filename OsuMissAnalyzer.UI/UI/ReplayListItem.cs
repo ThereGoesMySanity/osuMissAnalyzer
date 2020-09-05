@@ -1,6 +1,6 @@
 using System;
 using BMAPI.v1;
-using OsuMissAnalyzer.Utils;
+using OsuMissAnalyzer.Core.Utils;
 using ReplayAPI;
 
 namespace OsuMissAnalyzer.UI

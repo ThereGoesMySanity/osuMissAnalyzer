@@ -2,7 +2,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 16
 VisualStudioVersion = 16.0.30413.136
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OsuMissAnalyzer", "OsuMissAnalyzer\OsuMissAnalyzer.csproj", "{93419898-7E68-4D72-9C6C-713406723C29}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OsuMissAnalyzer.Core", "OsuMissAnalyzer.Core\OsuMissAnalyzer.Core.csproj", "{93419898-7E68-4D72-9C6C-713406723C29}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{A72B1A3E-C572-44CA-8DFB-F11860BC9FA4}"
 	ProjectSection(SolutionItems) = preProject
@@ -10,6 +10,10 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "osuDodgyMomentsFinder", "osuReplayAnalyzer\osuDodgyMomentsFinder\osuDodgyMomentsFinder.csproj", "{78BA9DB5-35BA-41BA-87F4-E69DDCD266B0}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OsuMissAnalyzer.UI", "OsuMissAnalyzer.UI\OsuMissAnalyzer.UI.csproj", "{E4D78154-B702-4583-970D-DDC4A84072F5}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OsuMissAnalyzer.Server", "OsuMissAnalyzer.Server\OsuMissAnalyzer.Server.csproj", "{2CCE7B71-C6FA-471F-BAFC-02C95E123659}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
