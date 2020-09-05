@@ -17,7 +17,7 @@ namespace OsuMissAnalyzer.Server.Database
         {
             folder = beatmapFolder;
             hashes = JsonConvert.DeserializeObject<Dictionary<string, string>>(Path.Combine(beatmapFolder, "beatmaps.db"));
-            WebClient w = new WebClient();
+            webClient = new WebClient();
             apiKey = File.ReadAllText("key.dat");
         }
         public void Close()

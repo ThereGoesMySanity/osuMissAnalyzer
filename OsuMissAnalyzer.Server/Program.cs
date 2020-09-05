@@ -48,7 +48,7 @@ namespace OsuMissAnalyzer.Server
                 Token = File.ReadAllText("token.dat"),
                 TokenType = TokenType.Bot
             });
-            discord.MessageCreated += async e =>
+            discord.MessageCreated += async e => await Task.Run(() =>
             {
                 List<Bitmap> misses = null;
                 foreach (var attachment in e.Message.Attachments)
@@ -72,7 +72,7 @@ namespace OsuMissAnalyzer.Server
                         misses = GetMisses(new ServerReplayLoader(data.Item1, data.Item2, database));
                     }
                 }
-            };
+            });
 
             await discord.ConnectAsync();
             byte[] buffer = new byte[4];
