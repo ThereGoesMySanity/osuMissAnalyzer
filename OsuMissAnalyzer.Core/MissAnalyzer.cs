@@ -12,9 +12,8 @@ using Newtonsoft.Json.Linq;
 using System.Net;
 using System.Diagnostics;
 using System.Threading;
-using OsuMissAnalyzer.Utils;
-using static OsuMissAnalyzer.Utils.MathUtils;
-using OsuMissAnalyzer.UI;
+using OsuMissAnalyzer.Core.Utils;
+using static OsuMissAnalyzer.Core.Utils.MathUtils;
 using System.Collections;
 using System.Collections.Generic;
 

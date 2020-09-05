@@ -4,9 +4,9 @@
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">x86</Platform>
     <ProjectGuid>{93419898-7E68-4D72-9C6C-713406723C29}</ProjectGuid>
-    <OutputType>Library</OutputType>
-    <RootNamespace>OsuMissAnalyzer.Core</RootNamespace>
-    <AssemblyName>OsuMissAnalyzer.Core</AssemblyName>
+    <OutputType>WinExe</OutputType>
+    <RootNamespace>OsuMissAnalyzer.UI</RootNamespace>
+    <AssemblyName>OsuMissAnalyzer</AssemblyName>
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|x86' ">
@@ -30,25 +30,46 @@
     <StartupObject />
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="OsuDatabase.cs" />
-    <Compile Include="MissAnalyzer.cs" />
-    <Compile Include="Utils/*" />
-    <Compile Include="Options.cs" />
+    <Compile Include="Program.cs" />
+    <Compile Include="ReplayLoader.cs" />
+    <Compile Include="UI\ListMessageBox.Designer.cs">
+      <DependentUpon>ListMessageBox.cs</DependentUpon>
+    </Compile>
+    <Compile Include="UI\MissWindow.cs" />
+    <Compile Include="UI\MissWindowController.cs" />
+    <Compile Include="UI\ReplayListItem.cs" />
+    <Compile Include="UI\ListMessageBox.cs">
+      <SubType>Form</SubType>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <Reference Include="Newtonsoft.Json, Version=11.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
       <HintPath>..\packages\Newtonsoft.Json.11.0.2\lib\net45\Newtonsoft.Json.dll</HintPath>
     </Reference>
+    <Reference Include="Mono.Options" />
     <Reference Include="System.Data" />
     <Reference Include="System.Windows.Forms" />
     <Reference Include="System" />
     <Reference Include="System.Drawing" />
     <Reference Include="System.Drawing.Design" />
     <ProjectReference Include="../osuReplayAnalyzer/osuDodgyMomentsFinder/osuDodgyMomentsFinder.csproj" />
+    <ProjectReference Include="../OsuMissAnalyzer.Core/OsuMissAnalyzer.Core.csproj" />
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="options.cfg">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
     <None Include="packages.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="UI\ListMessageBox.resx">
+      <DependentUpon>ListMessageBox.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Properties\DataSources\" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
 </Project>

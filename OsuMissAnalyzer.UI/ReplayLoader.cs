@@ -8,10 +8,9 @@ using System.Windows.Forms;
 using BMAPI.v1;
 using Newtonsoft.Json.Linq;
 using osuDodgyMomentsFinder;
-using OsuMissAnalyzer.UI;
 using ReplayAPI;
 
-namespace OsuMissAnalyzer.Core
+namespace OsuMissAnalyzer.UI
 {
     public class ReplayLoader
     {
@@ -41,7 +40,6 @@ namespace OsuMissAnalyzer.Core
 
             if (ReplayAnalyzer.misses.Count == 0)
             {
-                Program.ShowErrorDialog("There is no miss in this replay.");
                 return false;
             }
             return true;
@@ -50,7 +48,7 @@ namespace OsuMissAnalyzer.Core
         public Replay LoadReplay()
         {
             Replay r = null;
-            if (Options.Opts.Settings.ContainsKey("osudir") && !Program.headless)
+            if (Options.Opts.Settings.ContainsKey("osudir") && !headless)
             {
                 if (MessageBox.Show("Analyze a recent replay?", "Miss Analyzer", MessageBoxButtons.YesNo, MessageBoxIcon.Question) == DialogResult.Yes)
                 {
@@ -69,7 +67,7 @@ namespace OsuMissAnalyzer.Core
                     }
                 }
             }
-            if (r == null && !Program.headless)
+            if (r == null && !headless)
             {
                 using (OpenFileDialog fd = new OpenFileDialog())
                 {
@@ -88,7 +86,7 @@ namespace OsuMissAnalyzer.Core
 
         public Beatmap LoadBeatmap(Replay r, bool dialog = true)
         {
-            dialog &= !Program.headless;
+            dialog &= !headless;
             Beatmap b = null;
             if (Options.Opts.OsuDb != null)
             {
