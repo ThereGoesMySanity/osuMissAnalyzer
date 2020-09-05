@@ -9,16 +9,14 @@ namespace OsuMissAnalyzer.Server.Database
 {
     public class ServerBeatmapDb
     {
+        private readonly OsuApi api;
         string folder;
         Dictionary<string, string> hashes;
-        WebClient webClient;
-        string apiKey;
-        public ServerBeatmapDb(string beatmapFolder)
+        public ServerBeatmapDb(OsuApi api, string beatmapFolder)
         {
+            this.api = api;
             folder = beatmapFolder;
             hashes = JsonConvert.DeserializeObject<Dictionary<string, string>>(Path.Combine(beatmapFolder, "beatmaps.db"));
-            webClient = new WebClient();
-            apiKey = File.ReadAllText("key.dat");
         }
         public void Close()
         {
@@ -33,10 +31,7 @@ namespace OsuMissAnalyzer.Server.Database
         {
             if (!hashes.ContainsKey(mapHash))
             {
-                var j = JArray.Parse(webClient.DownloadString($"https://osu.ppy.sh/api/get_beatmaps?k={apiKey}&h={mapHash}"));
-                string beatmap_id = (string)j[0]["beatmap_id"];
-                webClient.DownloadFile($"https://osu.ppy.sh/osu/{beatmap_id}", Path.Combine(folder, $"{beatmap_id}.osu"));
-                hashes[mapHash] = beatmap_id;
+                hashes[mapHash] = api.DownloadBeatmapFromHashv1(mapHash, folder);
             }
             return new Beatmap(Path.Combine(folder, $"{hashes[mapHash]}.osu"));
         }
@@ -45,7 +40,7 @@ namespace OsuMissAnalyzer.Server.Database
             string file = Path.Combine(folder, $"{beatmap_id}.osu");
             if (!File.Exists(file))
             {
-                webClient.DownloadFile($"https://osu.ppy.sh/osu/{beatmap_id}", file);
+                api.DownloadBeatmapFromId(beatmap_id, folder);
                 hashes[Beatmap.MD5FromFile(file)] = beatmap_id;
             }
             return new Beatmap(file);

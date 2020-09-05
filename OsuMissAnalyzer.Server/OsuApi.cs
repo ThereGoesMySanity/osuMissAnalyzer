@@ -11,14 +11,18 @@ namespace OsuMissAnalyzer.Server
 {
     public class OsuApi
     {
+        private string apiKeyv1;
         private string clientId = "2558";
         private string clientSecret;
         private Stopwatch tokenExpiry;
         private int tokenTime;
         private string token;
+        private WebClient webClient;
         public OsuApi()
         {
             clientSecret = File.ReadAllText("secret.dat");
+            apiKeyv1 = File.ReadAllText("key.dat");
+            webClient = new WebClient();
             tokenExpiry = new Stopwatch();
             RefreshToken();
         }
@@ -43,7 +47,29 @@ namespace OsuMissAnalyzer.Server
             if (tokenExpiry.Elapsed.TotalSeconds >= tokenTime)
                 RefreshToken();
         }
-        public Tuple<string, string> GetUserRecent(string userId, int limit)
+        public JToken ApiRequestv1(string endpoint, string query)
+        {
+            WebRequest w = WebRequest.Create($"https://osu.ppy.sh/api/{endpoint}?k={apiKeyv1}&{query}");
+            WebResponse res = w.GetResponse();
+            return JToken.Parse(new StreamReader(res.GetResponseStream()).ReadToEnd());
+        }
+        public string GetUserIdv1(string username)
+        {
+            return (string)ApiRequestv1("get_user", $"u={username}&type=string")[0]["user_id"];
+        }
+        public string DownloadBeatmapFromHashv1(string mapHash, string destinationFolder)
+        {
+            var j = JArray.Parse(webClient.DownloadString($"https://osu.ppy.sh/api/get_beatmaps?k={apiKeyv1}&h={mapHash}"));
+            string beatmapId = (string)j[0]["beatmap_id"];
+            webClient.DownloadFile($"https://osu.ppy.sh/osu/{beatmapId}", Path.Combine(destinationFolder, $"{beatmapId}.osu"));
+            return beatmapId;
+        }
+        public void DownloadBeatmapFromId(string beatmapId, string destinationFolder)
+        {
+            string file = Path.Combine(destinationFolder, $"{beatmapId}.osu");
+            webClient.DownloadFile($"https://osu.ppy.sh/osu/{beatmapId}", file);
+        }
+        public Tuple<string, string> GetUserRecentv2(string userId, int limit)
         {
             CheckToken();
             WebRequest w = WebRequest.Create($"https://osu.ppy.sh/api/v2/users/{userId}/scores/recent?mode=osu&limit={limit}");
@@ -52,17 +78,18 @@ namespace OsuMissAnalyzer.Server
             JArray j = JArray.Parse(new StreamReader(res.GetResponseStream()).ReadToEnd());
             foreach(JToken score in j)
             {
-                if ((bool)score["replay"])
+                if ((bool)score["replay"] && !(bool)score["perfect"])
                 {
-                    string filename = $"replay_{score["best_id"]}.osr";
-                    using (WebClient c = new WebClient())
-                    {
-                        c.DownloadFile($"https://osu.ppy.sh/scores/osu/{score["best_id"]}/download", filename);
-                    }
-                    return Tuple.Create(filename, (string)score["beatmap"]["id"]);
+                    return Tuple.Create((string)score["best_id"], (string)score["beatmap"]["id"]);
                 }
             }
             return null;
+        }
+        public void DownloadReplayFromId(string onlineId, string destinationFolder)
+        {
+            string filename = $"{onlineId}.osr";
+            webClient.DownloadFile($"https://osu.ppy.sh/scores/osu/{onlineId}/download", filename);
+
         }
     }
 }

@@ -1,4 +1,6 @@
 using System;
+using System.Drawing.Imaging;
+using System.IO;
 using System.Windows.Forms;
 using OsuMissAnalyzer.Core;
 
@@ -40,7 +42,12 @@ namespace OsuMissAnalyzer.UI
                     Model.ToggleOutlines();
                     break;
                 case Keys.P:
-                    Model.DrawAllMisses(View.Area);
+                    int i = 0;
+                    foreach (var img in Model.DrawAllMisses(View.Area))
+                    {
+                        string filename = $"{Path.GetFileNameWithoutExtension(Loader.Replay.Filename)}.{i++}.png";
+                        img.Save(filename, System.Drawing.Imaging.ImageFormat.Png);
+                    }
                     break;
                 case Keys.R:
                     Loader.Load(null, null);
