@@ -35,13 +35,20 @@ namespace OsuMissAnalyzer.Server.Database
             {
                 var j = JArray.Parse(webClient.DownloadString($"https://osu.ppy.sh/api/get_beatmaps?k={apiKey}&h={mapHash}"));
                 string beatmap_id = (string)j[0]["beatmap_id"];
-                webClient.DownloadFile($"https://osu.ppy.sh/osu/{beatmap_id}",Path.Combine(folder, $"{beatmap_id}.osu"));
-                
+                webClient.DownloadFile($"https://osu.ppy.sh/osu/{beatmap_id}", Path.Combine(folder, $"{beatmap_id}.osu"));
+                hashes[mapHash] = beatmap_id;
             }
+            return new Beatmap(Path.Combine(folder, $"{hashes[mapHash]}.osu"));
         }
-        public void AddBeatmap(File beatmap)
+        public Beatmap GetBeatmapFromId(string beatmap_id)
         {
-
+            string file = Path.Combine(folder, $"{beatmap_id}.osu");
+            if (!File.Exists(file))
+            {
+                webClient.DownloadFile($"https://osu.ppy.sh/osu/{beatmap_id}", file);
+                hashes[Beatmap.MD5FromFile(file)] = beatmap_id;
+            }
+            return new Beatmap(file);
         }
     }
 }

@@ -32,6 +32,8 @@
   <ItemGroup>
     <!-- items -->
     <Compile Include="Program.cs" />
+    <Compile Include="ServerReplayLoader.cs" />
+    <Compile Include="OsuApi.cs" />
     <Compile Include="Database\*" />
   </ItemGroup>
   <ItemGroup>
@@ -47,6 +49,9 @@
     <Reference Include="System" />
     <Reference Include="System.Drawing" />
     <Reference Include="System.Drawing.Design" />
+    <Reference Include="Mono.Unix" >
+     <HintPath>/usr/lib/mono/4.5-api/Mono.Posix.dll</HintPath>
+    </Reference>
     <ProjectReference Include="../osuReplayAnalyzer/osuDodgyMomentsFinder/osuDodgyMomentsFinder.csproj" />
     <ProjectReference Include="../OsuMissAnalyzer.Core/OsuMissAnalyzer.Core.csproj" />
     <Reference Include="System.Xml" />
