@@ -9,10 +9,11 @@ using BMAPI.v1;
 using Newtonsoft.Json.Linq;
 using osuDodgyMomentsFinder;
 using ReplayAPI;
+using OsuMissAnalyzer.Core;
 
 namespace OsuMissAnalyzer.UI
 {
-    public class ReplayLoader
+    public class UIReplayLoader : ReplayLoader
     {
         public Replay Replay { get; private set; }
         public Beatmap Beatmap { get; private set; }
