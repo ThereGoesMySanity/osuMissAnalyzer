@@ -31,12 +31,8 @@ namespace OsuMissAnalyzer.Server
                 new UnixSignal(Mono.Unix.Native.Signum.SIGINT),
             };
             Thread signalThread = new Thread(delegate () {
-                while (true)
-                {
-                    Console.WriteLine("inside thread");
-                    int index = UnixSignal.WaitAny(signals);
-                    interruptPipe.Writing.Write(BitConverter.GetBytes(index), 0, 4);
-                }
+                int index = UnixSignal.WaitAny(signals);
+                interruptPipe.Writing.Write(BitConverter.GetBytes(index), 0, 4);
             });
             signalThread.Start();
             MainAsync(args).ConfigureAwait(false).GetAwaiter().GetResult();

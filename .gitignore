@@ -46,4 +46,4 @@ options.cfg
 /.vs/OsuMissAnalyzer/v15/Server/sqlite3
 MissAnalyzerServer
 server.sh
-serverdata/**
+serverdata/
