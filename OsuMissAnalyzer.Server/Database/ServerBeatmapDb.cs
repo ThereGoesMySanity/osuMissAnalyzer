@@ -16,8 +16,15 @@ namespace OsuMissAnalyzer.Server.Database
         {
             this.api = api;
             folder = beatmapFolder;
-            
-            hashes = JsonConvert.DeserializeObject<Dictionary<string, string>>(Path.Combine(beatmapFolder, "beatmaps.db"));
+            string db = Path.Combine(beatmapFolder, "beatmaps.db");
+            if (File.Exists(db))
+            {
+                hashes = JsonConvert.DeserializeObject<Dictionary<string, string>>(File.ReadAllText(db));
+            }
+            else
+            {
+                hashes = new Dictionary<string, string>();
+            }
         }
         public void Close()
         {
