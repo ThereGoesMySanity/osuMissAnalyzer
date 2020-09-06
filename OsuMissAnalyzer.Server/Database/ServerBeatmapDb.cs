@@ -12,11 +12,11 @@ namespace OsuMissAnalyzer.Server.Database
         private readonly OsuApi api;
         string folder;
         Dictionary<string, string> hashes;
-        public ServerBeatmapDb(OsuApi api, string beatmapFolder)
+        public ServerBeatmapDb(OsuApi api, string serverDir)
         {
             this.api = api;
-            folder = beatmapFolder;
-            string db = Path.Combine(beatmapFolder, "beatmaps.db");
+            folder = serverDir;
+            string db = Path.Combine(serverDir, "beatmaps.db");
             if (File.Exists(db))
             {
                 hashes = JsonConvert.DeserializeObject<Dictionary<string, string>>(File.ReadAllText(db));
@@ -41,11 +41,11 @@ namespace OsuMissAnalyzer.Server.Database
             {
                 hashes[mapHash] = api.DownloadBeatmapFromHashv1(mapHash, folder);
             }
-            return new Beatmap(Path.Combine(folder, $"{hashes[mapHash]}.osu"));
+            return new Beatmap(Path.Combine(folder, "beatmaps", $"{hashes[mapHash]}.osu"));
         }
         public Beatmap GetBeatmapFromId(string beatmap_id)
         {
-            string file = Path.Combine(folder, $"{beatmap_id}.osu");
+            string file = Path.Combine(folder, "beatmaps", $"{beatmap_id}.osu");
             if (!File.Exists(file))
             {
                 api.DownloadBeatmapFromId(beatmap_id, folder);

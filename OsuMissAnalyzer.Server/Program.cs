@@ -33,17 +33,18 @@ namespace OsuMissAnalyzer.Server
             Thread signalThread = new Thread(delegate () {
                 while (true)
                 {
+                    Console.WriteLine("inside thread");
                     int index = UnixSignal.WaitAny(signals);
                     interruptPipe.Writing.Write(BitConverter.GetBytes(index), 0, 4);
                 }
             });
+            signalThread.Start();
             MainAsync(args).ConfigureAwait(false).GetAwaiter().GetResult();
         }
         public enum Source { USER, OWO, ATTACHMENT }
         static async Task MainAsync(string[] args)
         {
-            string beatmapDir = "beatmaps";
-            string replayDir = "replays";
+            string serverDir = "";
             string osuId = "2558";
             string osuSecret = "";
             string osuApiKey = "";
@@ -52,8 +53,7 @@ namespace OsuMissAnalyzer.Server
             string discordPermissions = "100416";
             bool help = false, link = false;
             var opts = new OptionSet() {
-                {"b|beatmapdir=", "Set beatmaps dir (default: ./beatmaps/)", b => beatmapDir = b},
-                {"r|replaydir=", "Set replays dir (default: ./replays/", r => replayDir = r},
+                {"d|dir=", "Set server storage dir (default: ./)", b => serverDir = b},
                 {"s|secret=", "Set client secret (osu!) (required)", s => osuSecret = s},
                 {"k|key=", "osu! api v1 key (required)", k => osuApiKey = k},
                 {"id=", "osu! client id (default: mine)", id => osuId = id},
@@ -79,10 +79,10 @@ Bot link: https://discordapp.com/oauth2/authorize?client_id={discordId}&scope=bo
             }
 
             OsuApi api = new OsuApi(osuId, osuSecret, osuApiKey);
-            Directory.CreateDirectory(beatmapDir);
-            Directory.CreateDirectory(replayDir);
-            var beatmapDatabase = new ServerBeatmapDb(api, beatmapDir);
-            var replayDatabase = new ServerReplayDb(api, replayDir);
+            Directory.CreateDirectory(Path.Combine(serverDir, "beatmaps"));
+            Directory.CreateDirectory(Path.Combine(serverDir, "replays"));
+            var beatmapDatabase = new ServerBeatmapDb(api, serverDir);
+            var replayDatabase = new ServerReplayDb(api, serverDir);
             string pfpPrefix = "https://a.ppy.sh/";
             Regex messageRegex = new Regex("^>miss (user-recent|user-top|beatmap) (.+?)(?: (\\d+))?$");
             Regex beatmapRegex = new Regex("^(https?://(?:osu|old).ppy.sh/(?:beatmapsets/\\d+#osu|b)/)?(\\d+)");
@@ -109,6 +109,7 @@ Bot link: https://discordapp.com/oauth2/authorize?client_id={discordId}&scope=bo
                 {
                     if (attachment.FileName.EndsWith(".osr"))
                     {
+                        string dest = Path.Combine(serverDir, "replays", attachment.FileName);
                         using (WebClient w = new WebClient())
                         {
                             w.DownloadFile(attachment.Url, attachment.FileName);
@@ -201,8 +202,10 @@ Bot link: https://discordapp.com/oauth2/authorize?client_id={discordId}&scope=bo
 
             discord.MessageReactionAdded += async e =>
             {
+                Console.WriteLine("reaction");
                 if (cachedMisses.Contains(e.Message))
                 {
+                    Console.WriteLine("found message");
                     var analyzer = cachedMisses[e.Message];
                     int index = Array.FindIndex(numberEmojis, t => t == e.Emoji);
                     if (index < analyzer.MissCount)

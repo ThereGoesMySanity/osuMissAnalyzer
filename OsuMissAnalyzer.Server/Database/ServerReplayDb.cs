@@ -6,18 +6,18 @@ namespace OsuMissAnalyzer.Server.Database
     public class ServerReplayDb
     {
         private readonly OsuApi api;
-        string folder;
-        public ServerReplayDb(OsuApi api, string folder)
+        string serverFolder;
+        public ServerReplayDb(OsuApi api, string serverFolder)
         {
             this.api = api;
-            this.folder = folder;
+            this.serverFolder = serverFolder;
         }
         public Replay GetReplayFromOnlineId(string onlineId)
         {
-            string file = Path.Combine(folder, $"{onlineId}.osr");
+            string file = Path.Combine(serverFolder, "replays", $"{onlineId}.osr");
             if (!File.Exists(file))
             {
-                api.DownloadReplayFromId(onlineId, folder);
+                api.DownloadReplayFromId(onlineId, serverFolder);
             }
             return new Replay(file);
         }
