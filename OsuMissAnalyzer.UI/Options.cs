@@ -2,17 +2,20 @@
 using System.Collections.Generic;
 using System.IO;
 using BMAPI.v1;
+using OsuDbAPI;
 using OsuMissAnalyzer.Core;
 
 namespace OsuMissAnalyzer.UI
 {
 	public class Options
 	{
-		public static Options Opts { get; set; }
 		public Dictionary<string, string> Settings { get; private set; }
-		public OsuDatabase Database;
+		public OsuDbFile Database;
+		public bool HasDatabase { get; private set; }
+        public string SongsFolder => Settings.ContainsKey("songsdir") ? Settings["songsdir"] : Path.Combine(Settings["osudir"], "Songs");
 		public Options(string file, Dictionary<string, string> optList)
 		{
+			HasDatabase = false;
 			Settings = new Dictionary<string, string>();
 			using (StreamReader f = new StreamReader(file))
 			{
@@ -26,19 +29,23 @@ namespace OsuMissAnalyzer.UI
 			{
 				AddOption(kv.Key, kv.Value);
 			}
-			Opts = this;
 		}
-		public Beatmap GetBeatmap(string mapHash)
+		public BMAPI.v1.Beatmap GetBeatmapFromHash(string mapHash)
 		{
-			return Database.GetBeatmap(GetSongsFolder(), mapHash);
+			return Database.GetBeatmapFromHash(mapHash).Load(SongsFolder);
 		}
-		public string GetSongsFolder() { return Settings.ContainsKey("songsdir")? Settings["songsdir"] : Path.Combine(Settings["osudir"], "Songs"); }
+		public BMAPI.v1.Beatmap GetBeatmapFromId(int mapId)
+        {
+			return Database.GetBeatmapFromId(mapId).Load(SongsFolder);
+
+        }
 		private void AddOption(string key, string value)
 		{
 			if (value.Length > 0) Settings.Add(key, value);
 			if (key == "osudir" && File.Exists(Path.Combine(value, "osu!.db")))
 			{
-				Database = new OsuDatabase(value, "osu!.db");
+				Database = new OsuDbFile(Path.Combine(value, "osu!.db"), byHash: true);
+				HasDatabase = true;
 			}
 		}
 	}

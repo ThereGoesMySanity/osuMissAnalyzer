@@ -10,6 +10,7 @@ using Newtonsoft.Json.Linq;
 using osuDodgyMomentsFinder;
 using ReplayAPI;
 using OsuMissAnalyzer.Core;
+using OsuMissAnalyzer.UI.UI;
 
 namespace OsuMissAnalyzer.UI
 {
@@ -18,6 +19,13 @@ namespace OsuMissAnalyzer.UI
         public Replay Replay { get; private set; }
         public Beatmap Beatmap { get; private set; }
         public ReplayAnalyzer ReplayAnalyzer { get; private set; }
+        public Options Options { get; private set; }
+
+        public UIReplayLoader(Options options)
+        {
+            Options = options;
+        }
+
         public bool Load(string replayFile, string beatmapFile)
         {
             Debug.Print("Loading Replay file...");
@@ -49,36 +57,41 @@ namespace OsuMissAnalyzer.UI
         public Replay LoadReplay()
         {
             Replay r = null;
-            if (Options.Opts.Settings.ContainsKey("osudir"))
+            var messageBox = new ReplayOptionBox(Options);
+            if (messageBox.ShowDialog() == DialogResult.OK)
             {
-                if (MessageBox.Show("Analyze a recent replay?", "Miss Analyzer", MessageBoxButtons.YesNo, MessageBoxIcon.Question) == DialogResult.Yes)
+                switch (messageBox.Result)
                 {
-                    var replays = new DirectoryInfo(Path.Combine(Options.Opts.Settings["osudir"], "Data", "r")).GetFiles()
-                            .Concat(new DirectoryInfo(Path.Combine(Options.Opts.Settings["osudir"], "Replays")).GetFiles())
-                            .Where(f => f.Name.EndsWith("osr"))
-                            .OrderByDescending(f => f.LastWriteTime)
-                            .Take(5).Select(file => new Replay(file.FullName))
-                            .OrderByDescending(re => re.PlayTime)
-                            .Select(re => new ReplayListItem() { replay = re, beatmap = LoadBeatmap(re, false) });
-                    var replayListForm = new ListMessageBox();
-                    replayListForm.SetContent(replays.ToList());
-                    if (replayListForm.ShowDialog() == DialogResult.OK && replayListForm.GetResult() != null)
-                    {
-                        r = replayListForm.GetResult().replay;
-                    }
-                }
-            }
-            if (r == null)
-            {
-                using (OpenFileDialog fd = new OpenFileDialog())
-                {
-                    fd.Title = "Choose replay file";
-                    fd.Filter = "osu! replay files (*.osr)|*.osr";
-                    DialogResult d = fd.ShowDialog();
-                    if (d == DialogResult.OK)
-                    {
-                        r = new Replay(fd.FileName);
-                    }
+                    case ReplayOptionBox.ReplayFind.RECENT:
+                        var replays = new DirectoryInfo(Path.Combine(Options.Settings["osudir"], "Data", "r")).GetFiles()
+                                .Concat(new DirectoryInfo(Path.Combine(Options.Settings["osudir"], "Replays")).GetFiles())
+                                .Where(f => f.Name.EndsWith("osr"))
+                                .OrderByDescending(f => f.LastWriteTime)
+                                .Take(5).Select(file => new Replay(file.FullName))
+                                .OrderByDescending(re => re.PlayTime)
+                                .Select(re => new ReplayListItem() { replay = re, beatmap = LoadBeatmap(re, false) });
+                        var replayListForm = new ListMessageBox();
+                        replayListForm.SetContent(replays.ToList());
+                        if (replayListForm.ShowDialog() == DialogResult.OK && replayListForm.GetResult() != null)
+                        {
+                            r = replayListForm.GetResult().replay;
+                        }
+                        break;
+                    case ReplayOptionBox.ReplayFind.BEATMAP:
+                        
+                        break;
+                    case ReplayOptionBox.ReplayFind.MANUAL:
+                        using (OpenFileDialog fd = new OpenFileDialog())
+                        {
+                            fd.Title = "Choose replay file";
+                            fd.Filter = "osu! replay files (*.osr)|*.osr";
+                            DialogResult d = fd.ShowDialog();
+                            if (d == DialogResult.OK)
+                            {
+                                r = new Replay(fd.FileName);
+                            }
+                        }
+                        break;
                 }
             }
             if (r == null) Program.ShowErrorDialog("Couldn't find replay");
@@ -88,26 +101,17 @@ namespace OsuMissAnalyzer.UI
         public Beatmap LoadBeatmap(Replay r, bool dialog = true)
         {
             Beatmap b = null;
-            if (Options.Opts.Database != null)
+            if (Options.Database != null)
             {
-                b = Options.Opts.GetBeatmap(r.MapHash);
+                b = Options.GetBeatmapFromHash(r.MapHash);
             }
             if (b == null)
             {
-                b = getBeatmapFromHash(Directory.GetCurrentDirectory(), false);
+                b = GetBeatmapFromHash(Directory.GetCurrentDirectory(), false);
             }
             if (b == null)
             {
-                if (Options.Opts.Settings.ContainsKey("songsdir"))
-                {
-                    b = getBeatmapFromHash(Options.Opts.Settings["songsdir"]);
-                }
-                else if (Options.Opts.Settings.ContainsKey("osudir")
-                    && File.Exists(Path.Combine(Options.Opts.Settings["osudir"], "Songs"))
-                    )
-                {
-                    b = getBeatmapFromHash(Path.Combine(Options.Opts.Settings["osudir"], "Songs"));
-                }
+                b = GetBeatmapFromHash(Options.SongsFolder, true);
             }
             if (b == null && dialog)
             {
@@ -126,18 +130,18 @@ namespace OsuMissAnalyzer.UI
             return b;
         }
 
-        private Beatmap getBeatmapFromHash(string dir, bool songsDir = true)
+        private Beatmap GetBeatmapFromHash(string dir, bool songsDir)
         {
             Debug.Print("\nChecking API Key...");
             JArray j = JArray.Parse("[]");
-            if (Options.Opts.Settings.ContainsKey("apikey"))
+            if (Options.Settings.ContainsKey("apikey"))
             {
                 Debug.Print("Found API key, searching for beatmap...");
 
                 using (WebClient w = new WebClient())
                 {
                     j = JArray.Parse(w.DownloadString("https://osu.ppy.sh/api/get_beatmaps" +
-                                                            "?k=" + Options.Opts.Settings["apikey"] +
+                                                            "?k=" + Options.Settings["apikey"] +
                                                             "&h=" + Replay.MapHash));
                 }
             }

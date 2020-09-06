@@ -33,11 +33,18 @@
     <Compile Include="Program.cs" />
     <Compile Include="Options.cs" />
     <Compile Include="UIReplayLoader.cs" />
-    <Compile Include="OsuDatabase.cs" />
+    <Compile Include="UI\ReplayOptionBox.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="UI\ReplayOptionBox.Designer.cs">
+      <DependentUpon>ReplayOptionBox.cs</DependentUpon>
+    </Compile>
     <Compile Include="UI\ListMessageBox.Designer.cs">
       <DependentUpon>ListMessageBox.cs</DependentUpon>
     </Compile>
-    <Compile Include="UI\MissWindow.cs" />
+    <Compile Include="UI\MissWindow.cs">
+      <SubType>Form</SubType>
+    </Compile>
     <Compile Include="UI\MissWindowController.cs" />
     <Compile Include="UI\ReplayListItem.cs" />
     <Compile Include="UI\ListMessageBox.cs">
@@ -45,11 +52,11 @@
     </Compile>
   </ItemGroup>
   <ItemGroup>
-    <Reference Include="Newtonsoft.Json, Version=10.0.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\Newtonsoft.Json.10.0.3\lib\net45\Newtonsoft.Json.dll</HintPath>
+    <Reference Include="Mono.Options, Version=6.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\Mono.Options.6.6.0.161\lib\net40\Mono.Options.dll</HintPath>
     </Reference>
-    <Reference Include="Mono.Options">
-     <HintPath>../packages/Mono.Options.6.6.0.161/lib/net40/Mono.Options.dll</HintPath>
+    <Reference Include="Newtonsoft.Json, Version=10.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
+      <HintPath>..\packages\Newtonsoft.Json.10.0.3\lib\net45\Newtonsoft.Json.dll</HintPath>
     </Reference>
     <Reference Include="System.Data" />
     <Reference Include="System.Windows.Forms" />
@@ -61,9 +68,6 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="options.cfg">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
@@ -71,9 +75,17 @@
       <DependentUpon>ListMessageBox.cs</DependentUpon>
       <SubType>Designer</SubType>
     </EmbeddedResource>
+    <EmbeddedResource Include="UI\ReplayOptionBox.resx">
+      <DependentUpon>ReplayOptionBox.cs</DependentUpon>
+    </EmbeddedResource>
   </ItemGroup>
   <ItemGroup>
-    <Folder Include="Properties\DataSources\" />
+    <Folder Include="Properties\" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="options.cfg">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
 </Project>

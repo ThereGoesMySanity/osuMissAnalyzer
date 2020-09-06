@@ -59,7 +59,7 @@ namespace OsuMissAnalyzer.UI
             Options options = new Options("options.cfg", optList);
             try
             {
-                UIReplayLoader replayLoader = new UIReplayLoader();
+                UIReplayLoader replayLoader = new UIReplayLoader(options);
                 if (!replayLoader.Load(replay, beatmap)) return;
                 if (replayLoader.Replay == null || replayLoader.Beatmap == null)
                 {
