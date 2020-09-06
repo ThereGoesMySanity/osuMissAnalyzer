@@ -26,7 +26,6 @@ namespace OsuMissAnalyzer.Server
             this.apiKeyv1 = apiKeyv1;
             this.clientSecret = clientSecret;
             webClient = new WebClient();
-            webClient.Headers.Add("Authorization", $"Bearer {token}");
             tokenExpiry = new Stopwatch();
             RefreshToken();
         }
@@ -74,18 +73,18 @@ namespace OsuMissAnalyzer.Server
             string file = Path.Combine(destinationFolder, $"{beatmapId}.osu");
             webClient.DownloadFile($"https://osu.ppy.sh/osu/{beatmapId}", file);
         }
-        public Tuple<string, string> GetUserScoresv2(string userId, string type, int index)
+        public JToken GetUserScoresv2(string userId, string type, int index)
         {
             var score = ((JArray)GetApiv2($"users/{userId}/scores/{type}?mode=osu&limit={index + 1}"))[index];
             if ((bool)score["replay"] && !(bool)score["perfect"])
-                return Tuple.Create((string)score["best_id"], (string)score["beatmap"]["id"]);
+                return score;
             return null;
         }
-        public Tuple<string, string> GetBeatmapScoresv2(string beatmapId, int index)
+        public JToken GetBeatmapScoresv2(string beatmapId, int index)
         {
             var score = ((JArray)GetApiv2($"beatmaps/{beatmapId}/scores"))[index];
             if ((bool)score["replay"] && !(bool)score["perfect"])
-                return Tuple.Create((string)score["best_id"], (string)score["beatmap"]["id"]);
+                return score;
             return null;
         }
         public JToken GetApiv2(string endpoint)
@@ -96,10 +95,10 @@ namespace OsuMissAnalyzer.Server
             WebResponse res = w.GetResponse();
             return JToken.Parse(new StreamReader(res.GetResponseStream()).ReadToEnd());
         }
-        public void DownloadReplayFromId(string onlineId, string destinationFolder)
+        public byte[] DownloadReplayFromId(string onlineId)
         {
-            string filename = Path.Combine(destinationFolder, $"{onlineId}.osr");
-            webClient.DownloadFile($"https://osu.ppy.sh/api/get_replay", filename);
+            var res = JToken.Parse(webClient.DownloadString($"https://osu.ppy.sh/api/get_replay?k={apiKeyv1}&s={onlineId}"));
+            return Convert.FromBase64String((string)res["content"]);
         }
 
     }

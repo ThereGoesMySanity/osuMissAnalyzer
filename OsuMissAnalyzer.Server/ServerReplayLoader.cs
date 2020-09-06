@@ -1,5 +1,6 @@
 using System;
 using BMAPI.v1;
+using Newtonsoft.Json.Linq;
 using osuDodgyMomentsFinder;
 using OsuMissAnalyzer.Core;
 using OsuMissAnalyzer.Server.Database;
@@ -18,8 +19,11 @@ namespace OsuMissAnalyzer.Server
             Beatmap = beatmap;
             ReplayAnalyzer = new ReplayAnalyzer(Beatmap, Replay);
         }
-        public ServerReplayLoader(Tuple<string, string> ids, ServerReplayDb replayDb, ServerBeatmapDb beatmapDb)
-         : this(replayDb.GetReplayFromOnlineId(ids.Item1), beatmapDb.GetBeatmapFromId(ids.Item2)) {}
+        public ServerReplayLoader(JToken score, ServerReplayDb replayDb, ServerBeatmapDb beatmapDb)
+         : this(score, beatmapDb.GetBeatmapFromId((string)score["beatmap"]["id"]), replayDb) {}
+        
+        public ServerReplayLoader(JToken score, Beatmap beatmap, ServerReplayDb replayDb)
+         : this(replayDb.GetReplayFromOnlineId(score, beatmap), beatmap) {}
         public ServerReplayLoader(Replay replay, ServerBeatmapDb database) : this(replay, database.GetBeatmap(replay.MapHash)) {}
     }
 }

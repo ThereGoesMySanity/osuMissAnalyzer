@@ -13,6 +13,7 @@ using System.Text.RegularExpressions;
 using ReplayAPI;
 using System.Runtime.Caching.Generic;
 using Mono.Options;
+using Newtonsoft.Json.Linq;
 
 namespace OsuMissAnalyzer.Server
 {
@@ -117,68 +118,68 @@ Bot link: https://discordapp.com/oauth2/authorize?client_id={discordId}&scope=bo
                 /*
                  * Can't do any of these until I figure out how to actually obtain a replay file
                  */
-                // //owo
-                // if (e.Author.Id == 289066747443675143 && e.Message.Content.StartsWith("**Most Recent osu! Standard Play for"))
-                // {
-                //     Console.WriteLine("owo");
-                //     string url = e.Message.Embeds[0].Author.IconUrl.ToString();
-                //     if (url.StartsWith(pfpPrefix))
-                //     {
-                //         var data = api.GetUserScoresv2(url.Substring(pfpPrefix.Length), "recent", 0);
-                //         missAnalyzer = new MissAnalyzer(new ServerReplayLoader(data, replayDatabase, beatmapDatabase));
-                //         source = Source.OWO;
-                //     }
-                // }
-                // //user-triggered
-                // Match m = messageRegex.Match(e.Message.Content);
-                // if (m.Success)
-                // {
-                //     Console.WriteLine(">miss");
-                //     int playIndex = 0;
-                //     ReplayLoader loader = null;
-                //     if (m.Groups.Count == 4 && m.Groups[3].Success) playIndex = int.Parse(m.Groups[3].Value) - 1;
-                //     Console.WriteLine(m.Groups[1].Value);
-                //     switch (m.Groups[1].Value)
-                //     {
-                //         case "user-recent":
-                //             var recent = api.GetUserScoresv2(api.GetUserIdv1(m.Groups[2].Value), "recent", playIndex);
-                //             if (await CheckApiResult(recent, e.Message))
-                //             {
-                //                 Console.WriteLine(m.Groups[2].Value);
-                //                 Console.WriteLine(recent.ToString());
-                //                 loader = new ServerReplayLoader(recent, replayDatabase, beatmapDatabase);
-                //                 Console.WriteLine(">recent");
-                //             }
-                //             break;
-                //         case "user-top":
-                //             var top = api.GetUserScoresv2(api.GetUserIdv1(m.Groups[2].Value), "best", playIndex);
-                //             if (await CheckApiResult(top, e.Message))
-                //             {
-                //                 loader = new ServerReplayLoader(top, replayDatabase, beatmapDatabase);
-                //             }
-                //             break;
-                //         case "beatmap":
-                //             var match = beatmapRegex.Match(m.Groups[2].Value);
-                //             if (match.Success)
-                //             {
-                //                 var bmTop = api.GetBeatmapScoresv2(match.Groups[1].Value, playIndex);
-                //                 if (await CheckApiResult(bmTop, e.Message))
-                //                 {
-                //                     loader = new ServerReplayLoader(bmTop, replayDatabase, beatmapDatabase);
-                //                 }
-                //             }
-                //             else
-                //             {
-                //                 await e.Message.RespondAsync("Invalid beatmap link");
-                //             }
-                //             break;
-                //     }
-                //     if (loader != null)
-                //     {
-                //         missAnalyzer = new MissAnalyzer(loader);
-                //         source = Source.USER;
-                //     }
-                // }
+                //owo
+                if (e.Author.Id == 289066747443675143 && e.Message.Content.StartsWith("**Most Recent osu! Standard Play for"))
+                {
+                    Console.WriteLine("owo");
+                    string url = e.Message.Embeds[0].Author.IconUrl.ToString();
+                    if (url.StartsWith(pfpPrefix))
+                    {
+                        var data = api.GetUserScoresv2(url.Substring(pfpPrefix.Length), "recent", 0);
+                        missAnalyzer = new MissAnalyzer(new ServerReplayLoader(data, replayDatabase, beatmapDatabase));
+                        source = Source.OWO;
+                    }
+                }
+                //user-triggered
+                Match m = messageRegex.Match(e.Message.Content);
+                if (m.Success)
+                {
+                    Console.WriteLine(">miss");
+                    int playIndex = 0;
+                    ReplayLoader loader = null;
+                    if (m.Groups.Count == 4 && m.Groups[3].Success) playIndex = int.Parse(m.Groups[3].Value) - 1;
+                    Console.WriteLine(m.Groups[1].Value);
+                    switch (m.Groups[1].Value)
+                    {
+                        case "user-recent":
+                            var recent = api.GetUserScoresv2(api.GetUserIdv1(m.Groups[2].Value), "recent", playIndex);
+                            if (await CheckApiResult(recent, e.Message))
+                            {
+                                Console.WriteLine(m.Groups[2].Value);
+                                Console.WriteLine(recent.ToString());
+                                loader = new ServerReplayLoader(recent, replayDatabase, beatmapDatabase);
+                                Console.WriteLine(">recent");
+                            }
+                            break;
+                        case "user-top":
+                            var top = api.GetUserScoresv2(api.GetUserIdv1(m.Groups[2].Value), "best", playIndex);
+                            if (await CheckApiResult(top, e.Message))
+                            {
+                                loader = new ServerReplayLoader(top, replayDatabase, beatmapDatabase);
+                            }
+                            break;
+                        case "beatmap":
+                            var match = beatmapRegex.Match(m.Groups[2].Value);
+                            if (match.Success)
+                            {
+                                var bmTop = api.GetBeatmapScoresv2(match.Groups[1].Value, playIndex);
+                                if (await CheckApiResult(bmTop, e.Message))
+                                {
+                                    loader = new ServerReplayLoader(bmTop, replayDatabase, beatmapDatabase);
+                                }
+                            }
+                            else
+                            {
+                                await e.Message.RespondAsync("Invalid beatmap link");
+                            }
+                            break;
+                    }
+                    if (loader != null)
+                    {
+                        missAnalyzer = new MissAnalyzer(loader);
+                        source = Source.USER;
+                    }
+                }
                 if (missAnalyzer != null)
                 {
                     DiscordMessage message = null;
@@ -239,7 +240,7 @@ Bot link: https://discordapp.com/oauth2/authorize?client_id={discordId}&scope=bo
             beatmapDatabase.Close();
             Console.WriteLine("Closed safely");
         }
-        private static async Task<bool> CheckApiResult(Tuple<string, string> result, DiscordMessage respondTo)
+        private static async Task<bool> CheckApiResult(JToken result, DiscordMessage respondTo)
         {
             if(result == null)
             {
