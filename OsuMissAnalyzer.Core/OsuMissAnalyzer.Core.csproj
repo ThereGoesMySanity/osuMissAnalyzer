@@ -43,11 +43,16 @@
     <Reference Include="System" />
     <Reference Include="System.Drawing" />
     <Reference Include="System.Drawing.Design" />
-    <ProjectReference Include="../osuReplayAnalyzer/osuDodgyMomentsFinder/osuDodgyMomentsFinder.csproj" />
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\osuReplayAnalyzer\osuDodgyMomentsFinder\osuDodgyMomentsFinder.csproj">
+      <Project>{78ba9db5-35ba-41ba-87f4-e69ddcd266b0}</Project>
+      <Name>osuDodgyMomentsFinder</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
 </Project>

@@ -62,7 +62,7 @@ namespace OsuMissAnalyzer.UI
             {
                 switch (messageBox.Result)
                 {
-                    case ReplayOptionBox.ReplayFind.RECENT:
+                    case ReplayFind.RECENT:
                         var replays = new DirectoryInfo(Path.Combine(Options.Settings["osudir"], "Data", "r")).GetFiles()
                                 .Concat(new DirectoryInfo(Path.Combine(Options.Settings["osudir"], "Replays")).GetFiles())
                                 .Where(f => f.Name.EndsWith("osr"))
@@ -77,10 +77,10 @@ namespace OsuMissAnalyzer.UI
                             r = replayListForm.GetResult().replay;
                         }
                         break;
-                    case ReplayOptionBox.ReplayFind.BEATMAP:
+                    case ReplayFind.BEATMAP:
                         
                         break;
-                    case ReplayOptionBox.ReplayFind.MANUAL:
+                    case ReplayFind.MANUAL:
                         using (OpenFileDialog fd = new OpenFileDialog())
                         {
                             fd.Title = "Choose replay file";

@@ -10,9 +10,9 @@ using System.Windows.Forms;
 
 namespace OsuMissAnalyzer.UI.UI
 {
+    public enum ReplayFind { RECENT, BEATMAP, MANUAL }
     public partial class ReplayOptionBox : Form
     {
-        public enum ReplayFind { RECENT, BEATMAP, MANUAL }
         public ReplayFind Result;
         public ReplayOptionBox(Options opts)
         {

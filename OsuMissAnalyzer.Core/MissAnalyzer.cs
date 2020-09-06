@@ -1,20 +1,13 @@
 ﻿using System;
 using System.Drawing;
-using System.Windows.Forms;
 using osuDodgyMomentsFinder;
 using ReplayAPI;
 using BMAPI.v1;
 using BMAPI;
-using System.IO;
 using BMAPI.v1.HitObjects;
 using System.Linq;
-using Newtonsoft.Json.Linq;
-using System.Net;
-using System.Diagnostics;
-using System.Threading;
 using OsuMissAnalyzer.Core.Utils;
 using static OsuMissAnalyzer.Core.Utils.MathUtils;
-using System.Collections;
 using System.Collections.Generic;
 
 namespace OsuMissAnalyzer.Core
@@ -25,7 +18,7 @@ namespace OsuMissAnalyzer.Core
         private const int arrowLength = 4;
         private const int sliderGranularity = 10;
         public bool HitCircleOutlines { get; private set; } = false;
-        private ReplayLoader ReplayLoader;
+        private readonly ReplayLoader ReplayLoader;
         private ReplayAnalyzer ReplayAnalyzer => ReplayLoader.ReplayAnalyzer;
         private Replay Replay => ReplayLoader.Replay;
         private Beatmap Beatmap => ReplayLoader.Beatmap;
@@ -90,10 +83,12 @@ namespace OsuMissAnalyzer.Core
             if (drawAllHitObjects) hitObject = Beatmap.HitObjects[num];
             else hitObject = ReplayAnalyzer.misses[num];
             float radius = (float)hitObject.Radius;
-            Pen circle = new Pen(Color.Gray, radius * 2 / scale);
-            circle.StartCap = System.Drawing.Drawing2D.LineCap.Round;
-            circle.EndCap = System.Drawing.Drawing2D.LineCap.Round;
-            circle.LineJoin = System.Drawing.Drawing2D.LineJoin.Round;
+            Pen circle = new Pen(Color.Gray, radius * 2 / scale)
+            {
+                StartCap = System.Drawing.Drawing2D.LineCap.Round,
+                EndCap = System.Drawing.Drawing2D.LineCap.Round,
+                LineJoin = System.Drawing.Drawing2D.LineJoin.Round
+            };
             Pen p = new Pen(Color.White);
             g.FillRectangle(p.Brush, area);
             RectangleF bounds = new RectangleF(PointF.Subtract(hitObject.Location.ToPointF(), MathUtils.Scale(area.Size, scale / 2)),
@@ -196,10 +191,15 @@ namespace OsuMissAnalyzer.Core
             p.Color = Color.Black;
             Font f = new Font(FontFamily.GenericSansSerif, 12);
             g.DrawString(Beatmap.ToString(), f, p.Brush, 0, 0);
+
             if (drawAllHitObjects) g.DrawString($"Object {num + 1} of {Beatmap.HitObjects.Count}", f, p.Brush, 0, f.Height);
             else g.DrawString($"Miss {num + 1} of {MissCount}", f, p.Brush, 0, f.Height);
-            TimeSpan ts = TimeSpan.FromMilliseconds(hitObject.StartTime);
-            g.DrawString($"Time: {ts.ToString(@"mm\:ss\.fff")}", f, p.Brush, 0, area.Height - f.Height);
+
+            float time = hitObject.StartTime;
+            if (Replay.Mods.HasFlag(Mods.DoubleTime)) time /= 1.5f;
+            else if (Replay.Mods.HasFlag(Mods.HalfTime)) time /= 0.75f;
+            TimeSpan ts = TimeSpan.FromMilliseconds(time);
+            g.DrawString($"Time: {ts:mm\\:ss\\.fff}", f, p.Brush, 0, area.Height - f.Height);
             return img;
         }
 
