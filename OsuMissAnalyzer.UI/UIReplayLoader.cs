@@ -22,7 +22,7 @@ namespace OsuMissAnalyzer.UI
         {
             Debug.Print("Loading Replay file...");
 
-            Replay = replayFile == null ? LoadReplay() : new Replay(replayFile, true, false);
+            Replay = replayFile == null ? LoadReplay() : new Replay(replayFile);
             if (Replay == null)
                 return false;
 
@@ -57,7 +57,7 @@ namespace OsuMissAnalyzer.UI
                             .Concat(new DirectoryInfo(Path.Combine(Options.Opts.Settings["osudir"], "Replays")).GetFiles())
                             .Where(f => f.Name.EndsWith("osr"))
                             .OrderByDescending(f => f.LastWriteTime)
-                            .Take(5).Select(file => new Replay(file.FullName, true, false))
+                            .Take(5).Select(file => new Replay(file.FullName))
                             .OrderByDescending(re => re.PlayTime)
                             .Select(re => new ReplayListItem() { replay = re, beatmap = LoadBeatmap(re, false) });
                     var replayListForm = new ListMessageBox();
@@ -77,7 +77,7 @@ namespace OsuMissAnalyzer.UI
                     DialogResult d = fd.ShowDialog();
                     if (d == DialogResult.OK)
                     {
-                        r = new Replay(fd.FileName, true, false);
+                        r = new Replay(fd.FileName);
                     }
                 }
             }

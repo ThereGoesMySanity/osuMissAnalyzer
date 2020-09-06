@@ -19,7 +19,7 @@ namespace OsuMissAnalyzer.Server.Database
             {
                 api.DownloadReplayFromId(onlineId, folder);
             }
-            return new Replay(file, true, false);
+            return new Replay(file);
         }
     }
 }

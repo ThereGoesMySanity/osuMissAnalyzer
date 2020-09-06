@@ -29,6 +29,7 @@ namespace OsuMissAnalyzer.Core
         private ReplayAnalyzer ReplayAnalyzer => ReplayLoader.ReplayAnalyzer;
         private Replay Replay => ReplayLoader.Replay;
         private Beatmap Beatmap => ReplayLoader.Beatmap;
+        public int MissCount => ReplayAnalyzer.misses.Count;
         private int hitObjIndex = 0;
         private bool drawAllHitObjects;
         private float scale = 1;
@@ -60,7 +61,7 @@ namespace OsuMissAnalyzer.Core
 
         public void NextObject()
         {
-            if (drawAllHitObjects ? hitObjIndex < Beatmap.HitObjects.Count - 1 : hitObjIndex < ReplayAnalyzer.misses.Count - 1) hitObjIndex++;
+            if (drawAllHitObjects ? hitObjIndex < Beatmap.HitObjects.Count - 1 : hitObjIndex < MissCount - 1) hitObjIndex++;
         }
         public void PreviousObject()
         {
@@ -79,7 +80,7 @@ namespace OsuMissAnalyzer.Core
         /// </summary>
         /// <returns>A Bitmap containing the drawing</returns>
         /// <param name="num">Index of the miss as it shows up in r.misses.</param>
-        private Bitmap DrawHitObject(int num, Rectangle area)
+        public Bitmap DrawHitObject(int num, Rectangle area)
         {
             Bitmap img = new Bitmap(area.Width, area.Height);
             Graphics g = Graphics.FromImage(img);
@@ -195,10 +196,10 @@ namespace OsuMissAnalyzer.Core
             p.Color = Color.Black;
             Font f = new Font(FontFamily.GenericSansSerif, 12);
             g.DrawString(Beatmap.ToString(), f, p.Brush, 0, 0);
-            if (drawAllHitObjects) g.DrawString("Object " + (num + 1) + " of " + Beatmap.HitObjects.Count, f, p.Brush, 0, f.Height);
-            else g.DrawString("Miss " + (num + 1) + " of " + ReplayAnalyzer.misses.Count, f, p.Brush, 0, f.Height);
+            if (drawAllHitObjects) g.DrawString($"Object {num + 1} of {Beatmap.HitObjects.Count}", f, p.Brush, 0, f.Height);
+            else g.DrawString($"Miss {num + 1} of {MissCount}", f, p.Brush, 0, f.Height);
             TimeSpan ts = TimeSpan.FromMilliseconds(hitObject.StartTime);
-            g.DrawString("Time: " + ts.ToString(@"mm\:ss\.fff"), f, p.Brush, 0, area.Height - f.Height);
+            g.DrawString($"Time: {ts.ToString(@"mm\:ss\.fff")}", f, p.Brush, 0, area.Height - f.Height);
             return img;
         }
 

@@ -43,6 +43,9 @@
     <Reference Include="DSharpPlus, Version=3.2.3">
       <HintPath>..\packages\DSharpPlus.3.2.3\lib\net45\DSharpPlus.dll</HintPath>
     </Reference>
+    <Reference Include="System.Runtime.Caching.Generic, Version=1.0.5.0">
+      <HintPath>..\packages\System.Runtime.Caching.Generic.1.0.5.0\lib\net40\System.Runtime.Caching.Generic.dll</HintPath>
+    </Reference>
     <Reference Include="Mono.Options" />
     <Reference Include="System.Data" />
     <Reference Include="System.Windows.Forms" />

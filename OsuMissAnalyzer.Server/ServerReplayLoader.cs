@@ -1,3 +1,4 @@
+using System;
 using BMAPI.v1;
 using osuDodgyMomentsFinder;
 using OsuMissAnalyzer.Core;
@@ -11,17 +12,14 @@ namespace OsuMissAnalyzer.Server
         public Replay Replay { get; private set; }
         public Beatmap Beatmap { get; private set; }
         public ReplayAnalyzer ReplayAnalyzer { get; private set; }
-        public ServerReplayLoader(string replayFile, string beatmapId, ServerBeatmapDb database)
+        public ServerReplayLoader(Replay replay, Beatmap beatmap)
         {
-            Replay = new Replay(replayFile, true, false);
-            Beatmap = database.GetBeatmapFromId(beatmapId);
+            Replay = replay;
+            Beatmap = beatmap;
             ReplayAnalyzer = new ReplayAnalyzer(Beatmap, Replay);
         }
-        public ServerReplayLoader(string replayFile, ServerBeatmapDb database)
-        {
-            Replay = new Replay(replayFile, true, false);
-            Beatmap = database.GetBeatmap(Replay.MapHash);
-            ReplayAnalyzer = new ReplayAnalyzer(Beatmap, Replay);
-        }
+        public ServerReplayLoader(Tuple<string, string> ids, ServerReplayDb replayDb, ServerBeatmapDb beatmapDb)
+         : this(replayDb.GetReplayFromOnlineId(ids.Item1), beatmapDb.GetBeatmapFromId(ids.Item2)) {}
+        public ServerReplayLoader(Replay replay, ServerBeatmapDb database) : this(replay, database.GetBeatmap(replay.MapHash)) {}
     }
 }
