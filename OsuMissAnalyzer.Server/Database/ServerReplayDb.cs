@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using BMAPI.v1;
@@ -69,7 +70,6 @@ namespace OsuMissAnalyzer.Server.Database
                 }
                 r.Save(file);
             }
-            Console.WriteLine("test");
             return new Replay(file);
         }
     }

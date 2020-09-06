@@ -5,6 +5,7 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Text;
+using System.Threading;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using OsuMissAnalyzer.Core;
@@ -17,6 +18,7 @@ namespace OsuMissAnalyzer.Server
         private string clientId;
         private string clientSecret;
         private Stopwatch tokenExpiry;
+        private Queue<DateTime> replayDls;
         private int tokenTime;
         private string token;
         private WebClient webClient;
@@ -27,6 +29,7 @@ namespace OsuMissAnalyzer.Server
             this.clientSecret = clientSecret;
             webClient = new WebClient();
             tokenExpiry = new Stopwatch();
+            replayDls = new Queue<DateTime>();
             RefreshToken();
         }
         private void RefreshToken()
@@ -97,6 +100,12 @@ namespace OsuMissAnalyzer.Server
         }
         public byte[] DownloadReplayFromId(string onlineId)
         {
+            while((DateTime.Now - replayDls.Peek()).TotalSeconds > 60) replayDls.Dequeue();
+            if (replayDls.Count >= 10)
+            {
+                Thread.Sleep(TimeSpan.FromMinutes(1).Subtract(DateTime.Now - replayDls.Peek()));
+            }
+            replayDls.Enqueue(DateTime.Now);
             var res = JToken.Parse(webClient.DownloadString($"https://osu.ppy.sh/api/get_replay?k={apiKeyv1}&s={onlineId}"));
             return Convert.FromBase64String((string)res["content"]);
         }
