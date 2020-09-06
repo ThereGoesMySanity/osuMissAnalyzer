@@ -7,13 +7,12 @@ using System.Net;
 using OsuMissAnalyzer.Server.Database;
 using System.IO;
 using OsuMissAnalyzer.Core;
-using System.Collections.Generic;
 using DSharpPlus.Entities;
 using System.Drawing;
-using System.Linq;
 using System.Text.RegularExpressions;
 using ReplayAPI;
 using System.Runtime.Caching.Generic;
+using Mono.Options;
 
 namespace OsuMissAnalyzer.Server
 {
@@ -44,9 +43,44 @@ namespace OsuMissAnalyzer.Server
         public enum Source { USER, OWO, ATTACHMENT }
         static async Task MainAsync(string[] args)
         {
-            OsuApi api = new OsuApi();
-            var beatmapDatabase = new ServerBeatmapDb(api, "beatmaps");
-            var replayDatabase = new ServerReplayDb(api, "replays");
+            string beatmapDir = "beatmaps";
+            string replayDir = "replays";
+            string osuId = "2558";
+            string osuSecret = "";
+            string osuApiKey = "";
+            string discordToken = "";
+            string discordId = "752035690237394944";
+            string discordPermissions = "100416";
+            bool help = false, link = false;
+            var opts = new OptionSet() {
+                {"b|beatmapdir=", "Set beatmaps dir (default: ./beatmaps/)", b => beatmapDir = b},
+                {"r|replaydir=", "Set replays dir (default: ./replays/", r => replayDir = r},
+                {"s|secret=", "Set client secret (osu!)", s => osuSecret = s},
+                {"k|key=", "osu! api v1 key", k => osuApiKey = k},
+                {"id=", "osu! client id (default: mine)", id => osuId = id},
+                {"t|token=", "discord bot token", t => discordToken = t},
+                {"h|help", "displays help", a => help = a != null},
+                {"l|link", "displays bot link and exits", l => link = l != null}
+            };
+            opts.Parse(args);
+            string botLink = $"https://discordapp.com/oauth2/authorize?client_id={discordId}&scope=bot&permissions={discordPermissions}";
+            if (link)
+            {
+                Console.WriteLine(botLink);
+                return;
+            }
+
+            if (help)
+            {
+                Console.WriteLine(
+$@"osu! Miss Analyzer, Discord Bot Edition
+Bot link: https://discordapp.com/oauth2/authorize?client_id={discordId}&scope=bot&permissions={discordPermissions}");
+                opts.WriteOptionDescriptions(Console.Out);
+            }
+
+            OsuApi api = new OsuApi(osuId, osuSecret, osuApiKey);
+            var beatmapDatabase = new ServerBeatmapDb(api, beatmapDir);
+            var replayDatabase = new ServerReplayDb(api, replayDir);
             string pfpPrefix = "https://a.ppy.sh/";
             Regex messageRegex = new Regex("^>miss (user-recent|user-top|beatmap) (.+?)(?: (\\d+))?$");
             Regex beatmapRegex = new Regex("^(https?://(?:osu|old).ppy.sh/(?:beatmapsets/\\d+#osu|b)/)?(\\d+)");
@@ -59,7 +93,7 @@ namespace OsuMissAnalyzer.Server
             DiscordEmoji[] numberEmojis = new DiscordEmoji[10];
             discord = new DiscordClient(new DiscordConfiguration
             {
-                Token = File.ReadAllText("token.dat"),
+                Token = discordToken,
                 TokenType = TokenType.Bot
             });
             for (int i = 0; i < 10; i++)

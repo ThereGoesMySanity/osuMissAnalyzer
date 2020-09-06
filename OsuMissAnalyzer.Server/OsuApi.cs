@@ -14,19 +14,22 @@ namespace OsuMissAnalyzer.Server
     public class OsuApi
     {
         private string apiKeyv1;
-        private string clientId = "2558";
+        private string clientId;
         private string clientSecret;
         private Stopwatch tokenExpiry;
         private int tokenTime;
         private string token;
         private WebClient webClient;
-        public OsuApi()
+        public OsuApi(string clientId, string clientSecret, string apiKeyv1)
         {
             clientSecret = File.ReadAllText("secret.dat");
             apiKeyv1 = File.ReadAllText("key.dat");
             webClient = new WebClient();
             tokenExpiry = new Stopwatch();
             RefreshToken();
+            this.clientId = clientId;
+            this.apiKeyv1 = apiKeyv1;
+            this.clientSecret = clientSecret;
         }
         private void RefreshToken()
         {
