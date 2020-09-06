@@ -16,6 +16,7 @@ namespace OsuMissAnalyzer.Server.Database
         {
             this.api = api;
             folder = beatmapFolder;
+            
             hashes = JsonConvert.DeserializeObject<Dictionary<string, string>>(Path.Combine(beatmapFolder, "beatmaps.db"));
         }
         public void Close()

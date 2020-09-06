@@ -22,20 +22,19 @@ namespace OsuMissAnalyzer.Server
         private WebClient webClient;
         public OsuApi(string clientId, string clientSecret, string apiKeyv1)
         {
-            clientSecret = File.ReadAllText("secret.dat");
-            apiKeyv1 = File.ReadAllText("key.dat");
-            webClient = new WebClient();
-            tokenExpiry = new Stopwatch();
-            RefreshToken();
             this.clientId = clientId;
             this.apiKeyv1 = apiKeyv1;
             this.clientSecret = clientSecret;
+            webClient = new WebClient();
+            tokenExpiry = new Stopwatch();
+            RefreshToken();
         }
         private void RefreshToken()
         {
             WebRequest w = WebRequest.Create("https://osu.ppy.sh/oauth/token");
             string postData = $"client_id={clientId}&client_secret={clientSecret}&grant_type=client_credentials&scope=public";
             byte[] bytes = Encoding.UTF8.GetBytes(postData);
+            w.Method = "POST";
             w.ContentType = "application/x-www-form-urlencoded";
             w.ContentLength = bytes.Length;
             Stream data = w.GetRequestStream();
