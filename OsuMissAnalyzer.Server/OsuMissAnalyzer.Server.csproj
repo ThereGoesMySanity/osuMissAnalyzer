@@ -46,7 +46,9 @@
     <Reference Include="System.Runtime.Caching.Generic, Version=1.0.5.0">
       <HintPath>..\packages\System.Runtime.Caching.Generic.1.0.5.0\lib\net40\System.Runtime.Caching.Generic.dll</HintPath>
     </Reference>
-    <Reference Include="Mono.Options" />
+    <Reference Include="Mono.Options">
+     <HintPath>../packages/Mono.Options.6.6.0.161/lib/net40/Mono.Options.dll</HintPath>
+    </Reference>
     <Reference Include="System.Data" />
     <Reference Include="System.Windows.Forms" />
     <Reference Include="System" />

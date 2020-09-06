@@ -37,7 +37,6 @@ namespace OsuMissAnalyzer.Server
                     interruptPipe.Writing.Write(BitConverter.GetBytes(index), 0, 4);
                 }
             });
-
             MainAsync(args).ConfigureAwait(false).GetAwaiter().GetResult();
         }
         public enum Source { USER, OWO, ATTACHMENT }
@@ -55,10 +54,10 @@ namespace OsuMissAnalyzer.Server
             var opts = new OptionSet() {
                 {"b|beatmapdir=", "Set beatmaps dir (default: ./beatmaps/)", b => beatmapDir = b},
                 {"r|replaydir=", "Set replays dir (default: ./replays/", r => replayDir = r},
-                {"s|secret=", "Set client secret (osu!)", s => osuSecret = s},
-                {"k|key=", "osu! api v1 key", k => osuApiKey = k},
+                {"s|secret=", "Set client secret (osu!) (required)", s => osuSecret = s},
+                {"k|key=", "osu! api v1 key (required)", k => osuApiKey = k},
                 {"id=", "osu! client id (default: mine)", id => osuId = id},
-                {"t|token=", "discord bot token", t => discordToken = t},
+                {"t|token=", "discord bot token (required)", t => discordToken = t},
                 {"h|help", "displays help", a => help = a != null},
                 {"l|link", "displays bot link and exits", l => link = l != null}
             };
@@ -70,15 +69,18 @@ namespace OsuMissAnalyzer.Server
                 return;
             }
 
-            if (help)
+            if (help || (osuSecret.Length * osuApiKey.Length * discordToken.Length) == 0)
             {
                 Console.WriteLine(
 $@"osu! Miss Analyzer, Discord Bot Edition
 Bot link: https://discordapp.com/oauth2/authorize?client_id={discordId}&scope=bot&permissions={discordPermissions}");
                 opts.WriteOptionDescriptions(Console.Out);
+                return;
             }
 
             OsuApi api = new OsuApi(osuId, osuSecret, osuApiKey);
+            Directory.CreateDirectory(beatmapDir);
+            Directory.CreateDirectory(replayDir);
             var beatmapDatabase = new ServerBeatmapDb(api, beatmapDir);
             var replayDatabase = new ServerReplayDb(api, replayDir);
             string pfpPrefix = "https://a.ppy.sh/";
@@ -216,6 +218,7 @@ Bot link: https://discordapp.com/oauth2/authorize?client_id={discordId}&scope=bo
             await interruptPipe.Reading.ReadAsync(buffer, 0, 4);
             await discord.DisconnectAsync();
             beatmapDatabase.Close();
+            Console.WriteLine("Closed safely");
         }
         private static async Task<bool> CheckApiResult(Tuple<string, string> result, DiscordMessage respondTo)
         {

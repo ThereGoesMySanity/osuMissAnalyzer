@@ -48,7 +48,9 @@
     <Reference Include="Newtonsoft.Json, Version=10.0.0.0, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\packages\Newtonsoft.Json.10.0.3\lib\net45\Newtonsoft.Json.dll</HintPath>
     </Reference>
-    <Reference Include="Mono.Options" />
+    <Reference Include="Mono.Options">
+     <HintPath>../packages/Mono.Options.6.6.0.161/lib/net40/Mono.Options.dll</HintPath>
+    </Reference>
     <Reference Include="System.Data" />
     <Reference Include="System.Windows.Forms" />
     <Reference Include="System" />
