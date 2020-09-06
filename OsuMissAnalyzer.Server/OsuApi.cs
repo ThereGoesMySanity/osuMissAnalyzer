@@ -26,6 +26,7 @@ namespace OsuMissAnalyzer.Server
             this.apiKeyv1 = apiKeyv1;
             this.clientSecret = clientSecret;
             webClient = new WebClient();
+            webClient.Headers.Add("Authorization", $"Bearer {token}");
             tokenExpiry = new Stopwatch();
             RefreshToken();
         }
@@ -98,7 +99,7 @@ namespace OsuMissAnalyzer.Server
         public void DownloadReplayFromId(string onlineId, string destinationFolder)
         {
             string filename = Path.Combine(destinationFolder, $"{onlineId}.osr");
-            webClient.DownloadFile($"https://osu.ppy.sh/scores/osu/{onlineId}/download", filename);
+            webClient.DownloadFile($"https://osu.ppy.sh/api/get_replay", filename);
         }
 
     }

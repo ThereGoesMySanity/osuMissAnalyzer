@@ -1,3 +1,4 @@
+using System;
 using System.IO;
 using ReplayAPI;
 
@@ -17,8 +18,10 @@ namespace OsuMissAnalyzer.Server.Database
             string file = Path.Combine(serverFolder, "replays", $"{onlineId}.osr");
             if (!File.Exists(file))
             {
+                Console.WriteLine("test1");
                 api.DownloadReplayFromId(onlineId, Path.Combine(serverFolder, "replays"));
             }
+            Console.WriteLine("test");
             return new Replay(file);
         }
     }
