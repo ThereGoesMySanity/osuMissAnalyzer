@@ -39,7 +39,7 @@ namespace OsuMissAnalyzer.Server.Database
         {
             if (!hashes.ContainsKey(mapHash))
             {
-                hashes[mapHash] = api.DownloadBeatmapFromHashv1(mapHash, folder);
+                hashes[mapHash] = api.DownloadBeatmapFromHashv1(mapHash, Path.Combine(folder, "beatmaps"));
             }
             return new Beatmap(Path.Combine(folder, "beatmaps", $"{hashes[mapHash]}.osu"));
         }
@@ -48,7 +48,7 @@ namespace OsuMissAnalyzer.Server.Database
             string file = Path.Combine(folder, "beatmaps", $"{beatmap_id}.osu");
             if (!File.Exists(file))
             {
-                api.DownloadBeatmapFromId(beatmap_id, folder);
+                api.DownloadBeatmapFromId(beatmap_id, Path.Combine(folder, "beatmaps"));
                 hashes[Beatmap.MD5FromFile(file)] = beatmap_id;
             }
             return new Beatmap(file);

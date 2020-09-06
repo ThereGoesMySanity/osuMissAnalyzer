@@ -108,9 +108,9 @@ Bot link: https://discordapp.com/oauth2/authorize?client_id={discordId}&scope=bo
                         string dest = Path.Combine(serverDir, "replays", attachment.FileName);
                         using (WebClient w = new WebClient())
                         {
-                            w.DownloadFile(attachment.Url, attachment.FileName);
+                            w.DownloadFile(attachment.Url, dest);
                         }
-                        missAnalyzer = new MissAnalyzer(new ServerReplayLoader(new Replay(attachment.FileName), beatmapDatabase));
+                        missAnalyzer = new MissAnalyzer(new ServerReplayLoader(new Replay(dest), beatmapDatabase));
                         source  = Source.ATTACHMENT;
                     }
                 }
@@ -211,6 +211,8 @@ Bot link: https://discordapp.com/oauth2/authorize?client_id={discordId}&scope=bo
                     }
                 }
             };
+            
+            Console.WriteLine("Init complete");
 
             await discord.ConnectAsync();
             byte[] buffer = new byte[4];
