@@ -17,7 +17,7 @@ namespace OsuMissAnalyzer.Server.Database
             string file = Path.Combine(serverFolder, "replays", $"{onlineId}.osr");
             if (!File.Exists(file))
             {
-                api.DownloadReplayFromId(onlineId, serverFolder);
+                api.DownloadReplayFromId(onlineId, Path.Combine(serverFolder, "replays"));
             }
             return new Replay(file);
         }

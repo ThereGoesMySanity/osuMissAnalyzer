@@ -30,7 +30,7 @@ namespace OsuMissAnalyzer.Core
         private Replay Replay => ReplayLoader.Replay;
         private Beatmap Beatmap => ReplayLoader.Beatmap;
         public int MissCount => ReplayAnalyzer.misses.Count;
-        private int hitObjIndex = 0;
+        public int CurrentObject { get; set; } = 0;
         private bool drawAllHitObjects;
         private float scale = 1;
 
@@ -50,22 +50,22 @@ namespace OsuMissAnalyzer.Core
             if (drawAllHitObjects)
             {
                 drawAllHitObjects = false;
-                hitObjIndex = ReplayAnalyzer.misses.Count(x => x.StartTime < Beatmap.HitObjects[hitObjIndex].StartTime);
+                CurrentObject = ReplayAnalyzer.misses.Count(x => x.StartTime < Beatmap.HitObjects[CurrentObject].StartTime);
             }
             else
             {
                 drawAllHitObjects = true;
-                hitObjIndex = Beatmap.HitObjects.IndexOf(ReplayAnalyzer.misses[hitObjIndex]);
+                CurrentObject = Beatmap.HitObjects.IndexOf(ReplayAnalyzer.misses[CurrentObject]);
             }
         }
 
         public void NextObject()
         {
-            if (drawAllHitObjects ? hitObjIndex < Beatmap.HitObjects.Count - 1 : hitObjIndex < MissCount - 1) hitObjIndex++;
+            if (drawAllHitObjects ? CurrentObject < Beatmap.HitObjects.Count - 1 : CurrentObject < MissCount - 1) CurrentObject++;
         }
         public void PreviousObject()
         {
-            if (hitObjIndex > 0) hitObjIndex--;
+            if (CurrentObject > 0) CurrentObject--;
         }
 
         public void ScaleChange(int i)
@@ -74,7 +74,7 @@ namespace OsuMissAnalyzer.Core
             if (scale < 0.1) scale = 0.1f;
         }
 
-        public Bitmap DrawSelectedHitObject(Rectangle area) { return DrawHitObject(hitObjIndex, area); }
+        public Bitmap DrawSelectedHitObject(Rectangle area) { return DrawHitObject(CurrentObject, area); }
         /// <summary>
         /// Draws the miss.
         /// </summary>

@@ -117,6 +117,7 @@ Bot link: https://discordapp.com/oauth2/authorize?client_id={discordId}&scope=bo
                 //owo
                 if (e.Author.Id == 289066747443675143 && e.Message.Content.StartsWith("**Most Recent osu! Standard Play for"))
                 {
+                    Console.WriteLine("owo");
                     string url = e.Message.Embeds[0].Author.IconUrl.ToString();
                     if (url.StartsWith(pfpPrefix))
                     {
@@ -129,16 +130,21 @@ Bot link: https://discordapp.com/oauth2/authorize?client_id={discordId}&scope=bo
                 Match m = messageRegex.Match(e.Message.Content);
                 if (m.Success)
                 {
+                    Console.WriteLine(">miss");
                     int playIndex = 0;
                     ReplayLoader loader = null;
-                    if (m.Groups.Count == 4) playIndex = int.Parse(m.Groups[3].Value) - 1;
+                    if (m.Groups.Count == 4 && m.Groups[3].Success) playIndex = int.Parse(m.Groups[3].Value) - 1;
+                    Console.WriteLine(m.Groups[1].Value);
                     switch (m.Groups[1].Value)
                     {
                         case "user-recent":
                             var recent = api.GetUserScoresv2(api.GetUserIdv1(m.Groups[2].Value), "recent", playIndex);
                             if (await CheckApiResult(recent, e.Message))
                             {
+                                Console.WriteLine(m.Groups[2].Value);
+                                Console.WriteLine(recent.ToString());
                                 loader = new ServerReplayLoader(recent, replayDatabase, beatmapDatabase);
+                                Console.WriteLine(">recent");
                             }
                             break;
                         case "user-top":
@@ -183,8 +189,8 @@ Bot link: https://discordapp.com/oauth2/authorize?client_id={discordId}&scope=bo
                     }
                     else
                     {
-                        message = await e.Message.RespondAsync($"**Found {missAnalyzer.MissCount} misses**");
-                        for (int i = 1; i <= missAnalyzer.MissCount; i++)
+                        message = await e.Message.RespondAsync($"Found **{missAnalyzer.MissCount}** miss{(missAnalyzer.MissCount != 1?"es":"")}");
+                        for (int i = 1; i < Math.Min(missAnalyzer.MissCount + 1, numberEmojis.Length); i++)
                         {
                             await message.CreateReactionAsync(numberEmojis[i]);
                         }
@@ -198,13 +204,22 @@ Bot link: https://discordapp.com/oauth2/authorize?client_id={discordId}&scope=bo
 
             discord.MessageReactionAdded += async e =>
             {
-                Console.WriteLine("reaction");
-                if (cachedMisses.Contains(e.Message))
+                if (!e.User.IsCurrent && cachedMisses.Contains(e.Message))
                 {
-                    Console.WriteLine("found message");
                     var analyzer = cachedMisses[e.Message];
-                    int index = Array.FindIndex(numberEmojis, t => t == e.Emoji);
-                    if (index < analyzer.MissCount)
+                    // switch (e.Emoji.GetDiscordName())
+                    // {
+                    //     case ":heavy_plus_sign:":
+                            
+                    //     break;
+                    //     case ":heavy_minus_sign:":
+
+                    //     break;
+                    //     case ":"
+
+                    // }
+                    int index = Array.FindIndex(numberEmojis, t => t == e.Emoji) - 1;
+                    if (index >= 0 && index < analyzer.MissCount)
                     {
                         var message = await SendMissMessage(analyzer, e.Message, index);
                         cachedMisses[message] = analyzer;
@@ -231,7 +246,8 @@ Bot link: https://discordapp.com/oauth2/authorize?client_id={discordId}&scope=bo
         }
         private static async Task<DiscordMessage> SendMissMessage(MissAnalyzer analyzer, DiscordMessage respondTo, int index)
         {
-            return await respondTo.RespondWithFileAsync(GetStream(analyzer.DrawHitObject(index, area)), "miss.png", $"**Miss {index + 1} of {analyzer.MissCount}**");
+            analyzer.CurrentObject = index;
+            return await respondTo.RespondWithFileAsync(GetStream(analyzer.DrawSelectedHitObject(area)), "miss.png", $"Miss **{index + 1}** of **{analyzer.MissCount}**");
         }
         private static MemoryStream GetStream(Bitmap bitmap)
         {
