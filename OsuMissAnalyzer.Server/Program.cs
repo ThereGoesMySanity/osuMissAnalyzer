@@ -136,7 +136,7 @@ Bot link: https://discordapp.com/oauth2/authorize?client_id={discordId}&scope=bo
                 {
                     Console.WriteLine(">miss");
                     int playIndex = 0;
-                    ReplayLoader loader = null;
+                    IReplayLoader loader = null;
                     if (m.Groups.Count == 4 && m.Groups[3].Success) playIndex = int.Parse(m.Groups[3].Value) - 1;
                     Console.WriteLine(m.Groups[1].Value);
                     switch (m.Groups[1].Value)

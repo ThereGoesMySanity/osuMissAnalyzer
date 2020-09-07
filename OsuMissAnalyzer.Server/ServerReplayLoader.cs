@@ -8,7 +8,7 @@ using ReplayAPI;
 
 namespace OsuMissAnalyzer.Server
 {
-    public class ServerReplayLoader : ReplayLoader
+    public class ServerReplayLoader : IReplayLoader
     {
         public Replay Replay { get; private set; }
         public Beatmap Beatmap { get; private set; }

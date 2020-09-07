@@ -14,7 +14,7 @@ using OsuMissAnalyzer.UI.UI;
 
 namespace OsuMissAnalyzer.UI
 {
-    public class UIReplayLoader : ReplayLoader
+    public class UIReplayLoader : IReplayLoader
     {
         public Replay Replay { get; private set; }
         public Beatmap Beatmap { get; private set; }
@@ -160,19 +160,19 @@ namespace OsuMissAnalyzer.UI
 
                 foreach (string folder in folders)
                 {
-                    Beatmap map = readFolder(folder, j.Count > 0 ? (string)j[0]["beatmap_id"] : null);
+                    Beatmap map = ReadFolder(folder, j.Count > 0 ? (string)j[0]["beatmap_id"] : null);
                     if (map != null) return map;
                 }
             }
             else
             {
-                Beatmap map = readFolder(dir, j.Count > 0 ? (string)j[0]["beatmap_id"] : null);
+                Beatmap map = ReadFolder(dir, j.Count > 0 ? (string)j[0]["beatmap_id"] : null);
                 if (map != null) return map;
             }
             return null;
         }
 
-        private Beatmap readFolder(string folder, string id)
+        private Beatmap ReadFolder(string folder, string id)
         {
             foreach (string file in Directory.GetFiles(folder, "*.osu"))
             {

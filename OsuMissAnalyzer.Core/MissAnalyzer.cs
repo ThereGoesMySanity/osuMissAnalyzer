@@ -18,7 +18,7 @@ namespace OsuMissAnalyzer.Core
         private const int arrowLength = 4;
         private const int sliderGranularity = 10;
         public bool HitCircleOutlines { get; private set; } = false;
-        private readonly ReplayLoader ReplayLoader;
+        private readonly IReplayLoader ReplayLoader;
         private ReplayAnalyzer ReplayAnalyzer => ReplayLoader.ReplayAnalyzer;
         private Replay Replay => ReplayLoader.Replay;
         private Beatmap Beatmap => ReplayLoader.Beatmap;
@@ -28,7 +28,7 @@ namespace OsuMissAnalyzer.Core
         private float scale = 1;
 
 
-        public MissAnalyzer(ReplayLoader replayLoader)
+        public MissAnalyzer(IReplayLoader replayLoader)
         {
             ReplayLoader = replayLoader;
         }

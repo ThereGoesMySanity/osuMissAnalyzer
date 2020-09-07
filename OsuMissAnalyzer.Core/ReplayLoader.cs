@@ -3,7 +3,7 @@ using ReplayAPI;
 using osuDodgyMomentsFinder;
 namespace OsuMissAnalyzer.Core
 {
-    public interface ReplayLoader
+    public interface IReplayLoader
     {
         Replay Replay { get; }
         Beatmap Beatmap { get; }
