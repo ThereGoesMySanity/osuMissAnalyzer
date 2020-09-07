@@ -78,16 +78,34 @@ namespace OsuMissAnalyzer.Server
         }
         public JToken GetUserScoresv2(string userId, string type, int index)
         {
-            var score = ((JArray)GetApiv2($"users/{userId}/scores/{type}?mode=osu&limit={index + 1}"))[index];
-            if ((bool)score["replay"] && !(bool)score["perfect"])
-                return score;
+            var req = $"users/{userId}/scores/{type}?mode=osu&include_fails=1&limit={index + 1}";
+            var res = GetApiv2(req);
+            if (res is JArray arr)
+            {
+                var score = arr[index];
+                if ((bool)score["replay"] && !(bool)score["perfect"])
+                    return score;
+            }
+            else
+            {
+                Console.WriteLine(req);
+            }
             return null;
         }
         public JToken GetBeatmapScoresv2(string beatmapId, int index)
         {
-            var score = ((JArray)GetApiv2($"beatmaps/{beatmapId}/scores"))[index];
-            if ((bool)score["replay"] && !(bool)score["perfect"])
-                return score;
+            var req = $"beatmaps/{beatmapId}/scores";
+            var res = GetApiv2(req);
+            if (res is JArray arr)
+            {
+                var score = arr[index];
+                if ((bool)score["replay"] && !(bool)score["perfect"])
+                    return score;
+            }
+            else
+            {
+                Console.WriteLine(req);
+            }
             return null;
         }
         public JToken GetApiv2(string endpoint)
@@ -100,7 +118,7 @@ namespace OsuMissAnalyzer.Server
         }
         public byte[] DownloadReplayFromId(string onlineId)
         {
-            while((DateTime.Now - replayDls.Peek()).TotalSeconds > 60) replayDls.Dequeue();
+            while ((DateTime.Now - replayDls.Peek()).TotalSeconds > 60) replayDls.Dequeue();
             if (replayDls.Count >= 10)
             {
                 Thread.Sleep(TimeSpan.FromMinutes(1).Subtract(DateTime.Now - replayDls.Peek()));

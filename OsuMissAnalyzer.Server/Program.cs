@@ -31,7 +31,8 @@ namespace OsuMissAnalyzer.Server
                 new UnixSignal(Mono.Unix.Native.Signum.SIGTERM),
                 new UnixSignal(Mono.Unix.Native.Signum.SIGINT),
             };
-            Thread signalThread = new Thread(delegate () {
+            Thread signalThread = new Thread(delegate ()
+            {
                 int index = UnixSignal.WaitAny(signals);
                 interruptPipe.Writing.Write(BitConverter.GetBytes(index), 0, 4);
             });
@@ -88,7 +89,7 @@ Bot link: https://discordapp.com/oauth2/authorize?client_id={discordId}&scope=bo
             var cachedMisses = new MemoryCache<DiscordMessage, MissAnalyzer>(128);
             cachedMisses.SetPolicy(typeof(LfuEvictionPolicy<,>));
             // Dictionary<DiscordMessage, MissAnalyzer> cachedMisses = new Dictionary<DiscordMessage, MissAnalyzer>();
-            string[] numbers = {"zero", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine"};
+            string[] numbers = { "zero", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine" };
             DiscordEmoji[] numberEmojis = new DiscordEmoji[10];
             discord = new DiscordClient(new DiscordConfiguration
             {
@@ -101,136 +102,144 @@ Bot link: https://discordapp.com/oauth2/authorize?client_id={discordId}&scope=bo
             }
             discord.MessageCreated += async e =>
             {
-                MissAnalyzer missAnalyzer = null;
-                foreach (var attachment in e.Message.Attachments)
+                try
                 {
-                    if (attachment.FileName.EndsWith(".osr"))
+                    MissAnalyzer missAnalyzer = null;
+                    foreach (var attachment in e.Message.Attachments)
                     {
-                        string dest = Path.Combine(serverDir, "replays", attachment.FileName);
-                        using (WebClient w = new WebClient())
+                        if (attachment.FileName.EndsWith(".osr"))
                         {
-                            w.DownloadFile(attachment.Url, dest);
+                            string dest = Path.Combine(serverDir, "replays", attachment.FileName);
+                            using (WebClient w = new WebClient())
+                            {
+                                w.DownloadFile(attachment.Url, dest);
+                            }
+                            missAnalyzer = new MissAnalyzer(new ServerReplayLoader(new Replay(dest), beatmapDatabase));
+                            source = Source.ATTACHMENT;
                         }
-                        missAnalyzer = new MissAnalyzer(new ServerReplayLoader(new Replay(dest), beatmapDatabase));
-                        source  = Source.ATTACHMENT;
                     }
-                }
-                /*
-                 * Can't do any of these until I figure out how to actually obtain a replay file
-                 */
-                //owo
-                if (e.Author.Id == 289066747443675143 && e.Message.Content.StartsWith("**Most Recent osu! Standard Play for"))
-                {
-                    Console.WriteLine("owo");
-                    string url = e.Message.Embeds[0].Author.IconUrl.ToString();
-                    if (url.StartsWith(pfpPrefix))
+                    /*
+                     * Can't do any of these until I figure out how to actually obtain a replay file
+                     */
+                    //owo
+                    if (e.Author.Id == 289066747443675143 && e.Message.Content.StartsWith("**Most Recent osu! Standard Play for"))
                     {
-                        var data = api.GetUserScoresv2(url.Substring(pfpPrefix.Length), "recent", 0);
-                        missAnalyzer = new MissAnalyzer(new ServerReplayLoader(data, replayDatabase, beatmapDatabase));
-                        source = Source.OWO;
+                        Console.WriteLine("owo");
+                        string url = e.Message.Embeds[0].Author.IconUrl.ToString();
+                        if (url.StartsWith(pfpPrefix))
+                        {
+                            var data = api.GetUserScoresv2(url.Substring(pfpPrefix.Length).Split('?')[0], "recent", 0);
+                            missAnalyzer = new MissAnalyzer(new ServerReplayLoader(data, replayDatabase, beatmapDatabase));
+                            source = Source.OWO;
+                        }
                     }
-                }
-                //user-triggered
-                Match m = messageRegex.Match(e.Message.Content);
-                if (m.Success)
-                {
-                    Console.WriteLine(">miss");
-                    int playIndex = 0;
-                    IReplayLoader loader = null;
-                    if (m.Groups.Count == 4 && m.Groups[3].Success) playIndex = int.Parse(m.Groups[3].Value) - 1;
-                    Console.WriteLine(m.Groups[1].Value);
-                    switch (m.Groups[1].Value)
+                    //user-triggered
+                    Match m = messageRegex.Match(e.Message.Content);
+                    if (m.Success)
                     {
-                        case "user-recent":
-                            var recent = api.GetUserScoresv2(api.GetUserIdv1(m.Groups[2].Value), "recent", playIndex);
-                            if (await CheckApiResult(recent, e.Message))
-                            {
-                                Console.WriteLine(m.Groups[2].Value);
-                                Console.WriteLine(recent.ToString());
-                                loader = new ServerReplayLoader(recent, replayDatabase, beatmapDatabase);
-                                Console.WriteLine(">recent");
-                            }
-                            break;
-                        case "user-top":
-                            var top = api.GetUserScoresv2(api.GetUserIdv1(m.Groups[2].Value), "best", playIndex);
-                            if (await CheckApiResult(top, e.Message))
-                            {
-                                loader = new ServerReplayLoader(top, replayDatabase, beatmapDatabase);
-                            }
-                            break;
-                        case "beatmap":
-                            var match = beatmapRegex.Match(m.Groups[2].Value);
-                            if (match.Success)
-                            {
-                                var bmTop = api.GetBeatmapScoresv2(match.Groups[1].Value, playIndex);
-                                if (await CheckApiResult(bmTop, e.Message))
+                        Console.WriteLine(">miss");
+                        int playIndex = 0;
+                        IReplayLoader loader = null;
+                        if (m.Groups.Count == 4 && m.Groups[3].Success) playIndex = int.Parse(m.Groups[3].Value) - 1;
+                        Console.WriteLine(m.Groups[1].Value);
+                        switch (m.Groups[1].Value)
+                        {
+                            case "user-recent":
+                                var recent = api.GetUserScoresv2(api.GetUserIdv1(m.Groups[2].Value), "recent", playIndex);
+                                if (await CheckApiResult(recent, e.Message))
                                 {
-                                    loader = new ServerReplayLoader(bmTop, replayDatabase, beatmapDatabase);
+                                    Console.WriteLine(m.Groups[2].Value);
+                                    Console.WriteLine(recent.ToString());
+                                    loader = new ServerReplayLoader(recent, replayDatabase, beatmapDatabase);
+                                    Console.WriteLine(">recent");
                                 }
-                            }
-                            else
-                            {
-                                await e.Message.RespondAsync("Invalid beatmap link");
-                            }
-                            break;
-                    }
-                    if (loader != null)
-                    {
-                        missAnalyzer = new MissAnalyzer(loader);
-                        source = Source.USER;
-                    }
-                }
-                if (missAnalyzer != null)
-                {
-                    DiscordMessage message = null;
-                    if (missAnalyzer.MissCount == 0 && source != Source.OWO)
-                    {
-                        await e.Message.RespondAsync("No misses found.");
-                    }
-                    else if (missAnalyzer.MissCount == 1)
-                    {
-                        message = await SendMissMessage(missAnalyzer, e.Message, 0);
-                    }
-                    else
-                    {
-                        message = await e.Message.RespondAsync($"Found **{missAnalyzer.MissCount}** miss{(missAnalyzer.MissCount != 1?"es":"")}");
-                        for (int i = 1; i < Math.Min(missAnalyzer.MissCount + 1, numberEmojis.Length); i++)
+                                break;
+                            case "user-top":
+                                var top = api.GetUserScoresv2(api.GetUserIdv1(m.Groups[2].Value), "best", playIndex);
+                                if (await CheckApiResult(top, e.Message))
+                                {
+                                    loader = new ServerReplayLoader(top, replayDatabase, beatmapDatabase);
+                                }
+                                break;
+                            case "beatmap":
+                                var match = beatmapRegex.Match(m.Groups[2].Value);
+                                if (match.Success)
+                                {
+                                    var bmTop = api.GetBeatmapScoresv2(match.Groups[1].Value, playIndex);
+                                    if (await CheckApiResult(bmTop, e.Message))
+                                    {
+                                        loader = new ServerReplayLoader(bmTop, replayDatabase, beatmapDatabase);
+                                    }
+                                }
+                                else
+                                {
+                                    await e.Message.RespondAsync("Invalid beatmap link");
+                                }
+                                break;
+                        }
+                        if (loader != null)
                         {
-                            await message.CreateReactionAsync(numberEmojis[i]);
+                            missAnalyzer = new MissAnalyzer(loader);
+                            source = Source.USER;
                         }
                     }
-                    if (message != null)
+                    if (missAnalyzer != null)
                     {
-                        cachedMisses[message] = missAnalyzer;
+                        DiscordMessage message = null;
+                        if (missAnalyzer.MissCount == 0 && source != Source.OWO)
+                        {
+                            await e.Message.RespondAsync("No misses found.");
+                        }
+                        else if (missAnalyzer.MissCount == 1)
+                        {
+                            message = await SendMissMessage(missAnalyzer, e.Message, 0);
+                        }
+                        else
+                        {
+                            message = await e.Message.RespondAsync($"Found **{missAnalyzer.MissCount}** miss{(missAnalyzer.MissCount != 1 ? "es" : "")}");
+                            for (int i = 1; i < Math.Min(missAnalyzer.MissCount + 1, numberEmojis.Length); i++)
+                            {
+                                await message.CreateReactionAsync(numberEmojis[i]);
+                            }
+                        }
+                        if (message != null)
+                        {
+                            cachedMisses[message] = missAnalyzer;
+                        }
                     }
                 }
+                catch (Exception exc) { Console.WriteLine(exc.ToString()); }
             };
 
             discord.MessageReactionAdded += async e =>
             {
-                if (!e.User.IsCurrent && cachedMisses.Contains(e.Message))
+                try
                 {
-                    var analyzer = cachedMisses[e.Message];
-                    // switch (e.Emoji.GetDiscordName())
-                    // {
-                    //     case ":heavy_plus_sign:":
-                            
-                    //     break;
-                    //     case ":heavy_minus_sign:":
-
-                    //     break;
-                    //     case ":"
-
-                    // }
-                    int index = Array.FindIndex(numberEmojis, t => t == e.Emoji) - 1;
-                    if (index >= 0 && index < analyzer.MissCount)
+                    if (!e.User.IsCurrent && cachedMisses.Contains(e.Message))
                     {
-                        var message = await SendMissMessage(analyzer, e.Message, index);
-                        cachedMisses[message] = analyzer;
+                        var analyzer = cachedMisses[e.Message];
+                        // switch (e.Emoji.GetDiscordName())
+                        // {
+                        //     case ":heavy_plus_sign:":
+
+                        //     break;
+                        //     case ":heavy_minus_sign:":
+
+                        //     break;
+                        //     case ":"
+
+                        // }
+                        int index = Array.FindIndex(numberEmojis, t => t == e.Emoji) - 1;
+                        if (index >= 0 && index < analyzer.MissCount)
+                        {
+                            var message = await SendMissMessage(analyzer, e.Message, index);
+                            cachedMisses[message] = analyzer;
+                        }
                     }
                 }
+                catch (Exception exc) { Console.WriteLine(exc.ToString()); }
             };
-            
+
             Console.WriteLine("Init complete");
 
             await discord.ConnectAsync();
@@ -242,7 +251,7 @@ Bot link: https://discordapp.com/oauth2/authorize?client_id={discordId}&scope=bo
         }
         private static async Task<bool> CheckApiResult(JToken result, DiscordMessage respondTo)
         {
-            if(result == null)
+            if (result == null)
             {
                 await respondTo.RespondAsync("Can't find replay on osu! servers - please upload it yourself");
             }
