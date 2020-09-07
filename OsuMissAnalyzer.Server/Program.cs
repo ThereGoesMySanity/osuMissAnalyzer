@@ -141,17 +141,13 @@ Bot link: https://discordapp.com/oauth2/authorize?client_id={discordId}&scope=bo
                         int playIndex = 0;
                         IReplayLoader loader = null;
                         if (m.Groups.Count == 4 && m.Groups[3].Success) playIndex = int.Parse(m.Groups[3].Value) - 1;
-                        Console.WriteLine(m.Groups[1].Value);
                         switch (m.Groups[1].Value)
                         {
                             case "user-recent":
                                 var recent = api.GetUserScoresv2(api.GetUserIdv1(m.Groups[2].Value), "recent", playIndex);
                                 if (await CheckApiResult(recent, e.Message))
                                 {
-                                    Console.WriteLine(m.Groups[2].Value);
-                                    Console.WriteLine(recent.ToString());
                                     loader = new ServerReplayLoader(recent, replayDatabase, beatmapDatabase);
-                                    Console.WriteLine(">recent");
                                 }
                                 break;
                             case "user-top":
