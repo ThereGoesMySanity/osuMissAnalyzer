@@ -1,10 +1,8 @@
+using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Net;
 using BMAPI.v1;
 using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
-using OsuMissAnalyzer.Core;
 namespace OsuMissAnalyzer.Server.Database
 {
     public class ServerBeatmapDb
@@ -39,6 +37,7 @@ namespace OsuMissAnalyzer.Server.Database
         {
             if (!hashes.ContainsKey(mapHash))
             {
+                Console.WriteLine("beatmap not found, downloading...");
                 hashes[mapHash] = api.DownloadBeatmapFromHashv1(mapHash, Path.Combine(folder, "beatmaps"));
             }
             return new Beatmap(Path.Combine(folder, "beatmaps", $"{hashes[mapHash]}.osu"));
@@ -48,6 +47,7 @@ namespace OsuMissAnalyzer.Server.Database
             string file = Path.Combine(folder, "beatmaps", $"{beatmap_id}.osu");
             if (!File.Exists(file))
             {
+                Console.WriteLine("beatmap not found, downloading...");
                 api.DownloadBeatmapFromId(beatmap_id, Path.Combine(folder, "beatmaps"));
                 hashes[Beatmap.MD5FromFile(file)] = beatmap_id;
             }

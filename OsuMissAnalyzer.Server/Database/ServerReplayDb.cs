@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using BMAPI.v1;
@@ -36,6 +35,7 @@ namespace OsuMissAnalyzer.Server.Database
             string file = Path.Combine(serverFolder, "replays", $"{(string)replay["best_id"]}.osr");
             if (!File.Exists(file))
             {
+                Console.WriteLine("replay not found, downloading...");
                 Replay r = new Replay();
                 r.GameMode = (GameModes)((int)replay["mode_int"]);
                 r.MapHash = beatmap.BeatmapHash;
