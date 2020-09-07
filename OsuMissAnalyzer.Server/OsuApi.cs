@@ -118,7 +118,7 @@ namespace OsuMissAnalyzer.Server
         }
         public byte[] DownloadReplayFromId(string onlineId)
         {
-            while ((DateTime.Now - replayDls.Peek()).TotalSeconds > 60) replayDls.Dequeue();
+            while (replayDls.Count > 0 && (DateTime.Now - replayDls.Peek()).TotalSeconds > 60) replayDls.Dequeue();
             if (replayDls.Count >= 10)
             {
                 Thread.Sleep(TimeSpan.FromMinutes(1).Subtract(DateTime.Now - replayDls.Peek()));

@@ -118,9 +118,6 @@ Bot link: https://discordapp.com/oauth2/authorize?client_id={discordId}&scope=bo
                             source = Source.ATTACHMENT;
                         }
                     }
-                    /*
-                     * Can't do any of these until I figure out how to actually obtain a replay file
-                     */
                     //owo
                     if (e.Author.Id == 289066747443675143 && e.Message.Content.StartsWith("**Most Recent osu! Standard Play for"))
                     {
@@ -129,8 +126,11 @@ Bot link: https://discordapp.com/oauth2/authorize?client_id={discordId}&scope=bo
                         if (url.StartsWith(pfpPrefix))
                         {
                             var data = api.GetUserScoresv2(url.Substring(pfpPrefix.Length).Split('?')[0], "recent", 0);
-                            missAnalyzer = new MissAnalyzer(new ServerReplayLoader(data, replayDatabase, beatmapDatabase));
-                            source = Source.OWO;
+                            if (data != null)
+                            {
+                                missAnalyzer = new MissAnalyzer(new ServerReplayLoader(data, replayDatabase, beatmapDatabase));
+                                source = Source.OWO;
+                            }
                         }
                     }
                     //user-triggered
