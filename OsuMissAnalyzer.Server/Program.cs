@@ -109,6 +109,7 @@ Bot link: https://discordapp.com/oauth2/authorize?client_id={discordId}&scope=bo
                     {
                         if (attachment.FileName.EndsWith(".osr"))
                         {
+                            Console.WriteLine("processing attachment");
                             string dest = Path.Combine(serverDir, "replays", attachment.FileName);
                             using (WebClient w = new WebClient())
                             {
@@ -121,7 +122,7 @@ Bot link: https://discordapp.com/oauth2/authorize?client_id={discordId}&scope=bo
                     //owo
                     if (e.Author.Id == 289066747443675143 && e.Message.Content.StartsWith("**Most Recent osu! Standard Play for"))
                     {
-                        Console.WriteLine("owo");
+                        Console.WriteLine("processing owo message");
                         string url = e.Message.Embeds[0].Author.IconUrl.ToString();
                         if (url.StartsWith(pfpPrefix))
                         {
@@ -137,7 +138,7 @@ Bot link: https://discordapp.com/oauth2/authorize?client_id={discordId}&scope=bo
                     Match m = messageRegex.Match(e.Message.Content);
                     if (m.Success)
                     {
-                        Console.WriteLine(">miss");
+                        Console.WriteLine("processing user call");
                         int playIndex = 0;
                         IReplayLoader loader = null;
                         if (m.Groups.Count == 4 && m.Groups[3].Success) playIndex = int.Parse(m.Groups[3].Value) - 1;
