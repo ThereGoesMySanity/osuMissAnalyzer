@@ -26,10 +26,7 @@ namespace OsuMissAnalyzer.UI
             this.database = database;
             listBox1.Items.AddRange(database.Beatmaps.ToArray());
         }
-        public Beatmap GetResult()
-        {
-            return (Beatmap)listBox1.SelectedItem;
-        }
+        public Beatmap Result => listBox1.SelectedItem as Beatmap;
 
         private void SubmitResult()
         {

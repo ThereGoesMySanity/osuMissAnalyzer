@@ -78,7 +78,13 @@ namespace OsuMissAnalyzer.UI
                         }
                         break;
                     case ReplayFind.BEATMAP:
-                        
+                        var beatmapForm = new BeatmapSearchBox();
+                        beatmapForm.SetContent(Options.Database);
+                        if (beatmapForm.ShowDialog() == DialogResult.OK)
+                        {
+                            Beatmap b = beatmapForm.Result.Load(Options.SongsFolder);
+                            
+                        }
                         break;
                     case ReplayFind.MANUAL:
                         using (OpenFileDialog fd = new OpenFileDialog())
