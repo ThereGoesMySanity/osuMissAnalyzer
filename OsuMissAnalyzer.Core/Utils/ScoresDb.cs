@@ -13,6 +13,7 @@ namespace OsuMissAnalyzer.Core
 
         public ScoresDb(string file)
         {
+            scores = new Dictionary<string, Score[]>();
             fileReader = new BinaryReader(new FileStream(file, FileMode.Open, FileAccess.Read, FileShare.Read));
             Version = fileReader.ReadUInt32();
             uint count = fileReader.ReadUInt32();
