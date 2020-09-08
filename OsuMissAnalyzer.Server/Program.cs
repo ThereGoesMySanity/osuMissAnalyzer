@@ -36,6 +36,7 @@ namespace OsuMissAnalyzer.Server
                 int index = UnixSignal.WaitAny(signals);
                 interruptPipe.Writing.Write(BitConverter.GetBytes(index), 0, 4);
             });
+            signalThread.IsBackground = true;
             signalThread.Start();
             MainAsync(args).ConfigureAwait(false).GetAwaiter().GetResult();
         }
