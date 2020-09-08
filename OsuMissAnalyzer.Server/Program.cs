@@ -228,7 +228,7 @@ Bot link: https://discordapp.com/oauth2/authorize?client_id={discordId}&scope=bo
 
                         // }
                         int index = Array.FindIndex(numberEmojis, t => t == e.Emoji) - 1;
-                        if (index >= 0 && index < analyzer.MissCount)
+                        if (index >= 0 && index < Math.Min(analyzer.MissCount, numberEmojis.Length - 1))
                         {
                             var message = await SendMissMessage(analyzer, e.Message, index);
                             cachedMisses[message] = analyzer;
