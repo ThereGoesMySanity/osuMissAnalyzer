@@ -65,7 +65,7 @@ namespace OsuMissAnalyzer.Server
         {
             var j = JArray.Parse(webClient.DownloadString($"https://osu.ppy.sh/api/get_beatmaps?k={apiKeyv1}&h={mapHash}"));
             string beatmapId = (string)j[0]["beatmap_id"];
-            webClient.DownloadFile($"https://osu.ppy.sh/osu/{beatmapId}", Path.Combine(destinationFolder, $"{beatmapId}.osu"));
+            DownloadBeatmapFromId(beatmapId, destinationFolder);
             return beatmapId;
         }
         public void DownloadBeatmapFromId(string beatmapId, string destinationFolder)
