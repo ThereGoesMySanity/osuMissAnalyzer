@@ -58,7 +58,7 @@ namespace OsuMissAnalyzer.UI
         }
         private void Filter(List<Beatmap> list, string[] terms)
         {
-            list.RemoveAll(o => terms.Any(t => o.SearchableTerms.All(s => !s.Contains(t))));
+            list.RemoveAll(o => terms.Any(t => o.SearchableTerms.All(s => s.IndexOf(t, StringComparison.InvariantCultureIgnoreCase) == -1)));
         }
 
         private void listBox1_DoubleClick(object sender, EventArgs e)
