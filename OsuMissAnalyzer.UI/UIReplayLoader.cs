@@ -56,7 +56,7 @@ namespace OsuMissAnalyzer.UI
 
         public Replay LoadReplay()
         {
-            Replay r = null;
+            Replay replay = null;
             var messageBox = new ReplayOptionBox(Options);
             if (messageBox.ShowDialog() == DialogResult.OK)
             {
@@ -74,7 +74,7 @@ namespace OsuMissAnalyzer.UI
                         replayListForm.SetContent(replays.ToList());
                         if (replayListForm.ShowDialog() == DialogResult.OK && replayListForm.GetResult() != null)
                         {
-                            r = replayListForm.GetResult().replay;
+                            replay = replayListForm.GetResult().replay;
                         }
                         break;
                     case ReplayFind.BEATMAP:
@@ -83,7 +83,12 @@ namespace OsuMissAnalyzer.UI
                         if (beatmapForm.ShowDialog() == DialogResult.OK)
                         {
                             Beatmap b = beatmapForm.Result.Load(Options.SongsFolder);
-                            
+                            var beatmapListForm = new ListMessageBox();
+                            beatmapListForm.SetContent(Options.GetReplaysFromBeatmap(b.BeatmapHash).Select(r => new ReplayListItem {replay = r, beatmap = b}).ToList());
+                            if (beatmapListForm.ShowDialog() == DialogResult.OK && beatmapListForm.GetResult() != null)
+                            {
+                                replay = beatmapListForm.GetResult().replay;
+                            }
                         }
                         break;
                     case ReplayFind.MANUAL:
@@ -91,35 +96,35 @@ namespace OsuMissAnalyzer.UI
                         {
                             fd.Title = "Choose replay file";
                             fd.Filter = "osu! replay files (*.osr)|*.osr";
-                            DialogResult d = fd.ShowDialog();
-                            if (d == DialogResult.OK)
+                            DialogResult result = fd.ShowDialog();
+                            if (result == DialogResult.OK)
                             {
-                                r = new Replay(fd.FileName);
+                                replay = new Replay(fd.FileName);
                             }
                         }
                         break;
                 }
             }
-            if (r == null) Program.ShowErrorDialog("Couldn't find replay");
-            return r;
+            if (replay == null) Program.ShowErrorDialog("Couldn't find replay");
+            return replay;
         }
 
-        public Beatmap LoadBeatmap(Replay r, bool dialog = true)
+        public Beatmap LoadBeatmap(Replay replay, bool dialog = true)
         {
-            Beatmap b = null;
+            Beatmap beatmap = null;
             if (Options.Database != null)
             {
-                b = Options.GetBeatmapFromHash(r.MapHash);
+                beatmap = Options.GetBeatmapFromHash(replay.MapHash);
             }
-            if (b == null)
+            if (beatmap == null)
             {
-                b = GetBeatmapFromHash(Directory.GetCurrentDirectory(), false);
+                beatmap = GetBeatmapFromHash(Directory.GetCurrentDirectory(), false);
             }
-            if (b == null)
+            if (beatmap == null)
             {
-                b = GetBeatmapFromHash(Options.SongsFolder, true);
+                beatmap = GetBeatmapFromHash(Options.SongsFolder, true);
             }
-            if (b == null && dialog)
+            if (beatmap == null && dialog)
             {
                 Program.ShowErrorDialog("Couldn't find beatmap automatically");
                 using (OpenFileDialog fd = new OpenFileDialog())
@@ -129,14 +134,14 @@ namespace OsuMissAnalyzer.UI
                     DialogResult d = fd.ShowDialog();
                     if (d == DialogResult.OK)
                     {
-                        b = new Beatmap(fd.FileName);
+                        beatmap = new Beatmap(fd.FileName);
                     }
                 }
             }
-            return b;
+            return beatmap;
         }
 
-        private Beatmap GetBeatmapFromHash(string dir, bool songsDir)
+        private Beatmap GetBeatmapFromHash(string dir, bool isSongsDir)
         {
             Debug.Print("\nChecking API Key...");
             JArray j = JArray.Parse("[]");
@@ -157,7 +162,7 @@ namespace OsuMissAnalyzer.UI
                 Thread t = new Thread(() =>
                                MessageBox.Show("No API key found, searching manually. It could take a while..."));
             }
-            if (songsDir)
+            if (isSongsDir)
             {
                 string[] folders;
 

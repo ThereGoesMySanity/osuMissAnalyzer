@@ -1,9 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using BMAPI.v1;
 using OsuDbAPI;
 using OsuMissAnalyzer.Core;
+using ReplayAPI;
 
 namespace OsuMissAnalyzer.UI
 {
@@ -38,8 +40,11 @@ namespace OsuMissAnalyzer.UI
 		public BMAPI.v1.Beatmap GetBeatmapFromId(int mapId)
         {
 			return Database.GetBeatmapFromId(mapId).Load(SongsFolder);
-
         }
+		public List<Replay> GetReplaysFromBeatmap(string beatmapHash)
+		{
+			return ScoresDb.scores[beatmapHash].Select(s => new Replay(Path.Combine(Settings["osudir"], "Data", "r", s.filename))).ToList();
+		}
 		private void AddOption(string key, string value)
 		{
 			if (value.Length > 0) Settings.Add(key, value);
