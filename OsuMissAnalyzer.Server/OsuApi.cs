@@ -94,9 +94,9 @@ namespace OsuMissAnalyzer.Server
         {
             var req = $"beatmaps/{beatmapId}/scores";
             var res = GetApiv2(req);
-            if (res is JArray arr)
+            if (res["scores"] != null)
             {
-                var score = arr[index];
+                var score = res["scores"][index];
                 if ((bool)score["replay"] && !(bool)score["perfect"])
                     return score;
             }

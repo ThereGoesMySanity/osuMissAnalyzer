@@ -83,7 +83,7 @@ Bot link: https://discordapp.com/oauth2/authorize?client_id={discordId}&scope=bo
             var replayDatabase = new ServerReplayDb(api, serverDir);
             string pfpPrefix = "https://a.ppy.sh/";
             Regex messageRegex = new Regex("^>miss (user-recent|user-top|beatmap) (.+?)(?: (\\d+))?$");
-            Regex beatmapRegex = new Regex("^(https?://(?:osu|old).ppy.sh/(?:beatmapsets/\\d+#osu|b)/)?(\\d+)");
+            Regex beatmapRegex = new Regex("^(?:https?://(?:osu|old).ppy.sh/(?:beatmapsets/\\d+#osu|b)/)?(\\d+)");
             Source source = Source.USER;
 
             var cachedMisses = new MemoryCache<DiscordMessage, MissAnalyzer>(128);
@@ -135,34 +135,34 @@ Bot link: https://discordapp.com/oauth2/authorize?client_id={discordId}&scope=bo
                         }
                     }
                     //user-triggered
-                    Match m = messageRegex.Match(e.Message.Content);
-                    if (m.Success)
+                    Match messageMatch = messageRegex.Match(e.Message.Content);
+                    if (messageMatch.Success)
                     {
                         Console.WriteLine("processing user call");
                         int playIndex = 0;
                         IReplayLoader loader = null;
-                        if (m.Groups.Count == 4 && m.Groups[3].Success) playIndex = int.Parse(m.Groups[3].Value) - 1;
-                        switch (m.Groups[1].Value)
+                        if (messageMatch.Groups.Count == 4 && messageMatch.Groups[3].Success) playIndex = int.Parse(messageMatch.Groups[3].Value) - 1;
+                        switch (messageMatch.Groups[1].Value)
                         {
                             case "user-recent":
-                                var recent = api.GetUserScoresv2(api.GetUserIdv1(m.Groups[2].Value), "recent", playIndex);
+                                var recent = api.GetUserScoresv2(api.GetUserIdv1(messageMatch.Groups[2].Value), "recent", playIndex);
                                 if (await CheckApiResult(recent, e.Message))
                                 {
                                     loader = new ServerReplayLoader(recent, replayDatabase, beatmapDatabase);
                                 }
                                 break;
                             case "user-top":
-                                var top = api.GetUserScoresv2(api.GetUserIdv1(m.Groups[2].Value), "best", playIndex);
+                                var top = api.GetUserScoresv2(api.GetUserIdv1(messageMatch.Groups[2].Value), "best", playIndex);
                                 if (await CheckApiResult(top, e.Message))
                                 {
                                     loader = new ServerReplayLoader(top, replayDatabase, beatmapDatabase);
                                 }
                                 break;
                             case "beatmap":
-                                var match = beatmapRegex.Match(m.Groups[2].Value);
-                                if (match.Success)
+                                var bmMatch = beatmapRegex.Match(messageMatch.Groups[2].Value);
+                                if (bmMatch.Success)
                                 {
-                                    var bmTop = api.GetBeatmapScoresv2(match.Groups[1].Value, playIndex);
+                                    var bmTop = api.GetBeatmapScoresv2(bmMatch.Groups[1].Value, playIndex);
                                     if (await CheckApiResult(bmTop, e.Message))
                                     {
                                         loader = new ServerReplayLoader(bmTop, replayDatabase, beatmapDatabase);
