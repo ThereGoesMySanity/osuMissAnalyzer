@@ -11,6 +11,7 @@ namespace OsuMissAnalyzer.UI
 	{
 		public Dictionary<string, string> Settings { get; private set; }
 		public OsuDbFile Database;
+		public ScoresDb ScoresDb;
 		public bool HasDatabase { get; private set; }
         public string SongsFolder => Settings.ContainsKey("songsdir") ? Settings["songsdir"] : Path.Combine(Settings["osudir"], "Songs");
 		public Options(string file, Dictionary<string, string> optList)
@@ -45,6 +46,7 @@ namespace OsuMissAnalyzer.UI
 			if (key == "osudir" && File.Exists(Path.Combine(value, "osu!.db")))
 			{
 				Database = new OsuDbFile(Path.Combine(value, "osu!.db"), byHash: true);
+				ScoresDb = new ScoresDb(Path.Combine(value, "scores.db"));
 				HasDatabase = true;
 			}
 		}
