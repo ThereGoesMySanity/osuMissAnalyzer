@@ -32,6 +32,10 @@ namespace OsuMissAnalyzer.Server
         CachedMessages,
         BeatmapsDbSize,
     }
+    public enum Format
+    {
+        CSV, JSON
+    }
     public class Logger
     {
         private const string ENDPOINT = "/run/missanalyzer-server";
@@ -98,15 +102,14 @@ namespace OsuMissAnalyzer.Server
                     string[] opts = content.Substring(4).Split(' ');
                     if (opts.Length == 1 && opts[0].ToLower() == "all")
                     {
-                        var dict = new JObject(Enum.GetNames(typeof(Logging)).Zip(counts, (a, b) => new JProperty(a, b)));
-                        byte[] byteData = Encoding.ASCII.GetBytes(dict.ToString(Formatting.None));
+                        byte[] byteData = Encoding.ASCII.GetBytes(GetStats(Format.JSON));
                         handler.BeginSend(byteData, 0, byteData.Length, 0, new AsyncCallback(SendCallback), handler);
                     }
                     else
                     {
                         opts.Select(TryParse).Where(e => e.HasValue).Select(e => e.Value);
                     }
-                    file.WriteLine($"{DateTime.UtcNow:O},{string.Join(",", counts)}");
+                    file.WriteLine(GetStats(Format.CSV));
                 }
 
                 handler.BeginReceive(state.buffer, 0, StateObject.BufferSize, 0, new AsyncCallback(ReadCallback), state);
@@ -117,6 +120,17 @@ namespace OsuMissAnalyzer.Server
             Socket handler = (Socket)result.AsyncState;
 
             handler.EndSend(result);
+        }
+        public string GetStats(Format format)
+        {
+            switch(format)
+            {
+                case Format.JSON:
+                    return new JObject(Enum.GetNames(typeof(Logging)).Zip(counts, (a, b) => new JProperty(a, b))).ToString(Formatting.None);
+                case Format.CSV:
+                    return $"{DateTime.UtcNow:O},{string.Join(",", counts)}";
+            }
+            return null;
         }
         public static void Log(Logging type, int count = 1)
         {

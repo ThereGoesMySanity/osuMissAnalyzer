@@ -47,8 +47,9 @@ namespace OsuMissAnalyzer.Server
         }
         private async Task CheckToken()
         {
-            Logger.LogAbsolute(Logging.TokenExpiry, (int)tokenExpiry.Elapsed.TotalMinutes);
-            if (tokenExpiry.Elapsed.TotalSeconds >= tokenTime)
+            var timeRemaining = TimeSpan.FromSeconds(tokenTime).Subtract(tokenExpiry.Elapsed);
+            Logger.LogAbsolute(Logging.TokenExpiry, (int)timeRemaining.TotalMinutes);
+            if (timeRemaining > TimeSpan.Zero)
                 await RefreshToken();
         }
         public async Task<JToken> ApiRequestv1(string endpoint, string query)
