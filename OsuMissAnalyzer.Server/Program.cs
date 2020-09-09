@@ -77,7 +77,9 @@ Bot link: https://discordapp.com/oauth2/authorize?client_id={discordId}&scope=bo
                 return;
             }
 
+            Logger.Instance = new Logger(Path.Combine(serverDir, "log.csv"));
             OsuApi api = new OsuApi(osuId, osuSecret, osuApiKey);
+            var apiToken = api.RefreshToken();
             Directory.CreateDirectory(Path.Combine(serverDir, "beatmaps"));
             Directory.CreateDirectory(Path.Combine(serverDir, "replays"));
             var beatmapDatabase = new ServerBeatmapDb(api, serverDir);
@@ -105,18 +107,23 @@ Bot link: https://discordapp.com/oauth2/authorize?client_id={discordId}&scope=bo
             {
                 try
                 {
+                    Logger.LogAbsolute(Logging.ServersJoined, discord.Guilds.Count);
+                    Logger.Log(Logging.EventsHandled);
                     MissAnalyzer missAnalyzer = null;
+                    //attachment
                     foreach (var attachment in e.Message.Attachments)
                     {
                         if (attachment.FileName.EndsWith(".osr"))
                         {
                             Console.WriteLine("processing attachment");
+                            Logger.Log(Logging.AttachmentCalls);
                             string dest = Path.Combine(serverDir, "replays", attachment.FileName);
                             using (WebClient w = new WebClient())
                             {
                                 w.DownloadFile(attachment.Url, dest);
                             }
-                            missAnalyzer = new MissAnalyzer(new ServerReplayLoader(new Replay(dest), beatmapDatabase));
+                            var replay = new Replay(dest);
+                            missAnalyzer = new MissAnalyzer(replay, await beatmapDatabase.GetBeatmap(replay.MapHash));
                             source = Source.ATTACHMENT;
                         }
                     }
@@ -124,13 +131,15 @@ Bot link: https://discordapp.com/oauth2/authorize?client_id={discordId}&scope=bo
                     if (e.Author.Id == 289066747443675143 && e.Message.Content.StartsWith("**Most Recent osu! Standard Play for"))
                     {
                         Console.WriteLine("processing owo message");
+                        Logger.Log(Logging.OwoCalls);
                         string url = e.Message.Embeds[0].Author.IconUrl.ToString();
                         if (url.StartsWith(pfpPrefix))
                         {
-                            var data = api.GetUserScoresv2(url.Substring(pfpPrefix.Length).Split('?')[0], "recent", 0);
+                            var data = await api.GetUserScoresv2(url.Substring(pfpPrefix.Length).Split('?')[0], "recent", 0);
                             if (data != null)
                             {
-                                missAnalyzer = new MissAnalyzer(new ServerReplayLoader(data, replayDatabase, beatmapDatabase));
+                                var beatmap = await beatmapDatabase.GetBeatmapFromId((string)data["beatmap"]["id"]);
+                                missAnalyzer = new MissAnalyzer(await replayDatabase.GetReplayFromOnlineId(data, beatmap), beatmap);
                                 source = Source.OWO;
                             }
                         }
@@ -140,34 +149,23 @@ Bot link: https://discordapp.com/oauth2/authorize?client_id={discordId}&scope=bo
                     if (messageMatch.Success)
                     {
                         Console.WriteLine("processing user call");
+                        Logger.Log(Logging.UserCalls);
                         int playIndex = 0;
-                        IReplayLoader loader = null;
+                        Task<JToken> scoreTask = null;
                         if (messageMatch.Groups.Count == 4 && messageMatch.Groups[3].Success) playIndex = int.Parse(messageMatch.Groups[3].Value) - 1;
                         switch (messageMatch.Groups[1].Value)
                         {
                             case "user-recent":
-                                var recent = api.GetUserScoresv2(api.GetUserIdv1(messageMatch.Groups[2].Value), "recent", playIndex);
-                                if (await CheckApiResult(recent, e.Message))
-                                {
-                                    loader = new ServerReplayLoader(recent, replayDatabase, beatmapDatabase);
-                                }
+                                scoreTask = api.GetUserScoresv2(await api.GetUserIdv1(messageMatch.Groups[2].Value), "recent", playIndex);
                                 break;
                             case "user-top":
-                                var top = api.GetUserScoresv2(api.GetUserIdv1(messageMatch.Groups[2].Value), "best", playIndex);
-                                if (await CheckApiResult(top, e.Message))
-                                {
-                                    loader = new ServerReplayLoader(top, replayDatabase, beatmapDatabase);
-                                }
+                                scoreTask = api.GetUserScoresv2(await api.GetUserIdv1(messageMatch.Groups[2].Value), "best", playIndex);
                                 break;
                             case "beatmap":
                                 var bmMatch = beatmapRegex.Match(messageMatch.Groups[2].Value);
                                 if (bmMatch.Success)
                                 {
-                                    var bmTop = api.GetBeatmapScoresv2(bmMatch.Groups[1].Value, playIndex);
-                                    if (await CheckApiResult(bmTop, e.Message))
-                                    {
-                                        loader = new ServerReplayLoader(bmTop, replayDatabase, beatmapDatabase);
-                                    }
+                                    scoreTask = api.GetBeatmapScoresv2(bmMatch.Groups[1].Value, playIndex);
                                 }
                                 else
                                 {
@@ -175,10 +173,15 @@ Bot link: https://discordapp.com/oauth2/authorize?client_id={discordId}&scope=bo
                                 }
                                 break;
                         }
-                        if (loader != null)
+                        if (scoreTask != null)
                         {
-                            missAnalyzer = new MissAnalyzer(loader);
-                            source = Source.USER;
+                            var score = await scoreTask; 
+                            if (await CheckApiResult(score, e.Message))
+                            {
+                                var beatmap = await beatmapDatabase.GetBeatmapFromId((string)score["beatmap"]["id"]);
+                                missAnalyzer = new MissAnalyzer(await replayDatabase.GetReplayFromOnlineId(score, beatmap), beatmap);
+                                source = Source.USER;
+                            }
                         }
                     }
                     if (missAnalyzer != null)
@@ -202,6 +205,7 @@ Bot link: https://discordapp.com/oauth2/authorize?client_id={discordId}&scope=bo
                         }
                         if (message != null)
                         {
+                            Logger.LogAbsolute(Logging.CachedMessages, cachedMisses.Count);
                             cachedMisses[message] = missAnalyzer;
                         }
                     }
@@ -213,6 +217,7 @@ Bot link: https://discordapp.com/oauth2/authorize?client_id={discordId}&scope=bo
             {
                 try
                 {
+                    Logger.Log(Logging.EventsHandled);
                     if (!e.User.IsCurrent && cachedMisses.Contains(e.Message))
                     {
                         var analyzer = cachedMisses[e.Message];
@@ -230,7 +235,9 @@ Bot link: https://discordapp.com/oauth2/authorize?client_id={discordId}&scope=bo
                         int index = Array.FindIndex(numberEmojis, t => t == e.Emoji) - 1;
                         if (index >= 0 && index < Math.Min(analyzer.MissCount, numberEmojis.Length - 1))
                         {
+                            Logger.Log(Logging.ReactionCalls);
                             var message = await SendMissMessage(analyzer, e.Message, index);
+                            Logger.LogAbsolute(Logging.CachedMessages, cachedMisses.Count);
                             cachedMisses[message] = analyzer;
                         }
                     }
@@ -238,9 +245,12 @@ Bot link: https://discordapp.com/oauth2/authorize?client_id={discordId}&scope=bo
                 catch (Exception exc) { Console.WriteLine(exc.ToString()); }
             };
 
+            await apiToken;
             Console.WriteLine("Init complete");
 
             await discord.ConnectAsync();
+            Logger.LogAbsolute(Logging.ServersJoined, discord.Guilds.Count);
+
             byte[] buffer = new byte[4];
             await interruptPipe.Reading.ReadAsync(buffer, 0, 4);
             await discord.DisconnectAsync();

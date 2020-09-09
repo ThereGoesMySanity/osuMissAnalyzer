@@ -32,8 +32,8 @@
   <ItemGroup>
     <!-- items -->
     <Compile Include="Program.cs" />
-    <Compile Include="ServerReplayLoader.cs" />
     <Compile Include="OsuApi.cs" />
+    <Compile Include="UnixLogger.cs" />
     <Compile Include="Database\*" />
   </ItemGroup>
   <ItemGroup>

@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Threading.Tasks;
 using BMAPI.v1;
 using Newtonsoft.Json;
 namespace OsuMissAnalyzer.Server.Database
@@ -18,6 +19,7 @@ namespace OsuMissAnalyzer.Server.Database
             if (File.Exists(db))
             {
                 hashes = JsonConvert.DeserializeObject<Dictionary<string, string>>(File.ReadAllText(db));
+                Logger.LogAbsolute(Logging.BeatmapsDbSize, hashes.Count);
             }
             else
             {
@@ -33,23 +35,35 @@ namespace OsuMissAnalyzer.Server.Database
                 serializer.Serialize(writer, hashes);
             }
         }
-        public Beatmap GetBeatmap(string mapHash)
+        public async Task<Beatmap> GetBeatmap(string mapHash)
         {
             if (!hashes.ContainsKey(mapHash))
             {
                 Console.WriteLine("beatmap not found, downloading...");
-                hashes[mapHash] = api.DownloadBeatmapFromHashv1(mapHash, Path.Combine(folder, "beatmaps"));
+                hashes[mapHash] = await api.DownloadBeatmapFromHashv1(mapHash, Path.Combine(folder, "beatmaps"));
+                Logger.LogAbsolute(Logging.BeatmapsDbSize, hashes.Count);
+                Logger.Log(Logging.BeatmapsCacheMiss);
+            }
+            else
+            {
+                Logger.Log(Logging.BeatmapsCacheHit);
             }
             return new Beatmap(Path.Combine(folder, "beatmaps", $"{hashes[mapHash]}.osu"));
         }
-        public Beatmap GetBeatmapFromId(string beatmap_id)
+        public async Task<Beatmap> GetBeatmapFromId(string beatmap_id)
         {
             string file = Path.Combine(folder, "beatmaps", $"{beatmap_id}.osu");
             if (!File.Exists(file))
             {
                 Console.WriteLine("beatmap not found, downloading...");
-                api.DownloadBeatmapFromId(beatmap_id, Path.Combine(folder, "beatmaps"));
+                await api.DownloadBeatmapFromId(beatmap_id, Path.Combine(folder, "beatmaps"));
                 hashes[Beatmap.MD5FromFile(file)] = beatmap_id;
+                Logger.LogAbsolute(Logging.BeatmapsDbSize, hashes.Count);
+                Logger.Log(Logging.BeatmapsCacheMiss);
+            }
+            else
+            {
+                Logger.Log(Logging.BeatmapsCacheHit);
             }
             return new Beatmap(file);
         }

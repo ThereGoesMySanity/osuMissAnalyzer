@@ -5,6 +5,7 @@ using System.IO;
 using System.Net;
 using System.Text;
 using System.Threading;
+using System.Threading.Tasks;
 using Newtonsoft.Json.Linq;
 
 namespace OsuMissAnalyzer.Server
@@ -27,9 +28,8 @@ namespace OsuMissAnalyzer.Server
             webClient = new WebClient();
             tokenExpiry = new Stopwatch();
             replayDls = new Queue<DateTime>();
-            RefreshToken();
         }
-        private void RefreshToken()
+        public async Task RefreshToken()
         {
             WebRequest w = WebRequest.Create("https://osu.ppy.sh/oauth/token");
             string postData = $"client_id={clientId}&client_secret={clientSecret}&grant_type=client_credentials&scope=public";
@@ -41,42 +41,47 @@ namespace OsuMissAnalyzer.Server
             data.Write(bytes, 0, bytes.Length);
             data.Close();
             tokenExpiry.Restart();
-            WebResponse res = w.GetResponse();
+            WebResponse res = await w.GetResponseAsync();
             JToken j = JToken.Parse(new StreamReader(res.GetResponseStream()).ReadToEnd());
             tokenTime = (int)j["expires_in"];
             token = (string)j["access_token"];
         }
-        private void CheckToken()
+        private async Task CheckToken()
         {
+            Logger.LogAbsolute(Logging.TokenExpiry, (int)tokenExpiry.Elapsed.TotalMinutes);
             if (tokenExpiry.Elapsed.TotalSeconds >= tokenTime)
-                RefreshToken();
+                await RefreshToken();
         }
-        public JToken ApiRequestv1(string endpoint, string query)
+        public async Task<JToken> ApiRequestv1(string endpoint, string query)
         {
             WebRequest w = WebRequest.Create($"https://osu.ppy.sh/api/{endpoint}?k={apiKeyv1}&{query}");
-            WebResponse res = w.GetResponse();
+            WebResponse res = await w.GetResponseAsync();
             return JToken.Parse(new StreamReader(res.GetResponseStream()).ReadToEnd());
         }
-        public string GetUserIdv1(string username)
+        public async Task<string> GetUserIdv1(string username)
         {
-            return (string)ApiRequestv1("get_user", $"u={username}&type=string")[0]["user_id"];
+            Logger.Log(Logging.ApiGetUserv1);
+            return (string)(await ApiRequestv1("get_user", $"u={username}&type=string"))[0]["user_id"];
         }
-        public string DownloadBeatmapFromHashv1(string mapHash, string destinationFolder)
+        public async Task<string> DownloadBeatmapFromHashv1(string mapHash, string destinationFolder)
         {
+            Logger.Log(Logging.ApiGetBeatmapsv1);
             var j = JArray.Parse(webClient.DownloadString($"https://osu.ppy.sh/api/get_beatmaps?k={apiKeyv1}&h={mapHash}"));
             string beatmapId = (string)j[0]["beatmap_id"];
-            DownloadBeatmapFromId(beatmapId, destinationFolder);
+            await DownloadBeatmapFromId(beatmapId, destinationFolder);
             return beatmapId;
         }
-        public void DownloadBeatmapFromId(string beatmapId, string destinationFolder)
+        public async Task DownloadBeatmapFromId(string beatmapId, string destinationFolder)
         {
+            Logger.Log(Logging.ApiDownloadBeatmap);
             string file = Path.Combine(destinationFolder, $"{beatmapId}.osu");
-            webClient.DownloadFile($"https://osu.ppy.sh/osu/{beatmapId}", file);
+            await webClient.DownloadFileTaskAsync($"https://osu.ppy.sh/osu/{beatmapId}", file);
         }
-        public JToken GetUserScoresv2(string userId, string type, int index)
+        public async Task<JToken> GetUserScoresv2(string userId, string type, int index)
         {
+            Logger.Log(Logging.ApiGetUserScoresv2);
             var req = $"users/{userId}/scores/{type}?mode=osu&include_fails=1&limit={index + 1}";
-            var res = GetApiv2(req);
+            var res = await GetApiv2(req);
             if (res is JArray arr)
             {
                 var score = arr[index];
@@ -90,10 +95,11 @@ namespace OsuMissAnalyzer.Server
             }
             return null;
         }
-        public JToken GetBeatmapScoresv2(string beatmapId, int index)
+        public async Task<JToken> GetBeatmapScoresv2(string beatmapId, int index)
         {
+            Logger.Log(Logging.ApiGetBeatmapScoresv2);
             var req = $"beatmaps/{beatmapId}/scores";
-            var res = GetApiv2(req);
+            var res =  await GetApiv2(req);
             if (res["scores"] != null)
             {
                 var score = res["scores"][index];
@@ -107,23 +113,24 @@ namespace OsuMissAnalyzer.Server
             }
             return null;
         }
-        public JToken GetApiv2(string endpoint)
+        public async Task<JToken> GetApiv2(string endpoint)
         {
-            CheckToken();
+            await CheckToken();
             WebRequest w = WebRequest.Create($"https://osu.ppy.sh/api/v2/{endpoint}");
             w.Headers.Add("Authorization", $"Bearer {token}");
-            WebResponse res = w.GetResponse();
+            WebResponse res = await w.GetResponseAsync();
             return JToken.Parse(new StreamReader(res.GetResponseStream()).ReadToEnd());
         }
-        public byte[] DownloadReplayFromId(string onlineId)
+        public async Task<byte[]> DownloadReplayFromId(string onlineId)
         {
+            Logger.Log(Logging.ApiGetReplayv1);
             while (replayDls.Count > 0 && (DateTime.Now - replayDls.Peek()).TotalSeconds > 60) replayDls.Dequeue();
             if (replayDls.Count >= 10)
             {
-                Thread.Sleep(TimeSpan.FromMinutes(1).Subtract(DateTime.Now - replayDls.Peek()));
+                await Task.Delay(TimeSpan.FromMinutes(1).Subtract(DateTime.Now - replayDls.Peek()));
             }
             replayDls.Enqueue(DateTime.Now);
-            var res = JToken.Parse(webClient.DownloadString($"https://osu.ppy.sh/api/get_replay?k={apiKeyv1}&s={onlineId}"));
+            var res = JToken.Parse(await webClient.DownloadStringTaskAsync($"https://osu.ppy.sh/api/get_replay?k={apiKeyv1}&s={onlineId}"));
             return Convert.FromBase64String((string)res["content"]);
         }
 

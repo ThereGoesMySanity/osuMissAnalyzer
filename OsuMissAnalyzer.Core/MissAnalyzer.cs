@@ -18,10 +18,9 @@ namespace OsuMissAnalyzer.Core
         private const int arrowLength = 4;
         private const int sliderGranularity = 10;
         public bool HitCircleOutlines { get; private set; } = false;
-        private readonly IReplayLoader ReplayLoader;
-        private ReplayAnalyzer ReplayAnalyzer => ReplayLoader.ReplayAnalyzer;
-        private Replay Replay => ReplayLoader.Replay;
-        private Beatmap Beatmap => ReplayLoader.Beatmap;
+        private ReplayAnalyzer ReplayAnalyzer { get; }
+        private Replay Replay { get; }
+        private Beatmap Beatmap { get; }
         public int MissCount => ReplayAnalyzer.misses.Count;
         public int CurrentObject { get; set; } = 0;
         private bool drawAllHitObjects;
@@ -30,7 +29,15 @@ namespace OsuMissAnalyzer.Core
 
         public MissAnalyzer(IReplayLoader replayLoader)
         {
-            ReplayLoader = replayLoader;
+            Replay = replayLoader.Replay;
+            Beatmap = replayLoader.Beatmap;
+            ReplayAnalyzer = replayLoader.ReplayAnalyzer;
+        }
+        public MissAnalyzer(Replay replay, Beatmap beatmap)
+        {
+            Replay = replay;
+            Beatmap = beatmap;
+            ReplayAnalyzer = new ReplayAnalyzer(beatmap, replay);
         }
 
         public void ToggleOutlines()
