@@ -49,7 +49,7 @@ namespace OsuMissAnalyzer.Server
         }
         private async Task CheckToken()
         {
-            if (TokenTimeRemaining < TimeSpan.Zero)
+            if (TokenTimeRemaining <= TimeSpan.Zero)
                 await RefreshToken();
         }
         public async Task<JToken> ApiRequestv1(string endpoint, string query)
