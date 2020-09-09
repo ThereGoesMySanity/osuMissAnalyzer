@@ -78,8 +78,8 @@ namespace OsuMissAnalyzer.Server
                 // There  might be more data, so store the data received so far.  
                 content = Encoding.ASCII.GetString(
                     state.buffer, 0, bytesRead);
-                
-                if(content.StartsWith("GET "))
+
+                if (content.StartsWith("GET "))
                 {
                     string[] opts = content.Substring(4).Split(' ');
                     if (opts.Length == 1 && opts[0].ToLower() == "all")

@@ -175,7 +175,7 @@ Bot link: https://discordapp.com/oauth2/authorize?client_id={discordId}&scope=bo
                         }
                         if (scoreTask != null)
                         {
-                            var score = await scoreTask; 
+                            var score = await scoreTask;
                             if (await CheckApiResult(score, e.Message))
                             {
                                 var beatmap = await beatmapDatabase.GetBeatmapFromId((string)score["beatmap"]["id"]);

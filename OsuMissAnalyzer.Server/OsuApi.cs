@@ -4,7 +4,6 @@ using System.Diagnostics;
 using System.IO;
 using System.Net;
 using System.Text;
-using System.Threading;
 using System.Threading.Tasks;
 using Newtonsoft.Json.Linq;
 
@@ -99,7 +98,7 @@ namespace OsuMissAnalyzer.Server
         {
             Logger.Log(Logging.ApiGetBeatmapScoresv2);
             var req = $"beatmaps/{beatmapId}/scores";
-            var res =  await GetApiv2(req);
+            var res = await GetApiv2(req);
             if (res["scores"] != null)
             {
                 var score = res["scores"][index];
