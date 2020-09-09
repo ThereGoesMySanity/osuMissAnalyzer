@@ -4,6 +4,7 @@ using System.Linq;
 using System.Net.Sockets;
 using System.Text;
 using Mono.Unix;
+using Mono.Unix.Native;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
@@ -40,20 +41,27 @@ namespace OsuMissAnalyzer.Server
 
 
         private Socket socket;
+        private UnixEndPoint endpoint;
+
         public Logger(string logFile)
         {
             file = new StreamWriter(logFile, true);
             counts = new int[Enum.GetValues(typeof(Logging)).Length];
+            if (File.Exists(ENDPOINT)) File.Delete(ENDPOINT);
             socket = new Socket(AddressFamily.Unix, SocketType.Stream, ProtocolType.IP);
-            var endpoint = new UnixEndPoint(ENDPOINT);
+            endpoint = new UnixEndPoint(ENDPOINT);
             socket.Bind(endpoint);
             socket.Listen(1);
             socket.BeginAccept(new AsyncCallback(AcceptCallback), null);
+            var fileInfo = new Mono.Unix.UnixFileInfo(ENDPOINT);
+            Syscall.chown(ENDPOINT, Syscall.getuid(), Syscall.getgrnam("netdata").gr_gid);
+            Syscall.chmod(ENDPOINT, FilePermissions.S_IWGRP | FilePermissions.S_IWUSR | FilePermissions.S_IRGRP | FilePermissions.S_IRUSR);
         }
         public void Close()
         {
             file.Close();
             socket.Close();
+            File.Delete(ENDPOINT);
         }
         public void AcceptCallback(IAsyncResult result)
         {
@@ -65,6 +73,7 @@ namespace OsuMissAnalyzer.Server
             handler.BeginReceive(state.buffer, 0, StateObject.BufferSize, 0,
                 new AsyncCallback(ReadCallback), state);
 
+            socket.BeginAccept(new AsyncCallback(AcceptCallback), null);
         }
         public void ReadCallback(IAsyncResult result)
         {
@@ -83,7 +92,6 @@ namespace OsuMissAnalyzer.Server
                 // There  might be more data, so store the data received so far.  
                 content = Encoding.ASCII.GetString(
                     state.buffer, 0, bytesRead);
-                Console.WriteLine("Got {content}");
 
                 if (content.StartsWith("GET "))
                 {
@@ -102,10 +110,6 @@ namespace OsuMissAnalyzer.Server
                 }
 
                 handler.BeginReceive(state.buffer, 0, StateObject.BufferSize, 0, new AsyncCallback(ReadCallback), state);
-            }
-            else
-            {
-                socket.BeginAccept(new AsyncCallback(AcceptCallback), null);
             }
         }
         public void SendCallback(IAsyncResult result)
