@@ -22,6 +22,7 @@ namespace OsuMissAnalyzer.Server.Database
         {
             ["NF"] = (int)Mods.NoFail,
             ["EZ"] = (int)Mods.Easy,
+            ["TD"] = (int)Mods.TouchDevice,
             ["HD"] = (int)Mods.Hidden,
             ["HR"] = (int)Mods.HardRock,
             ["SD"] = (int)Mods.SuddenDeath,
