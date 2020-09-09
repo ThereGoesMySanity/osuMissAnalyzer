@@ -19,6 +19,7 @@ namespace OsuMissAnalyzer.Server
         private int tokenTime;
         private string token;
         private WebClient webClient;
+        private TimeSpan TokenTimeRemaining => TimeSpan.FromSeconds(tokenTime).Subtract(tokenExpiry.Elapsed);
         public OsuApi(string clientId, string clientSecret, string apiKeyv1)
         {
             this.clientId = clientId;
@@ -44,12 +45,11 @@ namespace OsuMissAnalyzer.Server
             JToken j = JToken.Parse(new StreamReader(res.GetResponseStream()).ReadToEnd());
             tokenTime = (int)j["expires_in"];
             token = (string)j["access_token"];
-            Logger.Instance.UpdateLogs += () => Logger.LogAbsolute(Logging.TokenExpiry, (int)Math.Max(TimeSpan.FromSeconds(tokenTime).Subtract(tokenExpiry.Elapsed).TotalMinutes, 0));
+            Logger.Instance.UpdateLogs += () => Logger.LogAbsolute(Logging.TokenExpiry, (int)Math.Max(TokenTimeRemaining.TotalMinutes, 0));
         }
         private async Task CheckToken()
         {
-            var timeRemaining = TimeSpan.FromSeconds(tokenTime).Subtract(tokenExpiry.Elapsed);
-            if (timeRemaining > TimeSpan.Zero)
+            if (TokenTimeRemaining < TimeSpan.Zero)
                 await RefreshToken();
         }
         public async Task<JToken> ApiRequestv1(string endpoint, string query)
