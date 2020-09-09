@@ -46,6 +46,7 @@ namespace OsuMissAnalyzer.Server
 
         private Socket socket;
         private UnixEndPoint endpoint;
+        public event Action UpdateLogs;
 
         public Logger(string logFile)
         {
@@ -99,6 +100,8 @@ namespace OsuMissAnalyzer.Server
 
                 if (content.StartsWith("GET "))
                 {
+                    UpdateLogs();
+
                     string[] opts = content.Substring(4).Split(' ');
                     if (opts.Length == 1 && opts[0].ToLower() == "all")
                     {

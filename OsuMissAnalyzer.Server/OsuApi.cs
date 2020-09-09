@@ -44,11 +44,11 @@ namespace OsuMissAnalyzer.Server
             JToken j = JToken.Parse(new StreamReader(res.GetResponseStream()).ReadToEnd());
             tokenTime = (int)j["expires_in"];
             token = (string)j["access_token"];
+            Logger.Instance.UpdateLogs += () => Logger.LogAbsolute(Logging.TokenExpiry, (int)Math.Max(TimeSpan.FromSeconds(tokenTime).Subtract(tokenExpiry.Elapsed).TotalMinutes, 0));
         }
         private async Task CheckToken()
         {
             var timeRemaining = TimeSpan.FromSeconds(tokenTime).Subtract(tokenExpiry.Elapsed);
-            Logger.LogAbsolute(Logging.TokenExpiry, (int)timeRemaining.TotalMinutes);
             if (timeRemaining > TimeSpan.Zero)
                 await RefreshToken();
         }
