@@ -50,6 +50,11 @@ namespace OsuMissAnalyzer.Server
             socket.Listen(1);
             socket.BeginAccept(new AsyncCallback(AcceptCallback), null);
         }
+        public void Close()
+        {
+            file.Close();
+            socket.Close();
+        }
         public void AcceptCallback(IAsyncResult result)
         {
             Socket handler = socket.EndAccept(result);
@@ -78,6 +83,7 @@ namespace OsuMissAnalyzer.Server
                 // There  might be more data, so store the data received so far.  
                 content = Encoding.ASCII.GetString(
                     state.buffer, 0, bytesRead);
+                Console.WriteLine("Got {content}");
 
                 if (content.StartsWith("GET "))
                 {

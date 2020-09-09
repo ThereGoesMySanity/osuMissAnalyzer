@@ -255,6 +255,7 @@ Bot link: https://discordapp.com/oauth2/authorize?client_id={discordId}&scope=bo
             await interruptPipe.Reading.ReadAsync(buffer, 0, 4);
             await discord.DisconnectAsync();
             beatmapDatabase.Close();
+            Logger.Instance.Close();
             Console.WriteLine("Closed safely");
         }
         private static async Task<bool> CheckApiResult(JToken result, DiscordMessage respondTo)
