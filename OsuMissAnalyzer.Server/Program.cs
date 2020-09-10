@@ -345,7 +345,7 @@ Bot link: https://discordapp.com/oauth2/authorize?client_id={discordId}&scope=bo
             discord.ClientErrored += async e =>
             {
                 await Logger.WriteLine(e.EventName);
-                await Logger.WriteLine(e.Exception);
+                await Logger.WriteLine(e.Exception, Logger.LogLevel.ALERT);
             };
 
             await apiToken;
