@@ -173,16 +173,18 @@ DM ThereGoesMySanity#2622 if you need help/want this bot on your server
                         string mapPrefix = "https://osu.ppy.sh/beatmapsets/";
                         if (url.StartsWith(prefix) && embed.Description.Contains(mapPrefix))
                         {
+                            replayLoader.ScoreId = url.Substring(prefix.Length);
                             string urlEnd = embed.Description.Substring(embed.Description.IndexOf(mapPrefix) + mapPrefix.Length);
                             var match = partialBeatmapRegex.Match(urlEnd);
-                            if(match.Success)
+                            var modMatch = modRegex.Match(urlEnd);
+                            if(match.Success && modMatch.Success)
                             {
                                 replayLoader.BeatmapId = match.Groups[1].Value;
+                                replayLoader.Mods = modMatch.Groups[1].Value;
                             }
                         }
                     }
-
-                    if (embed != null)
+                    if (embed != null && replayLoader.BeatmapId == null)
                     {
                         string url = embed.Author.IconUrl.ToString();
                         if (url.StartsWith(pfpPrefix))
