@@ -32,7 +32,20 @@ namespace OsuMissAnalyzer.Server.Database
             ["FL"] = (int)Mods.FlashLight,
             ["PF"] = (int)Mods.Perfect,
         };
-        public async Task<Replay> GetReplayFromOnlineId(JToken score, Beatmap beatmap)
+        public async Task<Replay> GetReplayFromOnlineId(string onlineId, string mods)
+        {
+            string file = Path.Combine(serverFolder, "replays", $"{onlineId}.osr");
+            if (!File.Exists(file))
+            {
+                Console.WriteLine("replay not found, downloading...");
+            }
+            else
+            {
+                Logger.Log(Logging.ReplaysCacheHit);
+            }
+            return null;
+        }
+        public async Task<Replay> GetReplayFromScore(JToken score, Beatmap beatmap)
         {
             string file = Path.Combine(serverFolder, "replays", $"{(string)score["best_id"]}.osr");
             if (!File.Exists(file))

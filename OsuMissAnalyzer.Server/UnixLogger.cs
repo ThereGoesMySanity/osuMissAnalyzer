@@ -12,8 +12,9 @@ namespace OsuMissAnalyzer.Server
 {
     public enum Logging
     {
-        OwoCalls,
         AttachmentCalls,
+        OwoCalls,
+        BismarckCalls,
         UserCalls,
         ReactionCalls,
         BeatmapsCacheHit,
@@ -24,6 +25,7 @@ namespace OsuMissAnalyzer.Server
         ApiGetUserv1,
         ApiGetBeatmapsv1,
         ApiGetReplayv1,
+        ApiGetScorev2,
         ApiGetUserScoresv2,
         ApiGetBeatmapScoresv2,
         ApiDownloadBeatmap,

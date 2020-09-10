@@ -51,6 +51,7 @@ namespace OsuMissAnalyzer.Server
             string discordId = "752035690237394944";
             string discordPermissions = "100416";
             bool help = false, link = false;
+            string apiv2Req = null;
             var opts = new OptionSet() {
                 {"d|dir=", "Set server storage dir (default: ./)", b => serverDir = b},
                 {"s|secret=", "Set client secret (osu!) (required)", s => osuSecret = s},
@@ -58,7 +59,8 @@ namespace OsuMissAnalyzer.Server
                 {"id=", "osu! client id (default: mine)", id => osuId = id},
                 {"t|token=", "discord bot token (required)", t => discordToken = t},
                 {"h|help", "displays help", a => help = a != null},
-                {"l|link", "displays bot link and exits", l => link = l != null}
+                {"l|link", "displays bot link and exits", l => link = l != null},
+                {"apiRequest=", "does api request", a => apiv2Req = a},
             };
             opts.Parse(args);
             string botLink = $"https://discordapp.com/oauth2/authorize?client_id={discordId}&scope=bot&permissions={discordPermissions}";
@@ -76,6 +78,12 @@ Bot link: https://discordapp.com/oauth2/authorize?client_id={discordId}&scope=bo
                 opts.WriteOptionDescriptions(Console.Out);
                 return;
             }
+            if (apiv2Req != null)
+            {
+                OsuApi api2 = new OsuApi(osuId, osuSecret, osuApiKey);
+                Console.WriteLine(await api2.GetApiv2(apiv2Req));
+                return;
+            }
 
             Logger.Instance = new Logger(Path.Combine(serverDir, "log.csv"));
             OsuApi api = new OsuApi(osuId, osuSecret, osuApiKey);
@@ -87,6 +95,8 @@ Bot link: https://discordapp.com/oauth2/authorize?client_id={discordId}&scope=bo
             string pfpPrefix = "https://a.ppy.sh/";
             Regex messageRegex = new Regex("^>miss (user-recent|user-top|beatmap) (.+?)(?: (\\d+))?$");
             Regex beatmapRegex = new Regex("^(?:https?://(?:osu|old).ppy.sh/(?:beatmapsets/\\d+#osu|b)/)?(\\d+)");
+            Regex partialBeatmapRegex = new Regex("^\\d+#osu/(\\d+)");
+            Regex modRegex = new Regex("](?: \\+([A-Z]+))?\\n");
             Source source = Source.USER;
 
             var cachedMisses = new MemoryCache<DiscordMessage, MissAnalyzer>(128);
@@ -153,8 +163,27 @@ Automatically responds to uploaded replay files
                             if (data != null)
                             {
                                 var beatmap = await beatmapDatabase.GetBeatmapFromId((string)data["beatmap"]["id"]);
-                                missAnalyzer = new MissAnalyzer(await replayDatabase.GetReplayFromOnlineId(data, beatmap), beatmap);
+                                missAnalyzer = new MissAnalyzer(await replayDatabase.GetReplayFromScore(data, beatmap), beatmap);
                                 source = Source.OWO;
+                            }
+                        }
+                    }
+                    //bismarck
+                    if (e.Author.Id == 207856807677263874 && e.Message.Content.Length == 0)
+                    {
+                        Console.WriteLine("processing bismarck message");
+                        Logger.Log(Logging.BismarckCalls);
+                        var embed = e.Message.Embeds[0];
+                        string url = embed.Url.AbsoluteUri;
+                        string prefix = "https://osu.ppy.sh/scores/osu/";
+                        string mapPrefix = "https://osu.ppy.sh/beatmapsets/";
+                        if (url.StartsWith(prefix) && embed.Description.Contains(mapPrefix))
+                        {
+                            string urlEnd = embed.Description.Substring(embed.Description.IndexOf(mapPrefix) + mapPrefix.Length);
+                            var match = partialBeatmapRegex.Match(urlEnd);
+                            if(match.Success)
+                            {
+                                var beatmap = await beatmapDatabase.GetBeatmapFromId(match.Groups[1].Value);
                             }
                         }
                     }
@@ -193,7 +222,7 @@ Automatically responds to uploaded replay files
                             if (await CheckApiResult(score, e.Message))
                             {
                                 var beatmap = await beatmapDatabase.GetBeatmapFromId((string)score["beatmap"]["id"]);
-                                missAnalyzer = new MissAnalyzer(await replayDatabase.GetReplayFromOnlineId(score, beatmap), beatmap);
+                                missAnalyzer = new MissAnalyzer(await replayDatabase.GetReplayFromScore(score, beatmap), beatmap);
                                 source = Source.USER;
                             }
                         }
