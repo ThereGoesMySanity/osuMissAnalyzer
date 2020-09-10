@@ -25,7 +25,7 @@ namespace OsuMissAnalyzer.Server
         const ulong BISMARCK = 207856807677263874;
         const ulong BOATBOT = 185013154198061056;
         const int size = 480;
-        const string HELP_MESSAGE = @"osu! Miss Analyzer bot
+        const string HELP_MESSAGE = @"[osu! Miss Analyzer](https://github.com/ThereGoesMySanity/osuMissAnalyzer) bot
 ```
 Usage:
   >miss {user-recent|user-top} <username> [<index>]
