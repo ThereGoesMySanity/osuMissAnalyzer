@@ -74,16 +74,17 @@ namespace OsuMissAnalyzer.Server
             // if (!socket.Connected) return;
             try
             {
-            Socket handler = socket.EndAccept(result);
+                Socket handler = socket.EndAccept(result);
 
-            // Create the state object.
-            StateObject state = new StateObject();
-            state.workSocket = handler;
-            handler.BeginReceive(state.buffer, 0, StateObject.BufferSize, 0,
-                new AsyncCallback(ReadCallback), state);
+                // Create the state object.
+                StateObject state = new StateObject();
+                state.workSocket = handler;
+                handler.BeginReceive(state.buffer, 0, StateObject.BufferSize, 0,
+                    new AsyncCallback(ReadCallback), state);
 
-            socket.BeginAccept(new AsyncCallback(AcceptCallback), null);
-            } catch (Exception e) {}
+                socket.BeginAccept(new AsyncCallback(AcceptCallback), null);
+            }
+            catch (Exception e) { if (!(e is Exception)) Console.WriteLine(e); }
         }
         public void ReadCallback(IAsyncResult result)
         {
@@ -131,7 +132,7 @@ namespace OsuMissAnalyzer.Server
         }
         public string GetStats(Format format)
         {
-            switch(format)
+            switch (format)
             {
                 case Format.JSON:
                     return new JObject(Enum.GetNames(typeof(Logging)).Zip(counts, (a, b) => new JProperty(a, b))).ToString(Formatting.None);
