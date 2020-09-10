@@ -139,10 +139,12 @@ namespace OsuMissAnalyzer.Server
         }
         public static void Log(Logging type, int count = 1)
         {
+            if (Instance == null) return;
             Instance.counts[(int)type] += count;
         }
         public static void LogAbsolute(Logging type, int value)
         {
+            if (Instance == null) return;
             Instance.counts[(int)type] = value;
         }
         private static Logging? TryParse(String s)
