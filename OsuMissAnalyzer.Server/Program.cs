@@ -86,13 +86,13 @@ DM ThereGoesMySanity#2622 if you need help/want this bot on your server
             string botLink = $"https://discordapp.com/oauth2/authorize?client_id={discordId}&scope=bot&permissions={discordPermissions}";
             if (link)
             {
-                Logger.WriteLine(botLink);
+                await Logger.WriteLine(botLink);
                 return;
             }
 
             if (help || (osuSecret.Length * osuApiKey.Length * discordToken.Length) == 0)
             {
-                Logger.WriteLine(
+                await Logger.WriteLine(
 $@"osu! Miss Analyzer, Discord Bot Edition
 Bot link: https://discordapp.com/oauth2/authorize?client_id={discordId}&scope=bot&permissions={discordPermissions}");
                 opts.WriteOptionDescriptions(Console.Out);
@@ -101,7 +101,7 @@ Bot link: https://discordapp.com/oauth2/authorize?client_id={discordId}&scope=bo
             if (apiv2Req != null)
             {
                 OsuApi api2 = new OsuApi(osuId, osuSecret, osuApiKey);
-                Logger.WriteLine(await api2.GetApiv2(apiv2Req));
+                await Logger.WriteLine(await api2.GetApiv2(apiv2Req));
                 return;
             }
 
@@ -127,6 +127,12 @@ Bot link: https://discordapp.com/oauth2/authorize?client_id={discordId}&scope=bo
                 ["%rs"] = BOATBOT,
                 ["!!rs"] = BISMARCK,
             };
+            var botIds = new Dictionary<ulong, string>
+            {
+                [OWO] = "owo",
+                [BOATBOT] = "boatbot",
+                [BISMARCK] = "bismarck",
+            };
             var rsCalls = new Dictionary<ulong, Queue<DiscordChannel>>
             {
                 [OWO] = new Queue<DiscordChannel>(),
@@ -139,7 +145,6 @@ Bot link: https://discordapp.com/oauth2/authorize?client_id={discordId}&scope=bo
                 {
                     if (e.Message.Content.StartsWith("**Most Recent osu! Standard Play for"))
                     {
-                        Logger.WriteLine("processing owo message");
                         return e.Message.Embeds[0];
                     }
                     return null;
@@ -148,7 +153,6 @@ Bot link: https://discordapp.com/oauth2/authorize?client_id={discordId}&scope=bo
                 {
                     if (e.Message.Content.Length == 0)
                     {
-                        Logger.WriteLine("processing bismarck message");
                         var embed = e.Message.Embeds[0];
                         string url = embed.Url.AbsoluteUri;
                         string prefix = "https://osu.ppy.sh/scores/osu/";
@@ -172,7 +176,6 @@ Bot link: https://discordapp.com/oauth2/authorize?client_id={discordId}&scope=bo
                 },
                 [BOATBOT] = (replayLoader, e) =>
                 {
-                    Logger.WriteLine("processing boatbot message");
                     return e.Message.Embeds[0];
                 },
             };
@@ -209,7 +212,7 @@ Bot link: https://discordapp.com/oauth2/authorize?client_id={discordId}&scope=bo
                 {
                     if (attachment.FileName.EndsWith(".osr"))
                     {
-                        Logger.WriteLine("processing attachment");
+                        await Logger.WriteLine("processing attachment");
                         Logger.Log(Logging.AttachmentCalls);
                         string dest = Path.Combine(serverDir, "replays", attachment.FileName);
                         using (WebClient w = new WebClient())
@@ -229,6 +232,7 @@ Bot link: https://discordapp.com/oauth2/authorize?client_id={discordId}&scope=bo
                 if (rsCalls.ContainsKey(e.Author.Id) && rsCalls[e.Author.Id].Count > 0 && rsCalls[e.Author.Id].Peek() == e.Channel)
                 {
                     DiscordEmbed embed = rsFunc[e.Author.Id](replayLoader, e);
+                    await Logger.WriteLine($"processing {botIds[e.Author.Id]} message");
                     Logger.Log(Logging.BotCalls);
                     if (embed != null)
                     {
@@ -247,7 +251,7 @@ Bot link: https://discordapp.com/oauth2/authorize?client_id={discordId}&scope=bo
                 Match messageMatch = messageRegex.Match(e.Message.Content);
                 if (messageMatch.Success)
                 {
-                    Logger.WriteLine("processing user call");
+                    await Logger.WriteLine("processing user call");
                     Logger.Log(Logging.UserCalls);
                     source = Source.USER;
 
@@ -340,12 +344,12 @@ Bot link: https://discordapp.com/oauth2/authorize?client_id={discordId}&scope=bo
 
             discord.ClientErrored += async e =>
             {
-                Logger.WriteLine(e.EventName);
-                Logger.WriteLine(e.Exception);
+                await Logger.WriteLine(e.EventName);
+                await Logger.WriteLine(e.Exception);
             };
 
             await apiToken;
-            Logger.WriteLine("Init complete");
+            await Logger.WriteLine("Init complete");
 
             await discord.ConnectAsync();
             Logger.LogAbsolute(Logging.ServersJoined, discord.Guilds.Count);
@@ -355,7 +359,7 @@ Bot link: https://discordapp.com/oauth2/authorize?client_id={discordId}&scope=bo
             await discord.DisconnectAsync();
             beatmapDatabase.Close();
             Logger.Instance.Close();
-            Logger.WriteLine("Closed safely");
+            await Logger.WriteLine("Closed safely");
         }
         private static async Task<bool> CheckApiResult(JToken result, DiscordMessage respondTo)
         {

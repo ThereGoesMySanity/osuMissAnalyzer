@@ -39,7 +39,7 @@ namespace OsuMissAnalyzer.Server.Database
             if (!File.Exists(file))
             {
                 Logger.Log(Logging.ReplaysCacheMiss);
-                Logger.WriteLine("replay not found, downloading...");
+                await Logger.WriteLine("replay not found, downloading...");
                 var data = await api.DownloadReplayFromId(onlineId);
                 if (data != null)
                 {
@@ -81,7 +81,7 @@ namespace OsuMissAnalyzer.Server.Database
             {
 
                 Logger.Log(Logging.ReplaysCacheMiss);
-                Logger.WriteLine("replay not found, downloading...");
+                await Logger.WriteLine("replay not found, downloading...");
                 var replayDownload = api.DownloadReplayFromId((string)score["best_id"]);
 
                 replay = new Replay();
