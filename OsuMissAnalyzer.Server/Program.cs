@@ -86,13 +86,13 @@ DM ThereGoesMySanity#2622 if you need help/want this bot on your server
             string botLink = $"https://discordapp.com/oauth2/authorize?client_id={discordId}&scope=bot&permissions={discordPermissions}";
             if (link)
             {
-                await Logger.WriteLine(botLink);
+                Console.WriteLine(botLink);
                 return;
             }
 
             if (help || (osuSecret.Length * osuApiKey.Length * discordToken.Length) == 0)
             {
-                await Logger.WriteLine(
+                Console.WriteLine(
 $@"osu! Miss Analyzer, Discord Bot Edition
 Bot link: https://discordapp.com/oauth2/authorize?client_id={discordId}&scope=bot&permissions={discordPermissions}");
                 opts.WriteOptionDescriptions(Console.Out);
@@ -101,7 +101,7 @@ Bot link: https://discordapp.com/oauth2/authorize?client_id={discordId}&scope=bo
             if (apiv2Req != null)
             {
                 OsuApi api2 = new OsuApi(osuId, osuSecret, osuApiKey);
-                await Logger.WriteLine(await api2.GetApiv2(apiv2Req));
+                Console.WriteLine(await api2.GetApiv2(apiv2Req));
                 return;
             }
 
@@ -294,7 +294,7 @@ Bot link: https://discordapp.com/oauth2/authorize?client_id={discordId}&scope=bo
                     {
                         message = await SendMissMessage(missAnalyzer, e.Message, 0);
                     }
-                    else
+                    else if (missAnalyzer.MissCount > 1)
                     {
                         message = await e.Message.RespondAsync($"Found **{missAnalyzer.MissCount}** miss{(missAnalyzer.MissCount != 1 ? "es" : "")}");
                         for (int i = 1; i < Math.Min(missAnalyzer.MissCount + 1, numberEmojis.Length); i++)
