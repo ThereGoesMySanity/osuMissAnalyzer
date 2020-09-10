@@ -13,8 +13,7 @@ namespace OsuMissAnalyzer.Server
     public enum Logging
     {
         AttachmentCalls,
-        OwoCalls,
-        BismarckCalls,
+        BotCalls,
         UserCalls,
         ReactionCalls,
         BeatmapsCacheHit,

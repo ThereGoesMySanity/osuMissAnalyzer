@@ -14,12 +14,29 @@ using ReplayAPI;
 using System.Runtime.Caching.Generic;
 using Mono.Options;
 using Newtonsoft.Json.Linq;
+using System.Collections.Generic;
+using DSharpPlus.EventArgs;
 
 namespace OsuMissAnalyzer.Server
 {
     public class Program
     {
+        const ulong OWO = 289066747443675143;
+        const ulong BISMARCK = 207856807677263874;
+        const ulong BOATBOT = 185013154198061056;
         const int size = 480;
+        const string HELP_MESSAGE = @"osu! Miss Analyzer bot
+```
+Usage:
+  >miss {{user-recent|user-top\}} <username> [<index>]
+    Finds #index recent/top play for username (index defaults to 1)
+  >miss beatmap <beatmap id/beatmap link> [<index>]
+    Finds #index score on beatmap (index defaults to 1)
+
+Automatically responds to >rs from owo bot if the replay is saved online
+Automatically responds to uploaded replay files
+DM ThereGoesMySanity#2622 if you need help/want this bot on your server
+```";
         private static Rectangle area = new Rectangle(0, 0, size, size);
         static DiscordClient discord;
         static UnixPipes interruptPipe;
@@ -101,14 +118,71 @@ Bot link: https://discordapp.com/oauth2/authorize?client_id={discordId}&scope=bo
 
             var cachedMisses = new MemoryCache<DiscordMessage, MissAnalyzer>(128);
             cachedMisses.SetPolicy(typeof(LfuEvictionPolicy<,>));
-            // Dictionary<DiscordMessage, MissAnalyzer> cachedMisses = new Dictionary<DiscordMessage, MissAnalyzer>();
-            string[] numbers = { "zero", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine" };
-            DiscordEmoji[] numberEmojis = new DiscordEmoji[10];
+
+            var rsTypes = new Dictionary<string, ulong> {
+                [">rs"] = OWO,
+                ["%rs"] = BOATBOT,
+                ["!!rs"] = BISMARCK,
+            };
+            var rsCalls = new Dictionary<ulong, Queue<DiscordChannel>>
+            {
+                [OWO] = new Queue<DiscordChannel>(),
+                [BOATBOT] = new Queue<DiscordChannel>(),
+                [BISMARCK] = new Queue<DiscordChannel>(),
+            };
+            var rsFunc = new Dictionary<ulong, Func<ServerReplayLoader, MessageCreateEventArgs, DiscordEmbed>>
+            {
+                [OWO] = (replayLoader, e) =>
+                {
+                    if (e.Message.Content.StartsWith("**Most Recent osu! Standard Play for"))
+                    {
+                        Console.WriteLine("processing owo message");
+                        return e.Message.Embeds[0];
+                    }
+                    return null;
+                },
+                [BISMARCK] = (replayLoader, e) =>
+                {
+                    if (e.Message.Content.Length == 0)
+                    {
+                        Console.WriteLine("processing bismarck message");
+                        var embed = e.Message.Embeds[0];
+                        string url = embed.Url.AbsoluteUri;
+                        string prefix = "https://osu.ppy.sh/scores/osu/";
+                        string mapPrefix = "https://osu.ppy.sh/beatmapsets/";
+                        if (url.StartsWith(prefix) && embed.Description.Contains(mapPrefix))
+                        {
+                            replayLoader.ScoreId = url.Substring(prefix.Length);
+                            string urlEnd = embed.Description.Substring(embed.Description.IndexOf(mapPrefix) + mapPrefix.Length);
+                            var match = partialBeatmapRegex.Match(urlEnd);
+                            var modMatch = modRegex.Match(urlEnd);
+                            if(match.Success && modMatch.Success)
+                            {
+                                replayLoader.BeatmapId = match.Groups[1].Value;
+                                replayLoader.Mods = modMatch.Groups[1].Value;
+                                return null;
+                            }
+                        }
+                        return embed;
+                    }
+                    return null;
+                },
+                [BOATBOT] = (replayLoader, e) =>
+                {
+                    Console.WriteLine("processing boatbot message");
+                    return e.Message.Embeds[0];
+                },
+            };
+
             discord = new DiscordClient(new DiscordConfiguration
             {
                 Token = discordToken,
                 TokenType = TokenType.Bot
             });
+
+            string[] numbers = { "zero", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine" };
+            DiscordEmoji[] numberEmojis = new DiscordEmoji[10];
+
             for (int i = 0; i < 10; i++)
             {
                 numberEmojis[i] = DiscordEmoji.FromName(discord, $":{numbers[i]}:");
@@ -120,22 +194,12 @@ Bot link: https://discordapp.com/oauth2/authorize?client_id={discordId}&scope=bo
                 {
                     Logger.LogAbsolute(Logging.ServersJoined, discord.Guilds.Count);
                     Logger.Log(Logging.EventsHandled);
-                    if (e.Message.Content.StartsWith(">miss help"))
+                    if (e.Message.Content.StartsWith(">miss help") || 
+                        (e.Message.Channel.IsPrivate && e.Message.Content.IndexOf("help", StringComparison.InvariantCultureIgnoreCase) >= 0))
                     {
-                        await e.Message.RespondAsync($@"osu! Miss Analyzer bot
-```
-Usage:
-  >miss {{user-recent|user-top\}} <username> [<index>]
-    Finds #index recent/top play for username (index defaults to 1)
-  >miss beatmap <beatmap id/beatmap link> [<index>]
-    Finds #index score on beatmap (index defaults to 1)
-Automatically responds to >rs from owo bot if the replay is saved online
-Automatically responds to uploaded replay files
-DM ThereGoesMySanity#2622 if you need help/want this bot on your server
-```");
+                        await e.Message.RespondAsync(HELP_MESSAGE);
                         return;
                     }
-                    // MissAnalyzer missAnalyzer = null;
                     ServerReplayLoader replayLoader = new ServerReplayLoader();
                     Source? source = null;
 
@@ -156,46 +220,26 @@ DM ThereGoesMySanity#2622 if you need help/want this bot on your server
                         }
                     }
 
-                    DiscordEmbed embed = null;
-                    //owo
-                    if (e.Author.Id == 289066747443675143 && e.Message.Content.StartsWith("**Most Recent osu! Standard Play for"))
+                    if (rsTypes.ContainsKey(e.Message.Content))
                     {
-                        Console.WriteLine("processing owo message");
-                        Logger.Log(Logging.OwoCalls);
-                        embed = e.Message.Embeds[0];
+                        rsCalls[rsTypes[e.Message.Content]].Enqueue(e.Message.Channel);
+                        return;
                     }
-                    //bismarck
-                    if (e.Author.Id == 207856807677263874 && e.Message.Content.Length == 0)
+                    if (rsCalls.ContainsKey(e.Author.Id) && rsCalls[e.Author.Id].Peek() == e.Channel)
                     {
-                        Console.WriteLine("processing bismarck message");
-                        Logger.Log(Logging.BismarckCalls);
-                        embed = e.Message.Embeds[0];
-                        string url = embed.Url.AbsoluteUri;
-                        string prefix = "https://osu.ppy.sh/scores/osu/";
-                        string mapPrefix = "https://osu.ppy.sh/beatmapsets/";
-                        if (url.StartsWith(prefix) && embed.Description.Contains(mapPrefix))
+                        DiscordEmbed embed = rsFunc[e.Author.Id](replayLoader, e);
+                        Logger.Log(Logging.BotCalls);
+                        if (embed != null)
                         {
-                            replayLoader.ScoreId = url.Substring(prefix.Length);
-                            string urlEnd = embed.Description.Substring(embed.Description.IndexOf(mapPrefix) + mapPrefix.Length);
-                            var match = partialBeatmapRegex.Match(urlEnd);
-                            var modMatch = modRegex.Match(urlEnd);
-                            if(match.Success && modMatch.Success)
+                            string url = embed.Author.IconUrl.ToString();
+                            if (url.StartsWith(pfpPrefix))
                             {
-                                replayLoader.BeatmapId = match.Groups[1].Value;
-                                replayLoader.Mods = modMatch.Groups[1].Value;
+                                replayLoader.UserId = url.Substring(pfpPrefix.Length).Split('?')[0];
+                                replayLoader.UserScores = "recent";
+                                replayLoader.PlayIndex = 0;
                             }
                         }
-                    }
-                    if (embed != null && replayLoader.BeatmapId == null)
-                    {
-                        string url = embed.Author.IconUrl.ToString();
-                        if (url.StartsWith(pfpPrefix))
-                        {
-                            replayLoader.UserId = url.Substring(pfpPrefix.Length).Split('?')[0];
-                            replayLoader.UserScores = "recent";
-                            replayLoader.PlayIndex = 0;
-                            source = Source.BOT;
-                        }
+                        source = Source.BOT;
                     }
 
                     //user-triggered
@@ -231,6 +275,7 @@ DM ThereGoesMySanity#2622 if you need help/want this bot on your server
                                 break;
                         }
                     }
+
                     if (await replayLoader.Load(api, replayDatabase, beatmapDatabase))
                     {
                         DiscordMessage message = null;
