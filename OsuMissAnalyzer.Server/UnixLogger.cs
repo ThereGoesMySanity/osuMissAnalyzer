@@ -42,6 +42,7 @@ namespace OsuMissAnalyzer.Server
     public class Logger
     {
         private const string ENDPOINT = "/run/missanalyzer-server";
+        private const string ALERT_PREFIX = "<@140920359288307712> ";
         private readonly string webHook;
 
         public static Logger Instance { get; set; }
@@ -156,15 +157,17 @@ namespace OsuMissAnalyzer.Server
             if (Instance == null) return;
             Instance.counts[(int)type] = value;
         }
-        public static async Task WriteLine(object o)
+
+        public enum LogLevel { NORMAL, ALERT }
+        public static async Task WriteLine(object o, LogLevel level = LogLevel.NORMAL)
         {
-            await WriteLine(o.ToString());
+            await WriteLine(o.ToString(), level);
         }
-        public static async Task WriteLine(string line)
+        public static async Task WriteLine(string line, LogLevel level = LogLevel.NORMAL)
         {
-            await Instance.writeLine(line);
+            await Instance.writeLine(line, level);
         }
-        public async Task writeLine(string line)
+        public async Task writeLine(string line, LogLevel level)
         {
             Console.WriteLine(line);
             if (!string.IsNullOrEmpty(webHook))
@@ -172,7 +175,7 @@ namespace OsuMissAnalyzer.Server
                 using (WebClient w = new WebClient())
                 {
                     w.Headers[HttpRequestHeader.ContentType] = "application/x-www-form-urlencoded";
-                    string res = await w.UploadStringTaskAsync(webHook, $"content={WebUtility.HtmlEncode(line)}");
+                    string res = await w.UploadStringTaskAsync(webHook, $"content={WebUtility.HtmlEncode((level == LogLevel.ALERT? ALERT_PREFIX : "") + line)}");
                 }
             }
         }
