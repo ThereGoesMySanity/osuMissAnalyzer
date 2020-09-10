@@ -131,7 +131,7 @@ namespace OsuMissAnalyzer.Server
             }
             replayDls.Enqueue(DateTime.Now);
             var res = JToken.Parse(await webClient.DownloadStringTaskAsync($"https://osu.ppy.sh/api/get_replay?k={apiKeyv1}&s={onlineId}"));
-            return Convert.FromBase64String((string)res["content"]);
+            return res["content"] != null? Convert.FromBase64String((string)res["content"]) : null;
         }
 
     }

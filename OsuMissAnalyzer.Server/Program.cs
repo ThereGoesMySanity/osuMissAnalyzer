@@ -40,7 +40,7 @@ namespace OsuMissAnalyzer.Server
             signalThread.Start();
             MainAsync(args).ConfigureAwait(false).GetAwaiter().GetResult();
         }
-        public enum Source { USER, OWO, ATTACHMENT }
+        public enum Source { USER, BOT, ATTACHMENT }
         static async Task MainAsync(string[] args)
         {
             string serverDir = "";
@@ -130,10 +130,13 @@ Usage:
     Finds #index score on beatmap (index defaults to 1)
 Automatically responds to >rs from owo bot if the replay is saved online
 Automatically responds to uploaded replay files
+DM ThereGoesMySanity#2622 if you need help/want this bot on your server
 ```");
                         return;
                     }
-                    MissAnalyzer missAnalyzer = null;
+                    // MissAnalyzer missAnalyzer = null;
+                    ServerReplayLoader replayLoader = new ServerReplayLoader();
+
                     //attachment
                     foreach (var attachment in e.Message.Attachments)
                     {
@@ -146,34 +149,25 @@ Automatically responds to uploaded replay files
                             {
                                 w.DownloadFile(attachment.Url, dest);
                             }
-                            var replay = new Replay(dest);
-                            missAnalyzer = new MissAnalyzer(replay, await beatmapDatabase.GetBeatmap(replay.MapHash));
+                            replayLoader.ReplayFile = dest;
                             source = Source.ATTACHMENT;
                         }
                     }
+
+                    DiscordEmbed embed = null;
                     //owo
                     if (e.Author.Id == 289066747443675143 && e.Message.Content.StartsWith("**Most Recent osu! Standard Play for"))
                     {
                         Console.WriteLine("processing owo message");
                         Logger.Log(Logging.OwoCalls);
-                        string url = e.Message.Embeds[0].Author.IconUrl.ToString();
-                        if (url.StartsWith(pfpPrefix))
-                        {
-                            var data = await api.GetUserScoresv2(url.Substring(pfpPrefix.Length).Split('?')[0], "recent", 0);
-                            if (data != null)
-                            {
-                                var beatmap = await beatmapDatabase.GetBeatmapFromId((string)data["beatmap"]["id"]);
-                                missAnalyzer = new MissAnalyzer(await replayDatabase.GetReplayFromScore(data, beatmap), beatmap);
-                                source = Source.OWO;
-                            }
-                        }
+                        embed = e.Message.Embeds[0];
                     }
                     //bismarck
                     if (e.Author.Id == 207856807677263874 && e.Message.Content.Length == 0)
                     {
                         Console.WriteLine("processing bismarck message");
                         Logger.Log(Logging.BismarckCalls);
-                        var embed = e.Message.Embeds[0];
+                        embed = e.Message.Embeds[0];
                         string url = embed.Url.AbsoluteUri;
                         string prefix = "https://osu.ppy.sh/scores/osu/";
                         string mapPrefix = "https://osu.ppy.sh/beatmapsets/";
@@ -183,54 +177,61 @@ Automatically responds to uploaded replay files
                             var match = partialBeatmapRegex.Match(urlEnd);
                             if(match.Success)
                             {
-                                var beatmap = await beatmapDatabase.GetBeatmapFromId(match.Groups[1].Value);
+                                replayLoader.BeatmapId = match.Groups[1].Value;
                             }
                         }
                     }
+
+                    if (embed != null)
+                    {
+                        string url = embed.Author.IconUrl.ToString();
+                        if (url.StartsWith(pfpPrefix))
+                        {
+                            replayLoader.UserId = url.Substring(pfpPrefix.Length).Split('?')[0];
+                            replayLoader.UserScores = "recent";
+                            replayLoader.PlayIndex = 0;
+                            source = Source.BOT;
+                        }
+                    }
+
                     //user-triggered
                     Match messageMatch = messageRegex.Match(e.Message.Content);
                     if (messageMatch.Success)
                     {
                         Console.WriteLine("processing user call");
                         Logger.Log(Logging.UserCalls);
-                        int playIndex = 0;
-                        Task<JToken> scoreTask = null;
-                        if (messageMatch.Groups.Count == 4 && messageMatch.Groups[3].Success) playIndex = int.Parse(messageMatch.Groups[3].Value) - 1;
+                        source = Source.USER;
+
+                        replayLoader.PlayIndex = 0;
+                        if (messageMatch.Groups.Count == 4 && messageMatch.Groups[3].Success)
+                            replayLoader.PlayIndex = int.Parse(messageMatch.Groups[3].Value) - 1;
+
                         switch (messageMatch.Groups[1].Value)
                         {
                             case "user-recent":
-                                scoreTask = api.GetUserScoresv2(await api.GetUserIdv1(messageMatch.Groups[2].Value), "recent", playIndex);
-                                break;
                             case "user-top":
-                                scoreTask = api.GetUserScoresv2(await api.GetUserIdv1(messageMatch.Groups[2].Value), "best", playIndex);
+                                replayLoader.Username = messageMatch.Groups[2].Value;
+                                replayLoader.UserScores = messageMatch.Groups[1].Value == "user-recent"? "recent" : "best";
                                 break;
                             case "beatmap":
                                 var bmMatch = beatmapRegex.Match(messageMatch.Groups[2].Value);
                                 if (bmMatch.Success)
                                 {
-                                    scoreTask = api.GetBeatmapScoresv2(bmMatch.Groups[1].Value, playIndex);
+                                    replayLoader.BeatmapId = bmMatch.Groups[1].Value;
                                 }
                                 else
                                 {
                                     await e.Message.RespondAsync("Invalid beatmap link");
+                                    return;
                                 }
                                 break;
                         }
-                        if (scoreTask != null)
-                        {
-                            var score = await scoreTask;
-                            if (await CheckApiResult(score, e.Message))
-                            {
-                                var beatmap = await beatmapDatabase.GetBeatmapFromId((string)score["beatmap"]["id"]);
-                                missAnalyzer = new MissAnalyzer(await replayDatabase.GetReplayFromScore(score, beatmap), beatmap);
-                                source = Source.USER;
-                            }
-                        }
                     }
-                    if (missAnalyzer != null)
+                    if (await replayLoader.Load(api, replayDatabase, beatmapDatabase))
                     {
                         DiscordMessage message = null;
-                        if (missAnalyzer.MissCount == 0 && source != Source.OWO)
+                        MissAnalyzer missAnalyzer = new MissAnalyzer(replayLoader);
+                        if (missAnalyzer.MissCount == 0 && source != Source.BOT)
                         {
                             await e.Message.RespondAsync("No misses found.");
                         }
@@ -251,6 +252,10 @@ Automatically responds to uploaded replay files
                             Logger.LogAbsolute(Logging.CachedMessages, cachedMisses.Count);
                             cachedMisses[message] = missAnalyzer;
                         }
+                    }
+                    else
+                    {
+                        await e.Message.RespondAsync($"Couldn't find {(replayLoader.Replay == null? "replay" : "beatmap")}");
                     }
                 }
                 catch (Exception exc) { Console.WriteLine(exc.ToString()); }

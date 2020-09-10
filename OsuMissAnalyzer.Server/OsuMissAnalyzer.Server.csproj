@@ -33,6 +33,7 @@
     <!-- items -->
     <Compile Include="Program.cs" />
     <Compile Include="OsuApi.cs" />
+    <Compile Include="ServerReplayLoader.cs" />
     <Compile Include="UnixLogger.cs" />
     <Compile Include="Database\*" />
   </ItemGroup>
