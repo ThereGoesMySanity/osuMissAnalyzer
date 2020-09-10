@@ -121,6 +121,7 @@ Bot link: https://discordapp.com/oauth2/authorize?client_id={discordId}&scope=bo
 
             var rsTypes = new Dictionary<string, ulong> {
                 [">rs"] = OWO,
+                [">recent"] = OWO,
                 ["%rs"] = BOATBOT,
                 ["!!rs"] = BISMARCK,
             };
