@@ -71,6 +71,7 @@ namespace OsuMissAnalyzer.Server
         }
         public void AcceptCallback(IAsyncResult result)
         {
+            if (!socket.Connected) return;
             Socket handler = socket.EndAccept(result);
 
             // Create the state object.
