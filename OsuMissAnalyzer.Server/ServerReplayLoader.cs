@@ -49,6 +49,9 @@ namespace OsuMissAnalyzer.Server
                     score = await api.GetUserScoresv2(UserId, UserScores, PlayIndex.Value);
                 else if (BeatmapId != null)
                     score = await api.GetBeatmapScoresv2(BeatmapId, PlayIndex.Value);
+
+                if (score != null && _beatmap == null)
+                    _beatmap = await beatmaps.GetBeatmapFromId((string)score["beatmap"]["id"]);
             }
 
             if (score != null && _beatmap != null)

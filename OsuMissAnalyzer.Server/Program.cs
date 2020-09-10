@@ -50,7 +50,7 @@ namespace OsuMissAnalyzer.Server
             string discordToken = "";
             string discordId = "752035690237394944";
             string discordPermissions = "100416";
-            bool help = false, link = false;
+            bool help = false, link = false, test = false;
             string apiv2Req = null;
             var opts = new OptionSet() {
                 {"d|dir=", "Set server storage dir (default: ./)", b => serverDir = b},
@@ -61,6 +61,7 @@ namespace OsuMissAnalyzer.Server
                 {"h|help", "displays help", a => help = a != null},
                 {"l|link", "displays bot link and exits", l => link = l != null},
                 {"apiRequest=", "does api request", a => apiv2Req = a},
+                {"test", "test server only", t => test = t != null},
             };
             opts.Parse(args);
             string botLink = $"https://discordapp.com/oauth2/authorize?client_id={discordId}&scope=bot&permissions={discordPermissions}";
@@ -114,7 +115,7 @@ Bot link: https://discordapp.com/oauth2/authorize?client_id={discordId}&scope=bo
             }
             discord.MessageCreated += async e =>
             {
-                Source? source = null;
+                if (test && e.Guild.Id != 753465280465862757L) return;
                 try
                 {
                     Logger.LogAbsolute(Logging.ServersJoined, discord.Guilds.Count);
@@ -136,6 +137,7 @@ DM ThereGoesMySanity#2622 if you need help/want this bot on your server
                     }
                     // MissAnalyzer missAnalyzer = null;
                     ServerReplayLoader replayLoader = new ServerReplayLoader();
+                    Source? source = null;
 
                     //attachment
                     foreach (var attachment in e.Message.Attachments)
@@ -265,6 +267,7 @@ DM ThereGoesMySanity#2622 if you need help/want this bot on your server
 
             discord.MessageReactionAdded += async e =>
             {
+                if (test && e.Message.Channel.GuildId != 753465280465862757L) return;
                 try
                 {
                     Logger.Log(Logging.EventsHandled);
