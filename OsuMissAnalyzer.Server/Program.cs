@@ -65,6 +65,7 @@ DM ThereGoesMySanity#2622 if you need help/want this bot on your server
             string osuSecret = "";
             string osuApiKey = "";
             string discordToken = "";
+            string webHook = "";
             string discordId = "752035690237394944";
             string discordPermissions = "100416";
             bool help = false, link = false, test = false;
@@ -79,6 +80,7 @@ DM ThereGoesMySanity#2622 if you need help/want this bot on your server
                 {"l|link", "displays bot link and exits", l => link = l != null},
                 {"apiRequest=", "does api request", a => apiv2Req = a},
                 {"test", "test server only", t => test = t != null},
+                {"w|webhook=", "webhook for output", w => webHook = w},
             };
             opts.Parse(args);
             string botLink = $"https://discordapp.com/oauth2/authorize?client_id={discordId}&scope=bot&permissions={discordPermissions}";
@@ -103,7 +105,7 @@ Bot link: https://discordapp.com/oauth2/authorize?client_id={discordId}&scope=bo
                 return;
             }
 
-            Logger.Instance = new Logger(Path.Combine(serverDir, "log.csv"));
+            Logger.Instance = new Logger(Path.Combine(serverDir, "log.csv"), webHook);
             OsuApi api = new OsuApi(osuId, osuSecret, osuApiKey);
             var apiToken = api.RefreshToken();
             Directory.CreateDirectory(Path.Combine(serverDir, "beatmaps"));
@@ -191,157 +193,155 @@ Bot link: https://discordapp.com/oauth2/authorize?client_id={discordId}&scope=bo
             discord.MessageCreated += async e =>
             {
                 if (test && e.Guild.Id != 753465280465862757L) return;
-                try
+                Logger.LogAbsolute(Logging.ServersJoined, discord.Guilds.Count);
+                Logger.Log(Logging.EventsHandled);
+                if (e.Message.Content.StartsWith(">miss help") || 
+                    (e.Message.Channel.IsPrivate && e.Message.Content.IndexOf("help", StringComparison.InvariantCultureIgnoreCase) >= 0))
                 {
-                    Logger.LogAbsolute(Logging.ServersJoined, discord.Guilds.Count);
-                    Logger.Log(Logging.EventsHandled);
-                    if (e.Message.Content.StartsWith(">miss help") || 
-                        (e.Message.Channel.IsPrivate && e.Message.Content.IndexOf("help", StringComparison.InvariantCultureIgnoreCase) >= 0))
-                    {
-                        await e.Message.RespondAsync(HELP_MESSAGE);
-                        return;
-                    }
-                    ServerReplayLoader replayLoader = new ServerReplayLoader();
-                    Source? source = null;
+                    await e.Message.RespondAsync(HELP_MESSAGE);
+                    return;
+                }
+                ServerReplayLoader replayLoader = new ServerReplayLoader();
+                Source? source = null;
 
-                    //attachment
-                    foreach (var attachment in e.Message.Attachments)
+                //attachment
+                foreach (var attachment in e.Message.Attachments)
+                {
+                    if (attachment.FileName.EndsWith(".osr"))
                     {
-                        if (attachment.FileName.EndsWith(".osr"))
+                        Console.WriteLine("processing attachment");
+                        Logger.Log(Logging.AttachmentCalls);
+                        string dest = Path.Combine(serverDir, "replays", attachment.FileName);
+                        using (WebClient w = new WebClient())
                         {
-                            Console.WriteLine("processing attachment");
-                            Logger.Log(Logging.AttachmentCalls);
-                            string dest = Path.Combine(serverDir, "replays", attachment.FileName);
-                            using (WebClient w = new WebClient())
-                            {
-                                w.DownloadFile(attachment.Url, dest);
-                            }
-                            replayLoader.ReplayFile = dest;
-                            source = Source.ATTACHMENT;
+                            w.DownloadFile(attachment.Url, dest);
                         }
-                    }
-
-                    if (rsTypes.ContainsKey(e.Message.Content.Split(' ')[0]))
-                    {
-                        rsCalls[rsTypes[e.Message.Content.Split(' ')[0]]].Enqueue(e.Message.Channel);
-                        return;
-                    }
-                    if (rsCalls.ContainsKey(e.Author.Id) && rsCalls[e.Author.Id].Peek() == e.Channel)
-                    {
-                        DiscordEmbed embed = rsFunc[e.Author.Id](replayLoader, e);
-                        Logger.Log(Logging.BotCalls);
-                        if (embed != null)
-                        {
-                            string url = embed.Author.IconUrl.ToString();
-                            if (url.StartsWith(pfpPrefix))
-                            {
-                                replayLoader.UserId = url.Substring(pfpPrefix.Length).Split('?')[0];
-                                replayLoader.UserScores = "recent";
-                                replayLoader.PlayIndex = 0;
-                            }
-                        }
-                        source = Source.BOT;
-                    }
-
-                    //user-triggered
-                    Match messageMatch = messageRegex.Match(e.Message.Content);
-                    if (messageMatch.Success)
-                    {
-                        Console.WriteLine("processing user call");
-                        Logger.Log(Logging.UserCalls);
-                        source = Source.USER;
-
-                        replayLoader.PlayIndex = 0;
-                        if (messageMatch.Groups.Count == 4 && messageMatch.Groups[3].Success)
-                            replayLoader.PlayIndex = int.Parse(messageMatch.Groups[3].Value) - 1;
-
-                        switch (messageMatch.Groups[1].Value)
-                        {
-                            case "user-recent":
-                            case "user-top":
-                                replayLoader.Username = messageMatch.Groups[2].Value;
-                                replayLoader.UserScores = messageMatch.Groups[1].Value == "user-recent"? "recent" : "best";
-                                break;
-                            case "beatmap":
-                                var bmMatch = beatmapRegex.Match(messageMatch.Groups[2].Value);
-                                if (bmMatch.Success)
-                                {
-                                    replayLoader.BeatmapId = bmMatch.Groups[1].Value;
-                                }
-                                else
-                                {
-                                    await e.Message.RespondAsync("Invalid beatmap link");
-                                    return;
-                                }
-                                break;
-                        }
-                    }
-
-                    if (await replayLoader.Load(api, replayDatabase, beatmapDatabase))
-                    {
-                        DiscordMessage message = null;
-                        MissAnalyzer missAnalyzer = new MissAnalyzer(replayLoader);
-                        if (missAnalyzer.MissCount == 0 && (source == Source.USER || source == Source.ATTACHMENT))
-                        {
-                            await e.Message.RespondAsync("No misses found.");
-                        }
-                        else if (missAnalyzer.MissCount == 1)
-                        {
-                            message = await SendMissMessage(missAnalyzer, e.Message, 0);
-                        }
-                        else
-                        {
-                            message = await e.Message.RespondAsync($"Found **{missAnalyzer.MissCount}** miss{(missAnalyzer.MissCount != 1 ? "es" : "")}");
-                            for (int i = 1; i < Math.Min(missAnalyzer.MissCount + 1, numberEmojis.Length); i++)
-                            {
-                                await message.CreateReactionAsync(numberEmojis[i]);
-                            }
-                        }
-                        if (message != null)
-                        {
-                            Logger.LogAbsolute(Logging.CachedMessages, cachedMisses.Count);
-                            cachedMisses[message] = missAnalyzer;
-                        }
-                    }
-                    else if (source == Source.USER || source == Source.ATTACHMENT)
-                    {
-                        await e.Message.RespondAsync($"Couldn't find {(replayLoader.Replay == null? "replay" : "beatmap")}");
+                        replayLoader.ReplayFile = dest;
+                        source = Source.ATTACHMENT;
                     }
                 }
-                catch (Exception exc) { Console.WriteLine(exc.ToString()); }
+
+                if (rsTypes.ContainsKey(e.Message.Content.Split(' ')[0]))
+                {
+                    rsCalls[rsTypes[e.Message.Content.Split(' ')[0]]].Enqueue(e.Message.Channel);
+                    return;
+                }
+                if (rsCalls.ContainsKey(e.Author.Id) && rsCalls[e.Author.Id].Count > 0 && rsCalls[e.Author.Id].Peek() == e.Channel)
+                {
+                    DiscordEmbed embed = rsFunc[e.Author.Id](replayLoader, e);
+                    Logger.Log(Logging.BotCalls);
+                    if (embed != null)
+                    {
+                        string url = embed.Author.IconUrl.ToString();
+                        if (url.StartsWith(pfpPrefix))
+                        {
+                            replayLoader.UserId = url.Substring(pfpPrefix.Length).Split('?')[0];
+                            replayLoader.UserScores = "recent";
+                            replayLoader.PlayIndex = 0;
+                        }
+                    }
+                    source = Source.BOT;
+                }
+
+                //user-triggered
+                Match messageMatch = messageRegex.Match(e.Message.Content);
+                if (messageMatch.Success)
+                {
+                    Console.WriteLine("processing user call");
+                    Logger.Log(Logging.UserCalls);
+                    source = Source.USER;
+
+                    replayLoader.PlayIndex = 0;
+                    if (messageMatch.Groups.Count == 4 && messageMatch.Groups[3].Success)
+                        replayLoader.PlayIndex = int.Parse(messageMatch.Groups[3].Value) - 1;
+
+                    switch (messageMatch.Groups[1].Value)
+                    {
+                        case "user-recent":
+                        case "user-top":
+                            replayLoader.Username = messageMatch.Groups[2].Value;
+                            replayLoader.UserScores = messageMatch.Groups[1].Value == "user-recent"? "recent" : "best";
+                            break;
+                        case "beatmap":
+                            var bmMatch = beatmapRegex.Match(messageMatch.Groups[2].Value);
+                            if (bmMatch.Success)
+                            {
+                                replayLoader.BeatmapId = bmMatch.Groups[1].Value;
+                            }
+                            else
+                            {
+                                await e.Message.RespondAsync("Invalid beatmap link");
+                                return;
+                            }
+                            break;
+                    }
+                }
+
+                if (await replayLoader.Load(api, replayDatabase, beatmapDatabase))
+                {
+                    DiscordMessage message = null;
+                    MissAnalyzer missAnalyzer = new MissAnalyzer(replayLoader);
+                    if (missAnalyzer.MissCount == 0 && (source == Source.USER || source == Source.ATTACHMENT))
+                    {
+                        await e.Message.RespondAsync("No misses found.");
+                    }
+                    else if (missAnalyzer.MissCount == 1)
+                    {
+                        message = await SendMissMessage(missAnalyzer, e.Message, 0);
+                    }
+                    else
+                    {
+                        message = await e.Message.RespondAsync($"Found **{missAnalyzer.MissCount}** miss{(missAnalyzer.MissCount != 1 ? "es" : "")}");
+                        for (int i = 1; i < Math.Min(missAnalyzer.MissCount + 1, numberEmojis.Length); i++)
+                        {
+                            await message.CreateReactionAsync(numberEmojis[i]);
+                        }
+                    }
+                    if (message != null)
+                    {
+                        Logger.LogAbsolute(Logging.CachedMessages, cachedMisses.Count);
+                        cachedMisses[message] = missAnalyzer;
+                    }
+                }
+                else if (source == Source.USER || source == Source.ATTACHMENT)
+                {
+                    await e.Message.RespondAsync($"Couldn't find {(replayLoader.Replay == null? "replay" : "beatmap")}");
+                }
             };
 
             discord.MessageReactionAdded += async e =>
             {
                 if (test && e.Message.Channel.GuildId != 753465280465862757L) return;
-                try
+                Logger.Log(Logging.EventsHandled);
+                if (!e.User.IsCurrent && cachedMisses.Contains(e.Message))
                 {
-                    Logger.Log(Logging.EventsHandled);
-                    if (!e.User.IsCurrent && cachedMisses.Contains(e.Message))
+                    var analyzer = cachedMisses[e.Message];
+                    // switch (e.Emoji.GetDiscordName())
+                    // {
+                    //     case ":heavy_plus_sign:":
+
+                    //     break;
+                    //     case ":heavy_minus_sign:":
+
+                    //     break;
+                    //     case ":"
+
+                    // }
+                    int index = Array.FindIndex(numberEmojis, t => t == e.Emoji) - 1;
+                    if (index >= 0 && index < Math.Min(analyzer.MissCount, numberEmojis.Length - 1))
                     {
-                        var analyzer = cachedMisses[e.Message];
-                        // switch (e.Emoji.GetDiscordName())
-                        // {
-                        //     case ":heavy_plus_sign:":
-
-                        //     break;
-                        //     case ":heavy_minus_sign:":
-
-                        //     break;
-                        //     case ":"
-
-                        // }
-                        int index = Array.FindIndex(numberEmojis, t => t == e.Emoji) - 1;
-                        if (index >= 0 && index < Math.Min(analyzer.MissCount, numberEmojis.Length - 1))
-                        {
-                            Logger.Log(Logging.ReactionCalls);
-                            var message = await SendMissMessage(analyzer, e.Message, index);
-                            Logger.LogAbsolute(Logging.CachedMessages, cachedMisses.Count);
-                            cachedMisses[message] = analyzer;
-                        }
+                        Logger.Log(Logging.ReactionCalls);
+                        var message = await SendMissMessage(analyzer, e.Message, index);
+                        Logger.LogAbsolute(Logging.CachedMessages, cachedMisses.Count);
+                        cachedMisses[message] = analyzer;
                     }
                 }
-                catch (Exception exc) { Console.WriteLine(exc.ToString()); }
+            };
+
+            discord.ClientErrored += async e =>
+            {
+                Console.WriteLine(e.EventName);
+                Console.WriteLine(e.Exception);
             };
 
             await apiToken;

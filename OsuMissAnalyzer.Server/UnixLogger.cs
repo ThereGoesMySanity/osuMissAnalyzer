@@ -1,8 +1,10 @@
 using System;
 using System.IO;
 using System.Linq;
+using System.Net;
 using System.Net.Sockets;
 using System.Text;
+using System.Threading.Tasks;
 using Mono.Unix;
 using Mono.Unix.Native;
 using Newtonsoft.Json;
@@ -40,6 +42,8 @@ namespace OsuMissAnalyzer.Server
     public class Logger
     {
         private const string ENDPOINT = "/run/missanalyzer-server";
+        private readonly string webHook;
+
         public static Logger Instance { get; set; }
         private StreamWriter file;
         private int[] counts;
@@ -49,7 +53,7 @@ namespace OsuMissAnalyzer.Server
         private UnixEndPoint endpoint;
         public event Action UpdateLogs;
 
-        public Logger(string logFile)
+        public Logger(string logFile, string webHook)
         {
             file = new StreamWriter(logFile, true);
             counts = new int[Enum.GetValues(typeof(Logging)).Length];
@@ -62,6 +66,7 @@ namespace OsuMissAnalyzer.Server
             var fileInfo = new Mono.Unix.UnixFileInfo(ENDPOINT);
             Syscall.chown(ENDPOINT, Syscall.getuid(), Syscall.getgrnam("netdata").gr_gid);
             Syscall.chmod(ENDPOINT, FilePermissions.S_IWGRP | FilePermissions.S_IWUSR | FilePermissions.S_IRGRP | FilePermissions.S_IRUSR);
+            this.webHook = webHook;
         }
         public void Close()
         {
@@ -150,6 +155,26 @@ namespace OsuMissAnalyzer.Server
         {
             if (Instance == null) return;
             Instance.counts[(int)type] = value;
+        }
+        public static async Task WriteLine(object o)
+        {
+            await WriteLine(o.ToString());
+        }
+        public static async Task WriteLine(string line)
+        {
+            await Instance.writeLine(line);
+        }
+        public async Task writeLine(string line)
+        {
+            Console.WriteLine(line);
+            if (!string.IsNullOrEmpty(webHook))
+            {
+                using (WebClient w = new WebClient())
+                {
+                    w.Headers[HttpRequestHeader.ContentType] = "application/x-www-form-urlencoded";
+                    string res = await w.UploadStringTaskAsync(webHook, $"content={WebUtility.HtmlEncode(line)}");
+                }
+            }
         }
         private static Logging? TryParse(String s)
         {
