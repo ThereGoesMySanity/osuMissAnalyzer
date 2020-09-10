@@ -89,7 +89,7 @@ namespace OsuMissAnalyzer.Server
 
                 socket.BeginAccept(new AsyncCallback(AcceptCallback), null);
             }
-            catch (Exception e) { if (!(e is Exception)) Console.WriteLine(e); }
+            catch (Exception e) { if (!(e is Exception)) Logger.WriteLine(e); }
         }
         public void ReadCallback(IAsyncResult result)
         {

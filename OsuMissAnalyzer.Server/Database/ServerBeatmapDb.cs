@@ -39,7 +39,7 @@ namespace OsuMissAnalyzer.Server.Database
         {
             if (!hashes.ContainsKey(mapHash))
             {
-                Console.WriteLine("beatmap not found, downloading...");
+                Logger.WriteLine("beatmap not found, downloading...");
                 hashes[mapHash] = await api.DownloadBeatmapFromHashv1(mapHash, Path.Combine(folder, "beatmaps"));
                 Logger.LogAbsolute(Logging.BeatmapsDbSize, hashes.Count);
                 Logger.Log(Logging.BeatmapsCacheMiss);
@@ -55,7 +55,7 @@ namespace OsuMissAnalyzer.Server.Database
             string file = Path.Combine(folder, "beatmaps", $"{beatmap_id}.osu");
             if (!File.Exists(file))
             {
-                Console.WriteLine("beatmap not found, downloading...");
+                Logger.WriteLine("beatmap not found, downloading...");
                 await api.DownloadBeatmapFromId(beatmap_id, Path.Combine(folder, "beatmaps"));
                 hashes[Beatmap.MD5FromFile(file)] = beatmap_id;
                 Logger.LogAbsolute(Logging.BeatmapsDbSize, hashes.Count);

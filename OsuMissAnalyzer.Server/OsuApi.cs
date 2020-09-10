@@ -90,8 +90,8 @@ namespace OsuMissAnalyzer.Server
             }
             else
             {
-                Console.WriteLine($"{req} failed");
-                Console.WriteLine(res.ToString());
+                Logger.WriteLine($"{req} failed");
+                Logger.WriteLine(res.ToString());
             }
             return null;
         }
@@ -108,8 +108,8 @@ namespace OsuMissAnalyzer.Server
             }
             else
             {
-                Console.WriteLine($"{req} failed");
-                Console.WriteLine(res.ToString());
+                Logger.WriteLine($"{req} failed");
+                Logger.WriteLine(res.ToString());
             }
             return null;
         }

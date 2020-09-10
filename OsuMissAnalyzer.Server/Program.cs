@@ -86,13 +86,13 @@ DM ThereGoesMySanity#2622 if you need help/want this bot on your server
             string botLink = $"https://discordapp.com/oauth2/authorize?client_id={discordId}&scope=bot&permissions={discordPermissions}";
             if (link)
             {
-                Console.WriteLine(botLink);
+                Logger.WriteLine(botLink);
                 return;
             }
 
             if (help || (osuSecret.Length * osuApiKey.Length * discordToken.Length) == 0)
             {
-                Console.WriteLine(
+                Logger.WriteLine(
 $@"osu! Miss Analyzer, Discord Bot Edition
 Bot link: https://discordapp.com/oauth2/authorize?client_id={discordId}&scope=bot&permissions={discordPermissions}");
                 opts.WriteOptionDescriptions(Console.Out);
@@ -101,7 +101,7 @@ Bot link: https://discordapp.com/oauth2/authorize?client_id={discordId}&scope=bo
             if (apiv2Req != null)
             {
                 OsuApi api2 = new OsuApi(osuId, osuSecret, osuApiKey);
-                Console.WriteLine(await api2.GetApiv2(apiv2Req));
+                Logger.WriteLine(await api2.GetApiv2(apiv2Req));
                 return;
             }
 
@@ -139,7 +139,7 @@ Bot link: https://discordapp.com/oauth2/authorize?client_id={discordId}&scope=bo
                 {
                     if (e.Message.Content.StartsWith("**Most Recent osu! Standard Play for"))
                     {
-                        Console.WriteLine("processing owo message");
+                        Logger.WriteLine("processing owo message");
                         return e.Message.Embeds[0];
                     }
                     return null;
@@ -148,7 +148,7 @@ Bot link: https://discordapp.com/oauth2/authorize?client_id={discordId}&scope=bo
                 {
                     if (e.Message.Content.Length == 0)
                     {
-                        Console.WriteLine("processing bismarck message");
+                        Logger.WriteLine("processing bismarck message");
                         var embed = e.Message.Embeds[0];
                         string url = embed.Url.AbsoluteUri;
                         string prefix = "https://osu.ppy.sh/scores/osu/";
@@ -172,7 +172,7 @@ Bot link: https://discordapp.com/oauth2/authorize?client_id={discordId}&scope=bo
                 },
                 [BOATBOT] = (replayLoader, e) =>
                 {
-                    Console.WriteLine("processing boatbot message");
+                    Logger.WriteLine("processing boatbot message");
                     return e.Message.Embeds[0];
                 },
             };
@@ -209,7 +209,7 @@ Bot link: https://discordapp.com/oauth2/authorize?client_id={discordId}&scope=bo
                 {
                     if (attachment.FileName.EndsWith(".osr"))
                     {
-                        Console.WriteLine("processing attachment");
+                        Logger.WriteLine("processing attachment");
                         Logger.Log(Logging.AttachmentCalls);
                         string dest = Path.Combine(serverDir, "replays", attachment.FileName);
                         using (WebClient w = new WebClient())
@@ -247,7 +247,7 @@ Bot link: https://discordapp.com/oauth2/authorize?client_id={discordId}&scope=bo
                 Match messageMatch = messageRegex.Match(e.Message.Content);
                 if (messageMatch.Success)
                 {
-                    Console.WriteLine("processing user call");
+                    Logger.WriteLine("processing user call");
                     Logger.Log(Logging.UserCalls);
                     source = Source.USER;
 
@@ -340,12 +340,12 @@ Bot link: https://discordapp.com/oauth2/authorize?client_id={discordId}&scope=bo
 
             discord.ClientErrored += async e =>
             {
-                Console.WriteLine(e.EventName);
-                Console.WriteLine(e.Exception);
+                Logger.WriteLine(e.EventName);
+                Logger.WriteLine(e.Exception);
             };
 
             await apiToken;
-            Console.WriteLine("Init complete");
+            Logger.WriteLine("Init complete");
 
             await discord.ConnectAsync();
             Logger.LogAbsolute(Logging.ServersJoined, discord.Guilds.Count);
@@ -355,7 +355,7 @@ Bot link: https://discordapp.com/oauth2/authorize?client_id={discordId}&scope=bo
             await discord.DisconnectAsync();
             beatmapDatabase.Close();
             Logger.Instance.Close();
-            Console.WriteLine("Closed safely");
+            Logger.WriteLine("Closed safely");
         }
         private static async Task<bool> CheckApiResult(JToken result, DiscordMessage respondTo)
         {
