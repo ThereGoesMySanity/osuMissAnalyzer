@@ -71,7 +71,9 @@ namespace OsuMissAnalyzer.Server
         }
         public void AcceptCallback(IAsyncResult result)
         {
-            if (!socket.Connected) return;
+            // if (!socket.Connected) return;
+            try
+            {
             Socket handler = socket.EndAccept(result);
 
             // Create the state object.
@@ -81,6 +83,7 @@ namespace OsuMissAnalyzer.Server
                 new AsyncCallback(ReadCallback), state);
 
             socket.BeginAccept(new AsyncCallback(AcceptCallback), null);
+            } catch (Exception e) {}
         }
         public void ReadCallback(IAsyncResult result)
         {
