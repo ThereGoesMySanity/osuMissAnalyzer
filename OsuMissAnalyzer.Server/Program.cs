@@ -222,7 +222,7 @@ Bot link: https://discordapp.com/oauth2/authorize?client_id={discordId}&scope=bo
 
                     if (rsTypes.ContainsKey(e.Message.Content.Split(' ')[0]))
                     {
-                        rsCalls[rsTypes[e.Message.Content]].Enqueue(e.Message.Channel);
+                        rsCalls[rsTypes[e.Message.Content.Split(' ')[0]]].Enqueue(e.Message.Channel);
                         return;
                     }
                     if (rsCalls.ContainsKey(e.Author.Id) && rsCalls[e.Author.Id].Peek() == e.Channel)
