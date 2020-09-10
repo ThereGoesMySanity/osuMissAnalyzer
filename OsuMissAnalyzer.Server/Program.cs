@@ -97,7 +97,6 @@ Bot link: https://discordapp.com/oauth2/authorize?client_id={discordId}&scope=bo
             Regex beatmapRegex = new Regex("^(?:https?://(?:osu|old).ppy.sh/(?:beatmapsets/\\d+#osu|b)/)?(\\d+)");
             Regex partialBeatmapRegex = new Regex("^\\d+#osu/(\\d+)");
             Regex modRegex = new Regex("](?: \\+([A-Z]+))?\\n");
-            Source? source = null;
 
             var cachedMisses = new MemoryCache<DiscordMessage, MissAnalyzer>(128);
             cachedMisses.SetPolicy(typeof(LfuEvictionPolicy<,>));
@@ -115,6 +114,7 @@ Bot link: https://discordapp.com/oauth2/authorize?client_id={discordId}&scope=bo
             }
             discord.MessageCreated += async e =>
             {
+                Source? source = null;
                 try
                 {
                     Logger.LogAbsolute(Logging.ServersJoined, discord.Guilds.Count);
