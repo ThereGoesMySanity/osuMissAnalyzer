@@ -97,7 +97,7 @@ Bot link: https://discordapp.com/oauth2/authorize?client_id={discordId}&scope=bo
             Regex beatmapRegex = new Regex("^(?:https?://(?:osu|old).ppy.sh/(?:beatmapsets/\\d+#osu|b)/)?(\\d+)");
             Regex partialBeatmapRegex = new Regex("^\\d+#osu/(\\d+)");
             Regex modRegex = new Regex("](?: \\+([A-Z]+))?\\n");
-            Source source = Source.USER;
+            Source? source = null;
 
             var cachedMisses = new MemoryCache<DiscordMessage, MissAnalyzer>(128);
             cachedMisses.SetPolicy(typeof(LfuEvictionPolicy<,>));
@@ -233,7 +233,7 @@ DM ThereGoesMySanity#2622 if you need help/want this bot on your server
                     {
                         DiscordMessage message = null;
                         MissAnalyzer missAnalyzer = new MissAnalyzer(replayLoader);
-                        if (missAnalyzer.MissCount == 0 && source != Source.BOT)
+                        if (missAnalyzer.MissCount == 0 && (source == Source.USER || source == Source.ATTACHMENT))
                         {
                             await e.Message.RespondAsync("No misses found.");
                         }
@@ -255,7 +255,7 @@ DM ThereGoesMySanity#2622 if you need help/want this bot on your server
                             cachedMisses[message] = missAnalyzer;
                         }
                     }
-                    else
+                    else if (source == Source.USER || source == Source.ATTACHMENT)
                     {
                         await e.Message.RespondAsync($"Couldn't find {(replayLoader.Replay == null? "replay" : "beatmap")}");
                     }
