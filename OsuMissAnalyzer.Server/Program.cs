@@ -118,7 +118,7 @@ Bot link: https://discordapp.com/oauth2/authorize?client_id={discordId}&scope=bo
             Regex partialBeatmapRegex = new Regex("^\\d+#osu/(\\d+)");
             Regex modRegex = new Regex("](?: \\+([A-Z]+))?\\n");
 
-            var cachedMisses = new MemoryCache<DiscordMessage, MissAnalyzer>(128);
+            var cachedMisses = new MemoryCache<DiscordMessage, SavedMiss>(128);
             cachedMisses.SetPolicy(typeof(LfuEvictionPolicy<,>));
 
             var rsTypes = new Dictionary<string, ulong> {
@@ -286,6 +286,7 @@ Bot link: https://discordapp.com/oauth2/authorize?client_id={discordId}&scope=bo
                 {
                     DiscordMessage message = null;
                     MissAnalyzer missAnalyzer = new MissAnalyzer(replayLoader);
+                    bool[] missesDisplayed = new bool[missAnalyzer.MissCount];
                     if (missAnalyzer.MissCount == 0 && (source == Source.USER || source == Source.ATTACHMENT))
                     {
                         await e.Message.RespondAsync("No misses found.");
@@ -293,6 +294,7 @@ Bot link: https://discordapp.com/oauth2/authorize?client_id={discordId}&scope=bo
                     else if (missAnalyzer.MissCount == 1)
                     {
                         message = await SendMissMessage(missAnalyzer, e.Message, 0);
+                        missesDisplayed[0] = true;
                     }
                     else if (missAnalyzer.MissCount > 1)
                     {
@@ -305,7 +307,7 @@ Bot link: https://discordapp.com/oauth2/authorize?client_id={discordId}&scope=bo
                     if (message != null)
                     {
                         Logger.LogAbsolute(Logging.CachedMessages, cachedMisses.Count);
-                        cachedMisses[message] = missAnalyzer;
+                        cachedMisses[message] = new SavedMiss(missAnalyzer, missesDisplayed);
                     }
                 }
                 else if (source == Source.USER || source == Source.ATTACHMENT)
@@ -318,9 +320,10 @@ Bot link: https://discordapp.com/oauth2/authorize?client_id={discordId}&scope=bo
             {
                 if (test && e.Message.Channel.GuildId != 753465280465862757L) return;
                 Logger.Log(Logging.EventsHandled);
-                if (!e.User.IsCurrent && cachedMisses.Contains(e.Message))
+                if (!e.User.IsCurrent && !e.User.IsBot && cachedMisses.Contains(e.Message))
                 {
-                    var analyzer = cachedMisses[e.Message];
+                    var savedMiss = cachedMisses[e.Message];
+                    var analyzer = savedMiss.MissAnalyzer;
                     // switch (e.Emoji.GetDiscordName())
                     // {
                     //     case ":heavy_plus_sign:":
@@ -333,12 +336,16 @@ Bot link: https://discordapp.com/oauth2/authorize?client_id={discordId}&scope=bo
 
                     // }
                     int index = Array.FindIndex(numberEmojis, t => t == e.Emoji) - 1;
-                    if (index >= 0 && index < Math.Min(analyzer.MissCount, numberEmojis.Length - 1))
+                    if (!savedMiss.MissesDisplayed[index])
                     {
-                        Logger.Log(Logging.ReactionCalls);
-                        var message = await SendMissMessage(analyzer, e.Message, index);
-                        Logger.LogAbsolute(Logging.CachedMessages, cachedMisses.Count);
-                        cachedMisses[message] = analyzer;
+                        if (index >= 0 && index < Math.Min(analyzer.MissCount, numberEmojis.Length - 1))
+                        {
+                            Logger.Log(Logging.ReactionCalls);
+                            var message = await SendMissMessage(analyzer, e.Message, index, e.User.Username);
+                            savedMiss.MissesDisplayed[index] = true;
+                            Logger.LogAbsolute(Logging.CachedMessages, cachedMisses.Count);
+                            // cachedMisses[message] = new SavedMiss(analyzer);
+                        }
                     }
                 }
             };
@@ -370,10 +377,11 @@ Bot link: https://discordapp.com/oauth2/authorize?client_id={discordId}&scope=bo
             }
             return result != null;
         }
-        private static async Task<DiscordMessage> SendMissMessage(MissAnalyzer analyzer, DiscordMessage respondTo, int index)
+        private static async Task<DiscordMessage> SendMissMessage(MissAnalyzer analyzer, DiscordMessage respondTo, int index, string requested = "")
         {
             analyzer.CurrentObject = index;
-            return await respondTo.RespondWithFileAsync(GetStream(analyzer.DrawSelectedHitObject(area)), "miss.png", $"Miss **{index + 1}** of **{analyzer.MissCount}**");
+            return await respondTo.RespondWithFileAsync(GetStream(analyzer.DrawSelectedHitObject(area)), 
+                    "miss.png", $"Miss **{index + 1}** of **{analyzer.MissCount}**{(requested != ""? " (requested by "+requested:"")})");
         }
         private static MemoryStream GetStream(Bitmap bitmap)
         {
