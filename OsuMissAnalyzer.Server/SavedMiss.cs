@@ -5,13 +5,11 @@ namespace OsuMissAnalyzer.Server
     public struct SavedMiss
     {
         public MissAnalyzer MissAnalyzer;
-        public bool[] MissesDisplayed;
-        public SavedMiss(MissAnalyzer analyzer) : this(analyzer, new bool[analyzer.MissCount]) {}
-
-        public SavedMiss(MissAnalyzer analyzer, bool[] missesDisplayed)
+        public string[] MissUrls;
+        public SavedMiss(MissAnalyzer analyzer)
         {
             MissAnalyzer = analyzer;
-            MissesDisplayed = missesDisplayed;
+            MissUrls = new string[analyzer.MissCount];
         } 
     }
 }

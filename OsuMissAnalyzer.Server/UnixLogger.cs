@@ -175,7 +175,8 @@ namespace OsuMissAnalyzer.Server
                 using (WebClient w = new WebClient())
                 {
                     w.Headers[HttpRequestHeader.ContentType] = "application/x-www-form-urlencoded";
-                    string res = await w.UploadStringTaskAsync(webHook, $"content={WebUtility.HtmlEncode((level == LogLevel.ALERT? ALERT_PREFIX : "") + line)}");
+                    string res = await w.UploadStringTaskAsync(webHook, 
+                            $"content={WebUtility.HtmlEncode((level == LogLevel.ALERT? ALERT_PREFIX : "") + line)}");
                 }
             }
         }

@@ -24,6 +24,7 @@ namespace OsuMissAnalyzer.Server
         const ulong OWO = 289066747443675143;
         const ulong BISMARCK = 207856807677263874;
         const ulong BOATBOT = 185013154198061056;
+        const ulong DUMP_CHANNEL = 753788360425734235L;
         const int size = 480;
         const string HELP_MESSAGE = @"osu! Miss Analyzer (https://github.com/ThereGoesMySanity/osuMissAnalyzer) bot
 ```
@@ -286,15 +287,14 @@ Bot link: https://discordapp.com/oauth2/authorize?client_id={discordId}&scope=bo
                 {
                     DiscordMessage message = null;
                     MissAnalyzer missAnalyzer = new MissAnalyzer(replayLoader);
-                    bool[] missesDisplayed = new bool[missAnalyzer.MissCount];
                     if (missAnalyzer.MissCount == 0 && (source == Source.USER || source == Source.ATTACHMENT))
                     {
                         await e.Message.RespondAsync("No misses found.");
                     }
                     else if (missAnalyzer.MissCount == 1)
                     {
-                        message = await SendMissMessage(missAnalyzer, e.Message, 0);
-                        missesDisplayed[0] = true;
+                        string miss = await SendMissMessage(missAnalyzer, 0);
+                        await e.Message.RespondAsync(miss);
                     }
                     else if (missAnalyzer.MissCount > 1)
                     {
@@ -307,7 +307,7 @@ Bot link: https://discordapp.com/oauth2/authorize?client_id={discordId}&scope=bo
                     if (message != null)
                     {
                         Logger.LogAbsolute(Logging.CachedMessages, cachedMisses.Count);
-                        cachedMisses[message] = new SavedMiss(missAnalyzer, missesDisplayed);
+                        cachedMisses[message] = new SavedMiss(missAnalyzer);
                     }
                 }
                 else if (source == Source.USER || source == Source.ATTACHMENT)
@@ -336,16 +336,14 @@ Bot link: https://discordapp.com/oauth2/authorize?client_id={discordId}&scope=bo
 
                     // }
                     int index = Array.FindIndex(numberEmojis, t => t == e.Emoji) - 1;
-                    if (!savedMiss.MissesDisplayed[index])
+                    if (index >= 0 && index < Math.Min(analyzer.MissCount, numberEmojis.Length - 1))
                     {
-                        if (index >= 0 && index < Math.Min(analyzer.MissCount, numberEmojis.Length - 1))
+                        Logger.Log(Logging.ReactionCalls);
+                        if (savedMiss.MissUrls[index] == null)
                         {
-                            Logger.Log(Logging.ReactionCalls);
-                            var message = await SendMissMessage(analyzer, e.Message, index, e.User.Username);
-                            savedMiss.MissesDisplayed[index] = true;
-                            Logger.LogAbsolute(Logging.CachedMessages, cachedMisses.Count);
-                            // cachedMisses[message] = new SavedMiss(analyzer);
+                            savedMiss.MissUrls[index] = await SendMissMessage(analyzer, index);
                         }
+                        await e.Message.ModifyAsync(savedMiss.MissUrls[index]);
                     }
                 }
             };
@@ -377,11 +375,11 @@ Bot link: https://discordapp.com/oauth2/authorize?client_id={discordId}&scope=bo
             }
             return result != null;
         }
-        private static async Task<DiscordMessage> SendMissMessage(MissAnalyzer analyzer, DiscordMessage respondTo, int index, string requested = "")
+        private static async Task<string> SendMissMessage(MissAnalyzer analyzer, int index)
         {
             analyzer.CurrentObject = index;
-            return await respondTo.RespondWithFileAsync(GetStream(analyzer.DrawSelectedHitObject(area)), 
-                    "miss.png", $"Miss **{index + 1}** of **{analyzer.MissCount}**{(requested != ""? " (requested by "+requested:"")})");
+            return (await (await discord.GetChannelAsync(DUMP_CHANNEL)).SendFileAsync(GetStream(analyzer.DrawSelectedHitObject(area)), 
+                    "miss.png", "")).Attachments[0].Url;
         }
         private static MemoryStream GetStream(Bitmap bitmap)
         {
