@@ -77,10 +77,10 @@ namespace OsuMissAnalyzer.Server
             string file = Path.Combine(destinationFolder, $"{beatmapId}.osu");
             await webClient.DownloadFileTaskAsync($"https://osu.ppy.sh/osu/{beatmapId}", file);
         }
-        public async Task<JToken> GetUserScoresv2(string userId, string type, int index)
+        public async Task<JToken> GetUserScoresv2(string userId, string type, int index, bool failedScores)
         {
             Logger.Log(Logging.ApiGetUserScoresv2);
-            var req = $"users/{userId}/scores/{type}?mode=osu&include_fails=1&limit={index + 1}";
+            var req = $"users/{userId}/scores/{type}?mode=osu&include_fails={(failedScores?1:0)}&limit={index + 1}";
             var res = await GetApiv2(req);
             if (res is JArray arr)
             {

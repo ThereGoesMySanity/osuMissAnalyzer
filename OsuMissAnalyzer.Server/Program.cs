@@ -242,7 +242,9 @@ Bot link: https://discordapp.com/oauth2/authorize?client_id={discordId}&scope=bo
                         if (url.StartsWith(pfpPrefix))
                         {
                             replayLoader.UserId = url.Substring(pfpPrefix.Length).Split('?')[0];
+                            await Logger.WriteLine($"found embed with userid {replayLoader.UserId}");
                             replayLoader.UserScores = "recent";
+                            replayLoader.FailedScores = true;
                             replayLoader.PlayIndex = 0;
                         }
                     }
@@ -359,6 +361,7 @@ Bot link: https://discordapp.com/oauth2/authorize?client_id={discordId}&scope=bo
 
             await discord.ConnectAsync();
             Logger.LogAbsolute(Logging.ServersJoined, discord.Guilds.Count);
+            await discord.UpdateStatusAsync(new DiscordGame(">miss help for help!"));
 
             byte[] buffer = new byte[4];
             await interruptPipe.Reading.ReadAsync(buffer, 0, 4);

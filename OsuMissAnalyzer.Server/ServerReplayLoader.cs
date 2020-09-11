@@ -17,6 +17,7 @@ namespace OsuMissAnalyzer.Server
         public string ScoreId;
         public string Mods;
         public string ReplayFile;
+        public bool FailedScores = false;
 
         public int? PlayIndex;
 
@@ -46,7 +47,7 @@ namespace OsuMissAnalyzer.Server
             if(_replay == null && PlayIndex.HasValue)
             {
                 if (UserId != null && UserScores != null)
-                    score = await api.GetUserScoresv2(UserId, UserScores, PlayIndex.Value);
+                    score = await api.GetUserScoresv2(UserId, UserScores, PlayIndex.Value, FailedScores);
                 else if (BeatmapId != null)
                     score = await api.GetBeatmapScoresv2(BeatmapId, PlayIndex.Value);
 
