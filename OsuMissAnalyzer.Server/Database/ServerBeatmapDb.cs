@@ -37,18 +37,30 @@ namespace OsuMissAnalyzer.Server.Database
         }
         public async Task<Beatmap> GetBeatmap(string mapHash)
         {
-            if (!hashes.ContainsKey(mapHash))
+            if (!string.IsNullOrEmpty(mapHash))
             {
-                await Logger.WriteLine("beatmap not found, downloading...");
-                hashes[mapHash] = await api.DownloadBeatmapFromHashv1(mapHash, Path.Combine(folder, "beatmaps"));
-                Logger.LogAbsolute(Logging.BeatmapsDbSize, hashes.Count);
-                Logger.Log(Logging.BeatmapsCacheMiss);
+                if (!hashes.ContainsKey(mapHash))
+                {
+                    await Logger.WriteLine("beatmap not found, downloading...");
+                    var result = await api.DownloadBeatmapFromHashv1(mapHash, Path.Combine(folder, "beatmaps"));
+                    if (result != null)
+                    {
+                        hashes[mapHash] = result;
+                        Logger.LogAbsolute(Logging.BeatmapsDbSize, hashes.Count);
+                        Logger.Log(Logging.BeatmapsCacheMiss);
+                    }
+                    else
+                    {
+                        return null;
+                    }
+                }
+                else
+                {
+                    Logger.Log(Logging.BeatmapsCacheHit);
+                }
+                return new Beatmap(Path.Combine(folder, "beatmaps", $"{hashes[mapHash]}.osu"));
             }
-            else
-            {
-                Logger.Log(Logging.BeatmapsCacheHit);
-            }
-            return new Beatmap(Path.Combine(folder, "beatmaps", $"{hashes[mapHash]}.osu"));
+            return null;
         }
         public async Task<Beatmap> GetBeatmapFromId(string beatmap_id)
         {

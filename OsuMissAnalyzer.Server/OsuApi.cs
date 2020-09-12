@@ -67,9 +67,13 @@ namespace OsuMissAnalyzer.Server
         {
             Logger.Log(Logging.ApiGetBeatmapsv1);
             var j = JArray.Parse(webClient.DownloadString($"https://osu.ppy.sh/api/get_beatmaps?k={apiKeyv1}&h={mapHash}"));
-            string beatmapId = (string)j[0]["beatmap_id"];
-            await DownloadBeatmapFromId(beatmapId, destinationFolder);
-            return beatmapId;
+            if (j.Count > 0)
+            {
+                string beatmapId = (string)j[0]["beatmap_id"];
+                await DownloadBeatmapFromId(beatmapId, destinationFolder);
+                return beatmapId;
+            }
+            return null;
         }
         public async Task DownloadBeatmapFromId(string beatmapId, string destinationFolder)
         {
@@ -82,9 +86,9 @@ namespace OsuMissAnalyzer.Server
             Logger.Log(Logging.ApiGetUserScoresv2);
             var req = $"users/{userId}/scores/{type}?mode=osu&include_fails={(failedScores?1:0)}&limit=1&offset={index}";
             var res = await GetApiv2(req);
-            if (res is JArray arr)
+            if (res is JArray arr && arr.Count > 0)
             {
-                var score = arr[index];
+                var score = arr[0];
                 if ((bool)score["replay"] && !(bool)score["perfect"])
                     return score;
             }
@@ -100,9 +104,9 @@ namespace OsuMissAnalyzer.Server
             Logger.Log(Logging.ApiGetBeatmapScoresv2);
             var req = $"beatmaps/{beatmapId}/scores";
             var res = await GetApiv2(req);
-            if (res["scores"] != null)
+            if (res["scores"] is JArray arr && arr.Count > index)
             {
-                var score = res["scores"][index];
+                var score = arr[index];
                 if ((bool)score["replay"] && !(bool)score["perfect"])
                     return score;
             }

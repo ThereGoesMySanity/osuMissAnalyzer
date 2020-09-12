@@ -177,7 +177,9 @@ Bot link: https://discordapp.com/oauth2/authorize?client_id={discordId}&scope=bo
                 },
                 [BOATBOT] = (replayLoader, e) =>
                 {
-                    return e.Message.Embeds[0];
+                    if (e.Message.Embeds.Count > 0)
+                        return e.Message.Embeds[0];
+                    return null;
                 },
             };
 
