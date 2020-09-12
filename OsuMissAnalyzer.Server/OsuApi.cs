@@ -80,7 +80,7 @@ namespace OsuMissAnalyzer.Server
         public async Task<JToken> GetUserScoresv2(string userId, string type, int index, bool failedScores)
         {
             Logger.Log(Logging.ApiGetUserScoresv2);
-            var req = $"users/{userId}/scores/{type}?mode=osu&include_fails={(failedScores?1:0)}&limit={index + 1}";
+            var req = $"users/{userId}/scores/{type}?mode=osu&include_fails={(failedScores?1:0)}&limit=1&offset={index}";
             var res = await GetApiv2(req);
             if (res is JArray arr)
             {
