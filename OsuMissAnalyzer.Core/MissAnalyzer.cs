@@ -127,7 +127,7 @@ namespace OsuMissAnalyzer.Core
             {
             }
             p.Color = Color.DarkGray;
-            g.DrawRectangle(p, Rectangle.Round(ScaleToRect(new RectangleF(Scale(bounds.Location, -1), new SizeF(512, 384)), bounds, area)));
+            g.DrawRectangle(p, Rectangle.Round(ScaleToRect(new RectangleF(pSub(new PointF(0, hr? 384 : 0), bounds, hr), new SizeF(512, 384)), bounds, area)));
             p.Color = Color.Gray;
             for (int q = hitObjectsEnd - 1; q > hitObjectsStart; q--)
             {

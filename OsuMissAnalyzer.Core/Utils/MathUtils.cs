@@ -43,7 +43,7 @@ namespace OsuMissAnalyzer.Core.Utils
         public static PointF pSub(PointF p1, RectangleF rect, bool hr = false)
         {
             PointF p = PointF.Subtract(p1, new SizeF(rect.Location));
-            return flip(p, rect.Width, hr);
+            return flip(p, rect.Height, hr);
         }
 
         /// <summary>
