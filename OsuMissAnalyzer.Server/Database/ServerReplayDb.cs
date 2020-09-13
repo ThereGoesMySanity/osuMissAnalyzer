@@ -18,20 +18,6 @@ namespace OsuMissAnalyzer.Server.Database
             this.api = api;
             this.serverFolder = serverFolder;
         }
-        private static Dictionary<string, int> modValues = new Dictionary<string, int>
-        {
-            ["NF"] = (int)Mods.NoFail,
-            ["EZ"] = (int)Mods.Easy,
-            ["TD"] = (int)Mods.TouchDevice,
-            ["HD"] = (int)Mods.Hidden,
-            ["HR"] = (int)Mods.HardRock,
-            ["SD"] = (int)Mods.SuddenDeath,
-            ["DT"] = (int)Mods.DoubleTime,
-            ["HT"] = (int)Mods.HalfTime,
-            ["NC"] = (int)Mods.NightCore,
-            ["FL"] = (int)Mods.FlashLight,
-            ["PF"] = (int)Mods.Perfect,
-        };
         public async Task<Replay> GetReplayFromOnlineId(string onlineId, string mods, Beatmap beatmap)
         {
             string file = Path.Combine(serverFolder, "replays", $"{onlineId}.osr");
@@ -44,9 +30,7 @@ namespace OsuMissAnalyzer.Server.Database
                 if (data != null)
                 {
                     replay = new Replay();
-                    replay.Mods = (Mods)Enumerable.Range(0, mods.Length / 2)
-                                .Select(i => mods.Substring(i * 2, 2))
-                                .Select(s => modValues[s]).Sum();
+                    replay.Mods = ConvertMods.StringToMods(mods);
                     replay.headerLoaded = true;
                     using (MemoryStream ms = new MemoryStream())
                     using (BinaryWriter bw = new BinaryWriter(ms))
@@ -98,7 +82,7 @@ namespace OsuMissAnalyzer.Server.Database
                 replay.TotalScore = (uint)score["score"];
                 replay.MaxCombo = (ushort)score["max_combo"];
                 replay.IsPerfect = (bool)score["perfect"];
-                replay.Mods = (Mods)score["mods"].Select(m => modValues[(string)m]).Sum();
+                replay.Mods = ConvertMods.StringToMods(score["mods"].Cast<string>());
                 replay.headerLoaded = true;
                 using (MemoryStream ms = new MemoryStream())
                 using (BinaryWriter bw = new BinaryWriter(ms))

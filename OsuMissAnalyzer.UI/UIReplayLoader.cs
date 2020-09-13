@@ -67,7 +67,7 @@ namespace OsuMissAnalyzer.UI
                                 .Concat(new DirectoryInfo(Path.Combine(Options.Settings["osudir"], "Replays")).GetFiles())
                                 .Where(f => f.Name.EndsWith("osr"))
                                 .OrderByDescending(f => f.LastWriteTime)
-                                .Take(5).Select(file => new Replay(file.FullName))
+                                .Take(10).Select(file => new Replay(file.FullName))
                                 .OrderByDescending(re => re.PlayTime)
                                 .Select(re => new ReplayListItem() { replay = re, beatmap = LoadBeatmap(re, false) });
                         var replayListForm = new ListMessageBox();
