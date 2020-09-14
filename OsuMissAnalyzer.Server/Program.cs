@@ -358,6 +358,11 @@ Bot link: https://discordapp.com/oauth2/authorize?client_id={discordId}&scope=bo
                 await Logger.WriteLine(e.Exception, Logger.LogLevel.ALERT);
             };
 
+            discord.SocketErrored += async e =>
+            {
+                await Logger.WriteLine(e.Exception, Logger.LogLevel.ALERT);
+            };
+
             await apiToken;
             await Logger.WriteLine("Init complete");
 
