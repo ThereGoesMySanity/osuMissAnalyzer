@@ -21,6 +21,7 @@ namespace OsuMissAnalyzer.Core
             {
                 ReadBeatmap();
             }
+            fileReader.Dispose();
         }
 
         private string readNullableString()
