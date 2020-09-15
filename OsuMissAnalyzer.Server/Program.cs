@@ -235,6 +235,7 @@ Bot link: https://discordapp.com/oauth2/authorize?client_id={discordId}&scope=bo
                 }
                 if (rsCalls.ContainsKey(e.Author.Id) && rsCalls[e.Author.Id].Count > 0 && rsCalls[e.Author.Id].Peek() == e.Channel)
                 {
+                    rsCalls[e.Author.Id].Dequeue();
                     DiscordEmbed embed = rsFunc[e.Author.Id](replayLoader, e);
                     await Logger.WriteLine($"processing {botIds[e.Author.Id]} message");
                     Logger.Log(Logging.BotCalls);
