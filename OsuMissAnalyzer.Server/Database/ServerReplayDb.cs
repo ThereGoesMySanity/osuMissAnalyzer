@@ -82,7 +82,7 @@ namespace OsuMissAnalyzer.Server.Database
                 replay.TotalScore = (uint)score["score"];
                 replay.MaxCombo = (ushort)score["max_combo"];
                 replay.IsPerfect = (bool)score["perfect"];
-                replay.Mods = ConvertMods.StringToMods(score["mods"].Cast<string>());
+                replay.Mods = ConvertMods.StringToMods(score["mods"].Select(s => (string)s));
                 replay.headerLoaded = true;
                 using (MemoryStream ms = new MemoryStream())
                 using (BinaryWriter bw = new BinaryWriter(ms))
