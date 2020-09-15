@@ -127,7 +127,7 @@ namespace OsuMissAnalyzer.Server
                     file.WriteLine(GetStats(Format.CSV));
                 }
 
-                handler.Close();
+                handler.BeginReceive(state.buffer, 0, StateObject.BufferSize, 0, new AsyncCallback(ReadCallback), state);
             }
         }
         public void SendCallback(IAsyncResult result)
