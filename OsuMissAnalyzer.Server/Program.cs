@@ -355,6 +355,7 @@ Bot link: https://discordapp.com/oauth2/authorize?client_id={discordId}&scope=bo
             discord.SocketErrored += async e =>
             {
                 await Logger.WriteLine(e.Exception, Logger.LogLevel.ALERT);
+                await discord.ConnectAsync();
             };
 
             await apiToken;
