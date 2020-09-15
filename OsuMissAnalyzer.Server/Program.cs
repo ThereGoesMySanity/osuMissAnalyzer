@@ -24,6 +24,8 @@ namespace OsuMissAnalyzer.Server
         const ulong OWO = 289066747443675143;
         const ulong BISMARCK = 207856807677263874;
         const ulong BOATBOT = 185013154198061056;
+
+        delegate bool BotCall(ServerReplayLoader server, MessageCreateEventArgs args, ref DiscordEmbed embed);
         const ulong DUMP_CHANNEL = 753788360425734235L;
         const int size = 480;
         const string HELP_MESSAGE = @"osu! Miss Analyzer (https://github.com/ThereGoesMySanity/osuMissAnalyzer) bot
@@ -140,46 +142,51 @@ Bot link: https://discordapp.com/oauth2/authorize?client_id={discordId}&scope=bo
                 [BOATBOT] = new Queue<DiscordChannel>(),
                 [BISMARCK] = new Queue<DiscordChannel>(),
             };
-            var rsFunc = new Dictionary<ulong, Func<ServerReplayLoader, MessageCreateEventArgs, DiscordEmbed>>
+            var rsFunc = new Dictionary<ulong, BotCall>
             {
-                [OWO] = (replayLoader, e) =>
+                [OWO] = (ServerReplayLoader replayLoader, MessageCreateEventArgs e, ref DiscordEmbed embed) =>
                 {
                     if (e.Message.Content.StartsWith("**Most Recent osu! Standard Play for"))
                     {
-                        return e.Message.Embeds[0];
+                        embed = e.Message.Embeds[0];
+                        return true;
                     }
-                    return null;
+                    return false;
                 },
-                [BISMARCK] = (replayLoader, e) =>
+                [BISMARCK] = (ServerReplayLoader replayLoader, MessageCreateEventArgs e, ref DiscordEmbed embed) =>
                 {
-                    if (e.Message.Content.Length == 0)
+                    if (e.Message.Content.Length == 0 && e.Message.Embeds.Count > 0)
                     {
-                        var embed = e.Message.Embeds[0];
-                        string url = embed.Url.AbsoluteUri;
+                        var em = e.Message.Embeds[0];
+                        string url = em.Url.AbsoluteUri;
                         string prefix = "https://osu.ppy.sh/scores/osu/";
                         string mapPrefix = "https://osu.ppy.sh/beatmapsets/";
-                        if (url.StartsWith(prefix) && embed.Description.Contains(mapPrefix))
+                        if (url.StartsWith(prefix) && em.Description.Contains(mapPrefix))
                         {
                             replayLoader.ScoreId = url.Substring(prefix.Length);
-                            string urlEnd = embed.Description.Substring(embed.Description.IndexOf(mapPrefix) + mapPrefix.Length);
+                            string urlEnd = em.Description.Substring(em.Description.IndexOf(mapPrefix) + mapPrefix.Length);
                             var match = partialBeatmapRegex.Match(urlEnd);
                             var modMatch = modRegex.Match(urlEnd);
                             if(match.Success && modMatch.Success)
                             {
                                 replayLoader.BeatmapId = match.Groups[1].Value;
                                 replayLoader.Mods = modMatch.Groups[1].Value;
-                                return null;
+                                return true;
                             }
                         }
-                        return embed;
+                        embed = em;
+                        return true;
                     }
-                    return null;
+                    return false;
                 },
-                [BOATBOT] = (replayLoader, e) =>
+                [BOATBOT] = (ServerReplayLoader replayLoader, MessageCreateEventArgs e, ref DiscordEmbed embed) =>
                 {
                     if (e.Message.Embeds.Count > 0)
-                        return e.Message.Embeds[0];
-                    return null;
+                    {
+                        embed = e.Message.Embeds[0];
+                        return true;
+                    }
+                    return false;
                 },
             };
 
@@ -235,10 +242,13 @@ Bot link: https://discordapp.com/oauth2/authorize?client_id={discordId}&scope=bo
                 }
                 if (rsCalls.ContainsKey(e.Author.Id) && rsCalls[e.Author.Id].Count > 0 && rsCalls[e.Author.Id].Peek() == e.Channel)
                 {
-                    rsCalls[e.Author.Id].Dequeue();
-                    DiscordEmbed embed = rsFunc[e.Author.Id](replayLoader, e);
-                    await Logger.WriteLine($"processing {botIds[e.Author.Id]} message");
-                    Logger.Log(Logging.BotCalls);
+                    DiscordEmbed embed = null;
+                    if (rsFunc[e.Author.Id](replayLoader, e, ref embed))
+                    {
+                        rsCalls[e.Author.Id].Dequeue();
+                        await Logger.WriteLine($"processing {botIds[e.Author.Id]} message");
+                        Logger.Log(Logging.BotCalls);
+                    }
                     if (embed != null)
                     {
                         string url = embed.Author.IconUrl.ToString();
