@@ -39,19 +39,22 @@ namespace OsuMissAnalyzer.UI
 
         }
 
-        private void textBox1_TextChanged(object sender, EventArgs e)
+        private async void textBox1_TextChanged(object sender, EventArgs e)
         {
             string[] termsOld = textOld.Split(new[] { ',', ' ', '!' }, StringSplitOptions.RemoveEmptyEntries).ToArray();
             string[] terms = textBox1.Text.Split(new[] { ',', ' ', '!' }, StringSplitOptions.RemoveEmptyEntries).ToArray();
 
             List <Beatmap> items = listBox1.Items.Cast<Beatmap>().ToList();
             listBox1.Items.Clear();
-
-            if (termsOld.Any(o => !textBox1.Text.Contains(o)))
-            {
-                items = new List<Beatmap>(database.Beatmaps);
-            }
-            Filter(items, terms);
+            await Task.Run(() =>
+                {
+                    if (termsOld.Any(o => !textBox1.Text.Contains(o)))
+                    {
+                        items = new List<Beatmap>(database.Beatmaps);
+                    }
+                    Filter(items, terms);
+                }
+            );
             listBox1.Items.AddRange(items.ToArray());
 
             textOld = textBox1.Text;
