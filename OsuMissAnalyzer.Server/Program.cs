@@ -124,23 +124,11 @@ Bot link: https://discordapp.com/oauth2/authorize?client_id={discordId}&scope=bo
             var cachedMisses = new MemoryCache<DiscordMessage, SavedMiss>(128);
             cachedMisses.SetPolicy(typeof(LfuEvictionPolicy<,>));
 
-            var rsTypes = new Dictionary<string, ulong> {
-                [">rs"] = OWO,
-                [">recent"] = OWO,
-                ["%rs"] = BOATBOT,
-                ["!!rs"] = BISMARCK,
-            };
             var botIds = new Dictionary<ulong, string>
             {
                 [OWO] = "owo",
                 [BOATBOT] = "boatbot",
                 [BISMARCK] = "bismarck",
-            };
-            var rsCalls = new Dictionary<ulong, Queue<DiscordChannel>>
-            {
-                [OWO] = new Queue<DiscordChannel>(),
-                [BOATBOT] = new Queue<DiscordChannel>(),
-                [BISMARCK] = new Queue<DiscordChannel>(),
             };
             var rsFunc = new Dictionary<ulong, BotCall>
             {
@@ -181,7 +169,7 @@ Bot link: https://discordapp.com/oauth2/authorize?client_id={discordId}&scope=bo
                 },
                 [BOATBOT] = (ServerReplayLoader replayLoader, MessageCreateEventArgs e, ref DiscordEmbed embed) =>
                 {
-                    if (e.Message.Embeds.Count > 0)
+                    if (e.Message.Content.StartsWith("Try #") && e.Message.Embeds.Count > 0)
                     {
                         embed = e.Message.Embeds[0];
                         return true;
@@ -234,34 +222,29 @@ Bot link: https://discordapp.com/oauth2/authorize?client_id={discordId}&scope=bo
                         source = Source.ATTACHMENT;
                     }
                 }
-
-                if (rsTypes.ContainsKey(e.Message.Content.Split(' ')[0]))
-                {
-                    rsCalls[rsTypes[e.Message.Content.Split(' ')[0]]].Enqueue(e.Message.Channel);
-                    return;
-                }
-                if (rsCalls.ContainsKey(e.Author.Id) && rsCalls[e.Author.Id].Count > 0 && rsCalls[e.Author.Id].Peek() == e.Channel)
+                
+                //bot
+                if (botIds.ContainsKey(e.Author.Id))
                 {
                     DiscordEmbed embed = null;
                     if (rsFunc[e.Author.Id](replayLoader, e, ref embed))
                     {
-                        rsCalls[e.Author.Id].Dequeue();
                         await Logger.WriteLine($"processing {botIds[e.Author.Id]} message");
                         Logger.Log(Logging.BotCalls);
-                    }
-                    if (embed != null)
-                    {
-                        string url = embed.Author.IconUrl.ToString();
-                        if (url.StartsWith(pfpPrefix))
+                        if (embed != null)
                         {
-                            replayLoader.UserId = url.Substring(pfpPrefix.Length).Split('?')[0];
-                            await Logger.WriteLine($"found embed with userid {replayLoader.UserId}");
-                            replayLoader.UserScores = "recent";
-                            replayLoader.FailedScores = true;
-                            replayLoader.PlayIndex = 0;
+                            string url = embed.Author.IconUrl.ToString();
+                            if (url.StartsWith(pfpPrefix))
+                            {
+                                replayLoader.UserId = url.Substring(pfpPrefix.Length).Split('?')[0];
+                                await Logger.WriteLine($"found embed with userid {replayLoader.UserId}");
+                                replayLoader.UserScores = "recent";
+                                replayLoader.FailedScores = true;
+                                replayLoader.PlayIndex = 0;
+                            }
                         }
+                        source = Source.BOT;
                     }
-                    source = Source.BOT;
                 }
 
                 //user-triggered
