@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net;
@@ -175,8 +176,37 @@ namespace OsuMissAnalyzer.Server
                 using (WebClient w = new WebClient())
                 {
                     w.Headers[HttpRequestHeader.ContentType] = "application/x-www-form-urlencoded";
-                    string message = WebUtility.HtmlEncode((level == LogLevel.ALERT? ALERT_PREFIX : "") + line);
-                    string res = await w.UploadStringTaskAsync(webHook, $"content={message}");
+                    string message = (level == LogLevel.ALERT? ALERT_PREFIX : "") + line;
+                    if (message.Length > 2000)
+                    {
+                        List<string> parts = new List<string>();
+                        var breaks = message.Split(new[] {'\n'}, StringSplitOptions.RemoveEmptyEntries);
+                        int i = 0;
+                        while (i < breaks.Length)
+                        {
+                            int count = 0;
+                            StringBuilder sb = new StringBuilder();
+                            if (breaks[i].Length > 2000)
+                            {
+                                i++;
+                            }
+                            while (i < breaks.Length && count + breaks[i].Length <= 2000)
+                            {
+                                if (count != 0) sb.Append('\n');
+                                sb.Append(breaks[i]);
+                                count += breaks[i].Length;
+                                i++;
+                            }
+                            if (sb.Length != 0)
+                            {
+                                await w.UploadStringTaskAsync(webHook, $"content={sb.ToString()}");
+                            }
+                        }
+                    }
+                    else
+                    {
+                        string res = await w.UploadStringTaskAsync(webHook, $"content={message}");
+                    }
                 }
             }
         }
