@@ -27,17 +27,15 @@ namespace OsuMissAnalyzer.Core
         private float scale = 1;
 
 
-        public MissAnalyzer(IReplayLoader replayLoader)
-        {
-            Replay = replayLoader.Replay;
-            Beatmap = replayLoader.Beatmap;
-            ReplayAnalyzer = replayLoader.ReplayAnalyzer;
-        }
-        public MissAnalyzer(Replay replay, Beatmap beatmap)
+        public MissAnalyzer(IReplayLoader replayLoader) : this(replayLoader.Replay, replayLoader.Beatmap, replayLoader.ReplayAnalyzer)
+        {}
+        public MissAnalyzer(Replay replay, Beatmap beatmap) : this(replay, beatmap, new ReplayAnalyzer(beatmap, replay))
+        {}
+        public MissAnalyzer(Replay replay, Beatmap beatmap, ReplayAnalyzer analyzer)
         {
             Replay = replay;
             Beatmap = beatmap;
-            ReplayAnalyzer = new ReplayAnalyzer(beatmap, replay);
+            ReplayAnalyzer = analyzer;
         }
 
         public void ToggleOutlines()
@@ -132,14 +130,14 @@ namespace OsuMissAnalyzer.Core
             for (int q = hitObjectsEnd - 1; q > hitObjectsStart; q--)
             {
                 int c = Math.Min(255, 100 + (int)(Math.Abs(Beatmap.HitObjects[q].StartTime - hitObject.StartTime) * 100 / maxTime));
-                if (Beatmap.HitObjects[q].Type == HitObjectType.Slider)
+                if (Beatmap.HitObjects[q].Type.HasFlag(HitObjectType.Slider))
                 {
                     SliderObject slider = (SliderObject)Beatmap.HitObjects[q];
                     PointF[] pt = new PointF[sliderGranularity];
                     for (int x = 0; x < sliderGranularity; x++)
                     {
                         pt[x] = ScaleToRect(
-                            pSub(slider.PositionAtDistance(x * 1f * slider.PixelLength / sliderGranularity).ToPoint(),
+                            pSub(slider.PositionAtTime(x * 1f / sliderGranularity).ToPoint(),
                                 bounds, hr), bounds, area);
                     }
                     circle.Color = Color.LemonChiffon;
