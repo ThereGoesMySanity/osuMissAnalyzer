@@ -140,7 +140,7 @@ namespace OsuMissAnalyzer.Core
                             pSub(slider.PositionAtTime(x * 1f / sliderGranularity).ToPoint(),
                                 bounds, hr), bounds, area);
                     }
-                    circle.Color = Color.LemonChiffon;
+                    circle.Color = Color.FromArgb(80, Color.DarkGoldenrod);
                     g.DrawLines(circle, pt);
                 }
 
