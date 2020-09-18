@@ -47,3 +47,5 @@ MissAnalyzerServer
 server.sh
 serverdata/
 stats/
+OsuMissAnalyzer.Tests/Resources/keys.dat
+OsuMissAnalyzer.Tests/Resources/replay-osu_1859001_3243485950.osr

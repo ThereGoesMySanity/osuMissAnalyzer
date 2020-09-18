@@ -16,6 +16,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OsuMissAnalyzer.UI", "OsuMi
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OsuMissAnalyzer.Server", "OsuMissAnalyzer.Server\OsuMissAnalyzer.Server.csproj", "{2CCE7B71-C6FA-471F-BAFC-02C95E123659}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OsuMissAnalyzer.Tests", "OsuMissAnalyzer.Tests\OsuMissAnalyzer.Tests.csproj", "{321670FE-8BC0-4B11-8AAE-C725BADC4CE3}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
