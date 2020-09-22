@@ -18,7 +18,8 @@ namespace OsuMissAnalyzer.UI
             MissWindowController controller;
             MissWindow window;
             Debug.Print("Starting MissAnalyser... ");
-            String replay = null, beatmap = null;
+            Directory.SetCurrentDirectory(AppDomain.CurrentDomain.BaseDirectory);
+            string replay = null, beatmap = null;
             List<string> extras;
             Dictionary<string, string> optList = new Dictionary<string, string>();
             bool help = false;
@@ -56,9 +57,9 @@ namespace OsuMissAnalyzer.UI
                 return;
             }
 
-            Options options = new Options("options.cfg", optList);
             try
             {
+                Options options = new Options("options.cfg", optList);
                 UIReplayLoader replayLoader = new UIReplayLoader(options);
                 if (!replayLoader.Load(replay, beatmap)) return;
                 if (replayLoader.Replay == null || replayLoader.Beatmap == null)
