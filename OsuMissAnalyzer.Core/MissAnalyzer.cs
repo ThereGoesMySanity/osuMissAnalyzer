@@ -16,7 +16,6 @@ namespace OsuMissAnalyzer.Core
     {
         private const int maxTime = 1000;
         private const int arrowLength = 4;
-        private const int sliderGranularity = 10;
         public bool HitCircleOutlines { get; private set; } = false;
         private ReplayAnalyzer ReplayAnalyzer { get; }
         private Replay Replay { get; }
@@ -133,13 +132,8 @@ namespace OsuMissAnalyzer.Core
                 if (Beatmap.HitObjects[q].Type.HasFlag(HitObjectType.Slider))
                 {
                     SliderObject slider = (SliderObject)Beatmap.HitObjects[q];
-                    PointF[] pt = new PointF[sliderGranularity];
-                    for (int x = 0; x < sliderGranularity; x++)
-                    {
-                        pt[x] = ScaleToRect(
-                            pSub(slider.PositionAtTime(x * 1f / sliderGranularity).ToPoint(),
-                                bounds, hr), bounds, area);
-                    }
+                    PointF[] pt = slider.Curves.SelectMany(curve => curve.CurveSnapshots).Select(s => ScaleToRect(
+                            pSub(s.point.ToPointF(), bounds, hr), bounds, area)).ToArray();
                     circle.Color = Color.FromArgb(80, Color.DarkGoldenrod);
                     g.DrawLines(circle, pt);
                 }

@@ -15,9 +15,9 @@ namespace OsuMissAnalyzer.Core.Utils
         {
             return new PointF(frame.X, frame.Y);
         }
-        public static Point ToPoint(this Vector2 vect)
+        public static PointF ToPointF(this Vector2 vect)
         {
-            return new Point((int)vect.X, (int)vect.Y);
+            return new PointF((float)vect.X, (float)vect.Y);
         }
         /// <summary>
         /// Flips point about the center of the screen if the Hard Rock mod is on, does nothing otherwise.
