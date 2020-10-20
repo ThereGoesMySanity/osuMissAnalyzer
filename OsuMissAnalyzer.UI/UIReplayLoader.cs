@@ -63,9 +63,10 @@ namespace OsuMissAnalyzer.UI
                 switch (messageBox.Result)
                 {
                     case ReplayFind.RECENT:
-                        var replays = new DirectoryInfo(Path.Combine(Options.Settings["osudir"], "Data", "r")).GetFiles()
-                                .Concat(new DirectoryInfo(Path.Combine(Options.Settings["osudir"], "Replays")).GetFiles())
-                                .Where(f => f.Name.EndsWith("osr"))
+                        var files = new DirectoryInfo(Path.Combine(Options.Settings["osudir"], "Data", "r")).GetFiles();
+                        var replayDir = new DirectoryInfo(Path.Combine(Options.Settings["osudir"], "Replays"));
+                        if (replayDir.Exists) files.Concat(replayDir.GetFiles());
+                        var replays = files.Where(f => f.Name.EndsWith("osr"))
                                 .OrderByDescending(f => f.LastWriteTime)
                                 .Take(10).Select(file => new Replay(file.FullName))
                                 .OrderByDescending(re => re.PlayTime)
@@ -118,11 +119,8 @@ namespace OsuMissAnalyzer.UI
             }
             if (beatmap == null)
             {
-                beatmap = GetBeatmapFromHash(Directory.GetCurrentDirectory(), false);
-            }
-            if (beatmap == null)
-            {
-                beatmap = GetBeatmapFromHash(Options.SongsFolder, true);
+                beatmap = GetBeatmapFromHash(Directory.GetCurrentDirectory(), false)
+                        ?? GetBeatmapFromHash(Options.SongsFolder, true);
             }
             if (beatmap == null && dialog)
             {

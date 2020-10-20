@@ -166,18 +166,25 @@ namespace OsuMissAnalyzer.Server
         }
         public static async Task WriteLine(string line, LogLevel level = LogLevel.NORMAL)
         {
-            await Instance.writeLine(line, level);
+            try
+            {
+                await Instance.writeLine(line, level);
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+            }
         }
         public async Task writeLine(string line, LogLevel level)
         {
             Console.WriteLine(line);
-            if (!string.IsNullOrEmpty(webHook))
+            if (!string.IsNullOrEmpty(webHook) && level == LogLevel.ALERT)
             {
                 using (WebClient w = new WebClient())
                 {
                     w.Headers[HttpRequestHeader.ContentType] = "application/x-www-form-urlencoded";
                     string message = (level == LogLevel.ALERT? ALERT_PREFIX : "") + line;
-                    if (message.Length > 2000)
+                    if (message.Length > 1800)
                     {
                         List<string> parts = new List<string>();
                         var breaks = message.Split(new[] {'\n'}, StringSplitOptions.RemoveEmptyEntries);
@@ -190,7 +197,7 @@ namespace OsuMissAnalyzer.Server
                             {
                                 i++;
                             }
-                            while (i < breaks.Length && count + breaks[i].Length <= 2000)
+                            while (i < breaks.Length && count + breaks[i].Length <= 1800)
                             {
                                 if (count != 0) sb.Append('\n');
                                 sb.Append(breaks[i]);
