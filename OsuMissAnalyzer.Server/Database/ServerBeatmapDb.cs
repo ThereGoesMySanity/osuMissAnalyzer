@@ -29,7 +29,7 @@ namespace OsuMissAnalyzer.Server.Database
             {
                 foreach (var file in Directory.EnumerateFiles(Path.Combine(serverDir, "beatmaps")))
                 {
-                    hashes.Add(Beatmap.MD5FromFile(file), Path.GetFileNameWithoutExtension(file));
+                    hashes[Beatmap.MD5FromFile(file)] = Path.GetFileNameWithoutExtension(file);
                 }
             }
         }
