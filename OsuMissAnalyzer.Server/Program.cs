@@ -71,7 +71,7 @@ DM ThereGoesMySanity#2622 if you need help/want this bot on your server
             string webHook = "";
             string discordId = "752035690237394944";
             string discordPermissions = "100416";
-            bool help = false, link = false, test = false;
+            bool help = false, link = false, test = false, reload = false;
             string apiv2Req = null;
             var opts = new OptionSet() {
                 {"d|dir=", "Set server storage dir (default: ./)", b => serverDir = b},
@@ -84,6 +84,7 @@ DM ThereGoesMySanity#2622 if you need help/want this bot on your server
                 {"apiRequest=", "does api request", a => apiv2Req = a},
                 {"test", "test server only", t => test = t != null},
                 {"w|webhook=", "webhook for output", w => webHook = w},
+                {"reload", "reload databases", r => reload = r != null},
             };
             opts.Parse(args);
             string botLink = $"https://discordapp.com/oauth2/authorize?client_id={discordId}&scope=bot&permissions={discordPermissions}";
@@ -113,7 +114,7 @@ Bot link: https://discordapp.com/oauth2/authorize?client_id={discordId}&scope=bo
             var apiToken = api.RefreshToken();
             Directory.CreateDirectory(Path.Combine(serverDir, "beatmaps"));
             Directory.CreateDirectory(Path.Combine(serverDir, "replays"));
-            var beatmapDatabase = new ServerBeatmapDb(api, serverDir);
+            var beatmapDatabase = new ServerBeatmapDb(api, serverDir, reload);
             var replayDatabase = new ServerReplayDb(api, serverDir);
             string pfpPrefix = "https://a.ppy.sh/";
             Regex messageRegex = new Regex("^>miss (user-recent|user-top|beatmap) (.+?)(?: (\\d+))?$");
@@ -191,8 +192,14 @@ Bot link: https://discordapp.com/oauth2/authorize?client_id={discordId}&scope=bo
             {
                 numberEmojis[i] = DiscordEmoji.FromName(discord, $":{numbers[i]}:");
             }
+            bool statusUpdated = false;
             discord.MessageCreated += async e =>
             {
+                if (!statusUpdated)
+                {
+                    await discord.UpdateStatusAsync(new DiscordGame(">miss help for help!"));
+                    statusUpdated = true;
+                }
                 if (test && e.Guild.Id != 753465280465862757L) return;
                 Logger.LogAbsolute(Logging.ServersJoined, discord.Guilds.Count);
                 Logger.Log(Logging.EventsHandled);
@@ -361,13 +368,16 @@ Bot link: https://discordapp.com/oauth2/authorize?client_id={discordId}&scope=bo
             await apiToken;
             await Logger.WriteLine("Init complete");
 
-            await discord.ConnectAsync();
-            Logger.LogAbsolute(Logging.ServersJoined, discord.Guilds.Count);
-            await discord.UpdateStatusAsync(new DiscordGame(">miss help for help!"));
+            try
+            {
+                await discord.ConnectAsync();
+                Logger.LogAbsolute(Logging.ServersJoined, discord.Guilds.Count);
 
-            byte[] buffer = new byte[4];
-            await interruptPipe.Reading.ReadAsync(buffer, 0, 4);
-            await discord.DisconnectAsync();
+                byte[] buffer = new byte[4];
+                await interruptPipe.Reading.ReadAsync(buffer, 0, 4);
+                await discord.DisconnectAsync();
+            }
+            catch (Exception e) { await Logger.WriteLine(e, Logger.LogLevel.ALERT); }
             beatmapDatabase.Close();
             Logger.Instance.Close();
             await Logger.WriteLine("Closed safely");

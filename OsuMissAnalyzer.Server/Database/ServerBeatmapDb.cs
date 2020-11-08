@@ -11,7 +11,7 @@ namespace OsuMissAnalyzer.Server.Database
         private readonly OsuApi api;
         string folder;
         Dictionary<string, string> hashes;
-        public ServerBeatmapDb(OsuApi api, string serverDir)
+        public ServerBeatmapDb(OsuApi api, string serverDir, bool reload = false)
         {
             this.api = api;
             folder = serverDir;
@@ -24,6 +24,13 @@ namespace OsuMissAnalyzer.Server.Database
             else
             {
                 hashes = new Dictionary<string, string>();
+            }
+            if (reload)
+            {
+                foreach (var file in Directory.EnumerateFiles(Path.Combine(serverDir, "beatmaps")))
+                {
+                    hashes.Add(Beatmap.MD5FromFile(file), Path.GetFileNameWithoutExtension(file));
+                }
             }
         }
         public void Close()
