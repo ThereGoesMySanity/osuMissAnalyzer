@@ -207,6 +207,7 @@ Bot link: https://discordapp.com/oauth2/authorize?client_id={discordId}&scope=bo
                     || (e.Message.Channel.IsPrivate && e.Message.Content.IndexOf("help", StringComparison.InvariantCultureIgnoreCase) >= 0)
                     || e.Message.Content == ">miss")
                 {
+                    await discord.UpdateStatusAsync(new DiscordGame(">miss help for help!"));
                     await e.Message.RespondAsync(HELP_MESSAGE);
                     return;
                 }
@@ -325,7 +326,7 @@ Bot link: https://discordapp.com/oauth2/authorize?client_id={discordId}&scope=bo
             {
                 if (test && e.Message.Channel.GuildId != 753465280465862757L) return;
                 Logger.Log(Logging.EventsHandled);
-                if (!e.User.IsCurrent && !e.User.IsBot && cachedMisses.Contains(e.Message))
+                if (cachedMisses.Contains(e.Message) && !e.User.IsCurrent && !e.User.IsBot)
                 {
                     var savedMiss = cachedMisses[e.Message];
                     var analyzer = savedMiss.MissAnalyzer;
