@@ -28,9 +28,12 @@ namespace OsuMissAnalyzer.Server
         private Beatmap _beatmap;
 
         public ReplayAnalyzer ReplayAnalyzer => _analyzer;
+
+        public bool Loaded { get; internal set; }
+
         private ReplayAnalyzer _analyzer;
 
-        public async Task<bool> Load(OsuApi api, ServerReplayDb replays, ServerBeatmapDb beatmaps)
+        public async Task<string> Load(OsuApi api, ServerReplayDb replays, ServerBeatmapDb beatmaps)
         {
             JToken score = null;
             if (Username != null && UserId == null)
@@ -61,12 +64,16 @@ namespace OsuMissAnalyzer.Server
             if (_beatmap == null && _replay != null)
                 _beatmap = await beatmaps.GetBeatmap(_replay.MapHash);
 
+            if (!_replay.fullLoaded)
+                return "Replay does not contain any cursor data - can't analyze";
+
             if (_replay != null && _beatmap != null)
             {
                 _analyzer = new ReplayAnalyzer(_beatmap, _replay);
-                return true;
+                Loaded = true;
+                return null;
             }
-            return false;
+            return $"Couldn't find {(_replay == null? "replay" : "beatmap")}";
         }
     }
 }

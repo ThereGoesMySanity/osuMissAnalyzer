@@ -213,6 +213,7 @@ Bot link: https://discordapp.com/oauth2/authorize?client_id={discordId}&scope=bo
                 }
                 ServerReplayLoader replayLoader = new ServerReplayLoader();
                 Source? source = null;
+                string errorMessage = null;
 
                 //attachment
                 foreach (var attachment in e.Message.Attachments)
@@ -282,20 +283,19 @@ Bot link: https://discordapp.com/oauth2/authorize?client_id={discordId}&scope=bo
                             }
                             else
                             {
-                                await e.Message.RespondAsync("Invalid beatmap link");
-                                return;
+                                errorMessage = "Invalid beatmap link";
                             }
                             break;
                     }
                 }
-
-                if (await replayLoader.Load(api, replayDatabase, beatmapDatabase))
+                errorMessage ??= await replayLoader.Load(api, replayDatabase, beatmapDatabase);
+                if (replayLoader.Loaded)
                 {
                     DiscordMessage message = null;
                     MissAnalyzer missAnalyzer = new MissAnalyzer(replayLoader);
                     if (missAnalyzer.MissCount == 0 && (source == Source.USER || source == Source.ATTACHMENT))
                     {
-                        await e.Message.RespondAsync("No misses found.");
+                        errorMessage = "No misses found.";
                     }
                     else if (missAnalyzer.MissCount == 1)
                     {
@@ -304,7 +304,7 @@ Bot link: https://discordapp.com/oauth2/authorize?client_id={discordId}&scope=bo
                     }
                     else if (missAnalyzer.MissCount > 1)
                     {
-                        message = await e.Message.RespondAsync($"Found **{missAnalyzer.MissCount}** miss{(missAnalyzer.MissCount != 1 ? "es" : "")}");
+                        message = await e.Message.RespondAsync($"Found **{missAnalyzer.MissCount}** misses");
                         for (int i = 1; i < Math.Min(missAnalyzer.MissCount + 1, numberEmojis.Length); i++)
                         {
                             await message.CreateReactionAsync(numberEmojis[i]);
@@ -316,9 +316,9 @@ Bot link: https://discordapp.com/oauth2/authorize?client_id={discordId}&scope=bo
                         cachedMisses[message] = new SavedMiss(missAnalyzer);
                     }
                 }
-                else if (source == Source.USER || source == Source.ATTACHMENT)
+                if (errorMessage != null && (source == Source.USER || source == Source.ATTACHMENT))
                 {
-                    await e.Message.RespondAsync($"Couldn't find {(replayLoader.Replay == null? "replay" : "beatmap")}");
+                    await e.Message.RespondAsync(errorMessage);
                 }
             };
 
