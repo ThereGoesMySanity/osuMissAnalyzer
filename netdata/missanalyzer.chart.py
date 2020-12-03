@@ -19,6 +19,8 @@ ORDER = [
     'servers',
     'cachedMessages',
     'beatmapsDb',
+    'messages',
+    'errors',
 ]
 
 CHARTS = {
@@ -94,16 +96,16 @@ CHARTS = {
     'messages': {
         'options': [None, 'Messages', 'messages/min', 'missanalyzer', 'missanalyzer.messages', 'line'],
         'lines': [
-            ['MessageCreated', 'Messages', 'incremental', 60, 1],
-            ['HelpMessageCreated', 'Messages', 'incremental', 60, 1],
-            ['MessageEdited', 'Messages', 'incremental', 60, 1],
+            ['MessageCreated', 'Message', 'incremental', 60, 1],
+            ['HelpMessageCreated', 'Help', 'incremental', 60, 1],
+            ['MessageEdited', 'Edited', 'incremental', 60, 1],
         ]
     },
     'errors': {
         'options': [None, 'Errors', 'errors/min', 'missanalyzer', 'missanalyzer.errors', 'line'],
         'lines': [
-            ['ErrorHandled', 'Errors', 'incremental', 60, 1],
-            ['ErrorUnhandled', 'Errors', 'incremental', 60, 1],
+            ['ErrorHandled', 'Handled', 'incremental', 60, 1],
+            ['ErrorUnhandled', 'Unhandled', 'incremental', 60, 1],
         ]
     },
 }
