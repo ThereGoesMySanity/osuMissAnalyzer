@@ -290,7 +290,7 @@ Bot link: https://discordapp.com/oauth2/authorize?client_id={discordId}&scope=bo
                             break;
                     }
                 }
-                errorMessage ??= await replayLoader.Load(api, replayDatabase, beatmapDatabase);
+                if (source != null) errorMessage ??= await replayLoader.Load(api, replayDatabase, beatmapDatabase);
                 if (replayLoader.Loaded)
                 {
                     DiscordMessage message = null;

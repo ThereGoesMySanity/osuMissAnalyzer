@@ -64,7 +64,7 @@ namespace OsuMissAnalyzer.Server
             if (_beatmap == null && _replay != null)
                 _beatmap = await beatmaps.GetBeatmap(_replay.MapHash);
 
-            if (!_replay.fullLoaded)
+            if (_replay != null && !_replay.fullLoaded)
                 return "Replay does not contain any cursor data - can't analyze";
 
             if (_replay != null && _beatmap != null)
