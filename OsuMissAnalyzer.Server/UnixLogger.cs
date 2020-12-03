@@ -180,40 +180,48 @@ namespace OsuMissAnalyzer.Server
             Console.WriteLine(line);
             if (!string.IsNullOrEmpty(webHook) && level == LogLevel.ALERT)
             {
-                using (WebClient w = new WebClient())
+                await LogToDiscord(ALERT_PREFIX);
+                await LogToDiscord(line);
+            }
+        }
+
+        public async Task LogToDiscord(string message)
+        {
+            using (WebClient w = new WebClient())
+            {
+                int maxLength = 1800;
+                w.Headers[HttpRequestHeader.ContentType] = "application/x-www-form-urlencoded";
+                if (message.Length > maxLength)
                 {
-                    w.Headers[HttpRequestHeader.ContentType] = "application/x-www-form-urlencoded";
-                    string message = (level == LogLevel.ALERT? ALERT_PREFIX : "") + line;
-                    if (message.Length > 1800)
+                    List<string> parts = new List<string>();
+                    var breaks = message.Split(new[] { '\n' }, StringSplitOptions.RemoveEmptyEntries);
+                    int i = 0;
+                    while (i < breaks.Length)
                     {
-                        List<string> parts = new List<string>();
-                        var breaks = message.Split(new[] {'\n'}, StringSplitOptions.RemoveEmptyEntries);
-                        int i = 0;
-                        while (i < breaks.Length)
+                        StringBuilder sb = new StringBuilder();
+                        if (breaks[i].Length > maxLength)
                         {
-                            int count = 0;
-                            StringBuilder sb = new StringBuilder();
-                            if (breaks[i].Length > 2000)
-                            {
-                                i++;
-                            }
-                            while (i < breaks.Length && count + breaks[i].Length <= 1800)
-                            {
-                                if (count != 0) sb.Append('\n');
-                                sb.Append(breaks[i]);
-                                count += breaks[i].Length;
-                                i++;
-                            }
-                            if (sb.Length != 0)
-                            {
-                                await w.UploadStringTaskAsync(webHook, $"content={sb.ToString()}");
-                            }
+                            breaks[i] = breaks[i].Substring(0, maxLength - 3) + "...";
+                        }
+                        while (i < breaks.Length && sb.Length + breaks[i].Length <= maxLength)
+                        {
+                            if (sb.Length != 0) sb.Append('\n');
+                            sb.Append(breaks[i]);
+                            i++;
+                        }
+                        if (sb.Length != 0)
+                        {
+                            await w.UploadStringTaskAsync(webHook, $"content={sb.ToString()}");
+                        }
+                        else
+                        {
+                            i++;
                         }
                     }
-                    else
-                    {
-                        string res = await w.UploadStringTaskAsync(webHook, $"content={message}");
-                    }
+                }
+                else
+                {
+                    string res = await w.UploadStringTaskAsync(webHook, $"content={message}");
                 }
             }
         }
