@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<!-- SPDX-License-Identifier: GPL-3.0-or-later -->
+<html lang="en">
+<head>
+    <title>Miss Analyzer Dashboard</title>
+    <meta name="application-name" content="netdata">
+
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
+    <meta property="og:locale" content="en_US" />
+    <meta property="og:image" content="https://cloud.githubusercontent.com/assets/2662304/22945737/e98cd0c6-f2fd-11e6-96f1-5501934b0955.png"/>
+    <meta property="og:url" content="http://my-netdata.io/"/>
+    <meta property="og:type" content="website"/>
+    <meta property="og:site_name" content="netdata"/>
+    <meta property="og:title" content="netdata - real-time performance monitoring, done right!"/>
+    <meta property="og:description" content="Stunning real-time dashboards, blazingly fast and extremely interactive. Zero configuration, zero dependencies, zero maintenance." />
+</head>
+<body>
+
+<div class="container-fluid">
+
+<h1>Miss Analyzer Dashboard <div data-netdata="system.cpu" data-chart-library="sparkline" data-height="30" data-after="-600" data-sparkline-linecolor="#888"></div></h1>
+<h1>Bot Charts</h1>
+
+<div style="width: 49%; display: inline-block;">
+    <div data-netdata="missanalyzer.events"
+        data-chart-library="dygraph"
+        data-width="100%"
+        data-height="200"
+        data-after="-21600"
+        data-gtime="60"
+        ></div>
+    <br/>
+</div>
+<div style="width: 49%; display: inline-block;">
+    <div data-netdata="missanalyzer.servers"
+        data-chart-library="dygraph"
+        data-width="100%"
+        data-height="200"
+        data-after="-21600"
+        ></div>
+    <br/>
+</div>
+<div style="width: 49%; display: inline-block;">
+    <div data-netdata="missanalyzer.calls"
+        data-chart-library="dygraph"
+        data-width="100%"
+        data-height="200"
+        data-after="-21600"
+        data-gtime="60"
+        ></div>
+    <br/>
+</div>
+<div style="width: 49%; display: inline-block;">
+    <div data-netdata="missanalyzer.token"
+        data-chart-library="dygraph"
+        data-width="100%"
+        data-height="200"
+        data-after="-21600"
+        ></div>
+    <br/>
+</div>
+<div style="width: 49%; display: inline-block;">
+    <div data-netdata="missanalyzer.apiv1"
+        data-chart-library="dygraph"
+        data-width="100%"
+        data-height="200"
+        data-after="-21600"
+        data-gtime="60"
+        ></div>
+    <br/>
+</div>
+<div style="width: 49%; display: inline-block;">
+    <div data-netdata="missanalyzer.apiv2"
+        data-chart-library="dygraph"
+        data-width="100%"
+        data-height="200"
+        data-after="-21600"
+        data-gtime="60"
+        ></div>
+    <br/>
+</div>
+<div style="width: 49%; display: inline-block;">
+    <div data-netdata="missanalyzer.caches"
+        data-chart-library="dygraph"
+        data-width="100%"
+        data-height="200"
+        data-after="-21600"
+        data-gtime="60"
+        ></div>
+    <br/>
+</div>
+<div style="width: 49%; display: inline-block;">
+    <div data-netdata="missanalyzer.downloads"
+        data-chart-library="dygraph"
+        data-width="100%"
+        data-height="200"
+        data-after="-21600"
+        data-gtime="60"
+        ></div>
+    <br/>
+</div>
+<div style="width: 49%; display: inline-block;">
+    <div data-netdata="missanalyzer.cachedMessages"
+        data-chart-library="dygraph"
+        data-width="100%"
+        data-height="200"
+        data-after="-21600"
+        ></div>
+    <br/>
+</div>
+<div style="width: 49%; display: inline-block;">
+    <div data-netdata="missanalyzer.beatmapsDb"
+        data-chart-library="dygraph"
+        data-width="100%"
+        data-height="200"
+        data-after="-21600"
+        ></div>
+    <br/>
+</div>
+<div style="width: 49%; display: inline-block;">
+    <div data-netdata="missanalyzer.messages"
+        data-chart-library="dygraph"
+        data-width="100%"
+        data-height="200"
+        data-after="-21600"
+        ></div>
+    <br/>
+</div>
+<div style="width: 49%; display: inline-block;">
+    <div data-netdata="missanalyzer.errors"
+        data-chart-library="dygraph"
+        data-width="100%"
+        data-height="200"
+        data-after="-21600"
+        ></div>
+    <br/>
+</div>
+<div style="width: 100%; display: inline-block;">
+    <div data-netdata="apps.mem"
+        data-chart-library="dygraph"
+        data-width="100%"
+        data-height="200"
+        data-after="-21600"
+        ></div>
+    <br/>
+</div>
+</div> <!-- 1st container -->
+</body>
+</html>
+
+<!-- you can set your netdata server globally, by ucommenting this -->
+<!-- you can also give a different server per chart, with the attribute: data-host="http://netdata.server:19999" -->
+<!-- <script> netdataServer = "http://box:19999"; </script> -->
+
+<!-- load the dashboard manager - it will do the rest -->
+<script>var netdataTheme = 'slate';</script>
+<script type="text/javascript" src="dashboard.js?v20190902-0"></script>
