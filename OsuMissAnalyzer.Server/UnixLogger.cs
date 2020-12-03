@@ -35,6 +35,11 @@ namespace OsuMissAnalyzer.Server
         ServersJoined,
         CachedMessages,
         BeatmapsDbSize,
+        MessageCreated,
+        HelpMessageCreated,
+        MessageEdited,
+        ErrorHandled,
+        ErrorUnhandled,
     }
     public enum Format
     {

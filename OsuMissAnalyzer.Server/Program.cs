@@ -195,6 +195,7 @@ Bot link: https://discordapp.com/oauth2/authorize?client_id={discordId}&scope=bo
             }
             Stopwatch status = new Stopwatch();
             status.Start();
+            Logger.Instance.UpdateLogs += () => Logger.LogAbsolute(Logging.ServersJoined, discord?.Guilds?.Count ?? 0);
             discord.MessageCreated += async e =>
             {
                 if (status.Elapsed > new TimeSpan(0, 5, 0))
@@ -203,13 +204,13 @@ Bot link: https://discordapp.com/oauth2/authorize?client_id={discordId}&scope=bo
                     await discord.UpdateStatusAsync(new DiscordGame(">miss help for help!"));
                 }
                 if (test && e.Guild.Id != 753465280465862757L) return;
-                Logger.LogAbsolute(Logging.ServersJoined, discord.Guilds.Count);
                 Logger.Log(Logging.EventsHandled);
                 if (e.Message.Content.StartsWith(">miss help")
                     || (e.Message.Channel.IsPrivate && e.Message.Content.IndexOf("help", StringComparison.InvariantCultureIgnoreCase) >= 0)
                     || e.Message.Content == ">miss")
                 {
                     await e.Message.RespondAsync(HELP_MESSAGE);
+                    Logger.Log(Logging.HelpMessageCreated);
                     return;
                 }
                 ServerReplayLoader replayLoader = new ServerReplayLoader();
@@ -301,10 +302,12 @@ Bot link: https://discordapp.com/oauth2/authorize?client_id={discordId}&scope=bo
                     else if (missAnalyzer.MissCount == 1)
                     {
                         string miss = await SendMissMessage(missAnalyzer, 0);
+                        Logger.Log(Logging.MessageCreated);
                         await e.Message.RespondAsync(miss);
                     }
                     else if (missAnalyzer.MissCount > 1)
                     {
+                        Logger.Log(Logging.MessageCreated);
                         message = await e.Message.RespondAsync($"Found **{missAnalyzer.MissCount}** misses");
                         for (int i = 1; i < Math.Min(missAnalyzer.MissCount + 1, numberEmojis.Length); i++)
                         {
@@ -319,6 +322,8 @@ Bot link: https://discordapp.com/oauth2/authorize?client_id={discordId}&scope=bo
                 }
                 if (errorMessage != null && (source == Source.USER || source == Source.ATTACHMENT))
                 {
+                    Logger.Log(Logging.MessageCreated);
+                    Logger.Log(Logging.ErrorHandled);
                     await e.Message.RespondAsync(errorMessage);
                 }
             };
@@ -350,6 +355,7 @@ Bot link: https://discordapp.com/oauth2/authorize?client_id={discordId}&scope=bo
                         {
                             savedMiss.MissUrls[index] = await SendMissMessage(analyzer, index);
                         }
+                        Logger.Log(Logging.MessageEdited);
                         await e.Message.ModifyAsync(savedMiss.MissUrls[index]);
                     }
                 }
@@ -357,12 +363,14 @@ Bot link: https://discordapp.com/oauth2/authorize?client_id={discordId}&scope=bo
 
             discord.ClientErrored += async e =>
             {
+                Logger.Log(Logging.ErrorUnhandled);
                 await Logger.WriteLine(e.EventName);
                 await Logger.WriteLine(e.Exception, Logger.LogLevel.ALERT);
             };
 
             discord.SocketErrored += async e =>
             {
+                Logger.Log(Logging.ErrorUnhandled);
                 await Logger.WriteLine(e.Exception, Logger.LogLevel.ALERT);
                 await discord.ConnectAsync();
             };
@@ -383,14 +391,6 @@ Bot link: https://discordapp.com/oauth2/authorize?client_id={discordId}&scope=bo
             beatmapDatabase.Close();
             Logger.Instance.Close();
             await Logger.WriteLine("Closed safely");
-        }
-        private static async Task<bool> CheckApiResult(JToken result, DiscordMessage respondTo)
-        {
-            if (result == null)
-            {
-                await respondTo.RespondAsync("Can't find replay on osu! servers - please upload it yourself");
-            }
-            return result != null;
         }
         private static async Task<string> SendMissMessage(MissAnalyzer analyzer, int index)
         {
