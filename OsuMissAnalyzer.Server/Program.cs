@@ -16,6 +16,7 @@ using Mono.Options;
 using Newtonsoft.Json.Linq;
 using System.Collections.Generic;
 using DSharpPlus.EventArgs;
+using System.Diagnostics;
 
 namespace OsuMissAnalyzer.Server
 {
@@ -192,13 +193,14 @@ Bot link: https://discordapp.com/oauth2/authorize?client_id={discordId}&scope=bo
             {
                 numberEmojis[i] = DiscordEmoji.FromName(discord, $":{numbers[i]}:");
             }
-            bool statusUpdated = false;
+            Stopwatch status = new Stopwatch();
+            status.Start();
             discord.MessageCreated += async e =>
             {
-                if (!statusUpdated)
+                if (status.Elapsed > new TimeSpan(0, 5, 0))
                 {
+                    status.Restart();
                     await discord.UpdateStatusAsync(new DiscordGame(">miss help for help!"));
-                    statusUpdated = true;
                 }
                 if (test && e.Guild.Id != 753465280465862757L) return;
                 Logger.LogAbsolute(Logging.ServersJoined, discord.Guilds.Count);
@@ -207,7 +209,6 @@ Bot link: https://discordapp.com/oauth2/authorize?client_id={discordId}&scope=bo
                     || (e.Message.Channel.IsPrivate && e.Message.Content.IndexOf("help", StringComparison.InvariantCultureIgnoreCase) >= 0)
                     || e.Message.Content == ">miss")
                 {
-                    await discord.UpdateStatusAsync(new DiscordGame(">miss help for help!"));
                     await e.Message.RespondAsync(HELP_MESSAGE);
                     return;
                 }
