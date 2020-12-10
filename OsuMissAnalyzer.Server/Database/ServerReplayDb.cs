@@ -47,8 +47,8 @@ namespace OsuMissAnalyzer.Server.Database
                             replay.Load();
                         }
                     }
+                    replay.Save(file);
                 }
-                replay.Save(file);
             }
             else
             {
