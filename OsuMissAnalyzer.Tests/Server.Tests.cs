@@ -1,3 +1,4 @@
+using System;
 using System.IO;
 using System.Threading.Tasks;
 using BMAPI.v1;
@@ -21,7 +22,13 @@ namespace OsuMissAnalyzer.Tests
             beatmaps = new ServerBeatmapDb(api, "serverdata");
         }
 
-        [TestCase("3243485950", "replay-osu_1859001_3243485950.osr")]
+        [Test]
+        public async Task GetBeatmap()
+        {
+            Beatmap b = await beatmaps.GetBeatmap("d41d8cd98f00b204e9800998ecf8427e");
+        }
+
+        // [TestCase("3243485950", "replay-osu_1859001_3243485950.osr")]
         public async Task TestApiDownload(string scoreId, string compareFile)
         {
             Replay compare = new Replay($"Resources/{compareFile}");

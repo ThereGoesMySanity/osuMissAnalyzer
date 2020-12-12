@@ -50,3 +50,5 @@ stats/
 OsuMissAnalyzer.Tests/Resources/keys.dat
 OsuMissAnalyzer.Tests/Resources/replay-osu_1859001_3243485950.osr
 TestResult.xml
+OsuMissAnalyzer.Tests/Resources/osu!.db
+upload.sh

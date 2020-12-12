@@ -205,9 +205,9 @@ Bot link: https://discordapp.com/oauth2/authorize?client_id={discordId}&scope=bo
                 }
                 if (test && e.Guild.Id != 753465280465862757L) return;
                 Logger.Log(Logging.EventsHandled);
-                if (e.Message.Content.StartsWith(">miss help")
+                if (!e.Author.IsCurrent && (e.Message.Content.StartsWith(">miss help")
                     || (e.Message.Channel.IsPrivate && e.Message.Content.IndexOf("help", StringComparison.InvariantCultureIgnoreCase) >= 0)
-                    || e.Message.Content == ">miss")
+                    || e.Message.Content == ">miss"))
                 {
                     await e.Message.RespondAsync(HELP_MESSAGE);
                     Logger.Log(Logging.HelpMessageCreated);

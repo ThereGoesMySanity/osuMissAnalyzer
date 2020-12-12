@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8" standalone="no"?>
-<test-run id="2" testcasecount="1" result="Passed" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="4" engine-version="3.9.0.0" clr-version="4.0.30319.42000" start-time="2020-09-18 03:15:18Z" end-time="2020-09-18 03:15:19Z" duration="1.846173">
+<test-run id="2" testcasecount="2" result="Passed" total="2" passed="2" failed="0" inconclusive="0" skipped="0" asserts="2" engine-version="3.9.0.0" clr-version="4.0.30319.42000" start-time="2020-10-20 07:59:03Z" end-time="2020-10-20 07:59:05Z" duration="2.666099">
   <command-line><![CDATA[/usr/lib/nunit3-console/nunit3-console.exe OsuMissAnalyzer.Tests.csproj]]></command-line>
-  <test-suite type="Assembly" id="1-1004" name="OsuMissAnalyzer.Tests.dll" fullname="/home/will/Documents/code/osuMissAnalyzer/OsuMissAnalyzer.Tests/bin/Debug/OsuMissAnalyzer.Tests.dll" runstate="Runnable" testcasecount="1" result="Passed" start-time="2020-09-18 03:15:18Z" end-time="2020-09-18 03:15:19Z" duration="1.082282" total="1" passed="1" failed="0" warnings="0" inconclusive="0" skipped="0" asserts="4">
-    <environment framework-version="3.12.0.0" clr-version="4.0.30319.42000" os-version="Unix 5.8.8.1" platform="Unix" cwd="/home/will/Documents/code/osuMissAnalyzer/OsuMissAnalyzer.Tests" machine-name="willk-arch" user="will" user-domain="willk-arch" culture="en-US" uiculture="en-US" os-architecture="x64" />
+  <test-suite type="Assembly" id="1-1004" name="OsuMissAnalyzer.Tests.dll" fullname="/home/will/Documents/code/osuMissAnalyzer/OsuMissAnalyzer.Tests/bin/Debug/OsuMissAnalyzer.Tests.dll" runstate="Runnable" testcasecount="2" result="Passed" start-time="2020-10-20 07:59:03Z" end-time="2020-10-20 07:59:05Z" duration="1.905459" total="2" passed="2" failed="0" warnings="0" inconclusive="0" skipped="0" asserts="2">
+    <environment framework-version="3.12.0.0" clr-version="4.0.30319.42000" os-version="Unix 5.8.14.1" platform="Unix" cwd="/home/will/Documents/code/osuMissAnalyzer/OsuMissAnalyzer.Tests" machine-name="willk-arch" user="will" user-domain="willk-arch" culture="en-US" uiculture="en-US" os-architecture="x64" />
     <settings>
       <setting name="BasePath" value="/home/will/Documents/code/osuMissAnalyzer/OsuMissAnalyzer.Tests/bin/Debug" />
       <setting name="DisposeRunners" value="True" />
@@ -15,16 +15,23 @@
       <setting name="NumberOfTestWorkers" value="12" />
     </settings>
     <properties>
-      <property name="_PID" value="505493" />
+      <property name="_PID" value="193155" />
       <property name="_APPDOMAIN" value="domain-7c7c0c38-OsuMissAnalyzer.Tests.csproj" />
     </properties>
-    <test-suite type="TestSuite" id="1-1005" name="OsuMissAnalyzer" fullname="OsuMissAnalyzer" runstate="Runnable" testcasecount="1" result="Passed" start-time="2020-09-18 03:15:18Z" end-time="2020-09-18 03:15:19Z" duration="1.066737" total="1" passed="1" failed="0" warnings="0" inconclusive="0" skipped="0" asserts="4">
-      <test-suite type="TestSuite" id="1-1006" name="Tests" fullname="OsuMissAnalyzer.Tests" runstate="Runnable" testcasecount="1" result="Passed" start-time="2020-09-18 03:15:18Z" end-time="2020-09-18 03:15:19Z" duration="1.066498" total="1" passed="1" failed="0" warnings="0" inconclusive="0" skipped="0" asserts="4">
-        <test-suite type="TestFixture" id="1-1000" name="ReplayAnalyzerTests" fullname="OsuMissAnalyzer.Tests.ReplayAnalyzerTests" classname="OsuMissAnalyzer.Tests.ReplayAnalyzerTests" runstate="Runnable" testcasecount="0" result="Passed" start-time="2020-09-18 03:15:18Z" end-time="2020-09-18 03:15:18Z" duration="0.000650" total="0" passed="0" failed="0" warnings="0" inconclusive="0" skipped="0" asserts="0" />
-        <test-suite type="TestFixture" id="1-1001" name="ServerTests" fullname="OsuMissAnalyzer.Tests.ServerTests" classname="OsuMissAnalyzer.Tests.ServerTests" runstate="Runnable" testcasecount="1" result="Passed" start-time="2020-09-18 03:15:18Z" end-time="2020-09-18 03:15:19Z" duration="1.060177" total="1" passed="1" failed="0" warnings="0" inconclusive="0" skipped="0" asserts="4">
-          <test-suite type="ParameterizedMethod" id="1-1003" name="TestApiDownload" fullname="OsuMissAnalyzer.Tests.ServerTests.TestApiDownload" classname="OsuMissAnalyzer.Tests.ServerTests" runstate="Runnable" testcasecount="1" result="Passed" start-time="2020-09-18 03:15:18Z" end-time="2020-09-18 03:15:19Z" duration="1.042473" total="1" passed="1" failed="0" warnings="0" inconclusive="0" skipped="0" asserts="4">
-            <test-case id="1-1002" name="TestApiDownload(&quot;3243485950&quot;,&quot;replay-osu_1859001_3243485950.osr&quot;)" fullname="OsuMissAnalyzer.Tests.ServerTests.TestApiDownload(&quot;3243485950&quot;,&quot;replay-osu_1859001_3243485950.osr&quot;)" methodname="TestApiDownload" classname="OsuMissAnalyzer.Tests.ServerTests" runstate="Runnable" seed="1212706142" result="Passed" start-time="2020-09-18 03:15:18Z" end-time="2020-09-18 03:15:19Z" duration="1.040177" asserts="4" />
-          </test-suite>
+    <test-suite type="TestSuite" id="1-1005" name="OsuMissAnalyzer" fullname="OsuMissAnalyzer" runstate="Runnable" testcasecount="2" result="Passed" start-time="2020-10-20 07:59:03Z" end-time="2020-10-20 07:59:05Z" duration="1.889722" total="2" passed="2" failed="0" warnings="0" inconclusive="0" skipped="0" asserts="2">
+      <test-suite type="TestSuite" id="1-1006" name="Tests" fullname="OsuMissAnalyzer.Tests" runstate="Runnable" testcasecount="2" result="Passed" start-time="2020-10-20 07:59:03Z" end-time="2020-10-20 07:59:05Z" duration="1.889434" total="2" passed="2" failed="0" warnings="0" inconclusive="0" skipped="0" asserts="2">
+        <test-suite type="TestFixture" id="1-1000" name="ReplayAnalyzerTests" fullname="OsuMissAnalyzer.Tests.ReplayAnalyzerTests" classname="OsuMissAnalyzer.Tests.ReplayAnalyzerTests" runstate="Runnable" testcasecount="1" result="Passed" start-time="2020-10-20 07:59:03Z" end-time="2020-10-20 07:59:05Z" duration="1.349251" total="1" passed="1" failed="0" warnings="0" inconclusive="0" skipped="0" asserts="2">
+          <test-case id="1-1001" name="TestOsuDb" fullname="OsuMissAnalyzer.Tests.ReplayAnalyzerTests.TestOsuDb" methodname="TestOsuDb" classname="OsuMissAnalyzer.Tests.ReplayAnalyzerTests" runstate="Runnable" seed="1402787912" result="Passed" start-time="2020-10-20 07:59:03Z" end-time="2020-10-20 07:59:05Z" duration="1.341051" asserts="2">
+            <output><![CDATA[O2i3 - Heart Function [Futsuu] (Capu) d41d8cd98f00b204e9800998ecf8427e Kola Kid - contra88 [Kantan] (Gamelan4) d41d8cd98f00b204e9800998ecf8427e
+71207
+]]></output>
+          </test-case>
+        </test-suite>
+        <test-suite type="TestFixture" id="1-1002" name="ServerTests" fullname="OsuMissAnalyzer.Tests.ServerTests" classname="OsuMissAnalyzer.Tests.ServerTests" runstate="Runnable" testcasecount="1" result="Passed" start-time="2020-10-20 07:59:05Z" end-time="2020-10-20 07:59:05Z" duration="0.537610" total="1" passed="1" failed="0" warnings="0" inconclusive="0" skipped="0" asserts="0">
+          <test-case id="1-1003" name="GetBeatmap" fullname="OsuMissAnalyzer.Tests.ServerTests.GetBeatmap" methodname="GetBeatmap" classname="OsuMissAnalyzer.Tests.ServerTests" runstate="Runnable" seed="1636701018" result="Passed" start-time="2020-10-20 07:59:05Z" end-time="2020-10-20 07:59:05Z" duration="0.530745" asserts="0">
+            <output><![CDATA[https://osu.ppy.sh/api/get_beatmaps?k=a3738bb54a10f7c1aac94e5a3daf209e70cf7ee3&h=d41d8cd98f00b204e9800998ecf8427e
+]]></output>
+          </test-case>
         </test-suite>
       </test-suite>
     </test-suite>
