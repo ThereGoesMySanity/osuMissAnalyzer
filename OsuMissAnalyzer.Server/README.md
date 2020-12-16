@@ -29,7 +29,7 @@ https://discord.com/oauth2/authorize?client_id=752035690237394944&scope=bot&perm
 ### Server-specific Settings
 The owner of the server can view/change settings with:
 ```
->miss settings [<server-id>]
+>miss settings [<server-id>] get
   View current settings
 >miss settings [<server-id>] set <setting> <value>
   Set the value of <setting> to <value>
