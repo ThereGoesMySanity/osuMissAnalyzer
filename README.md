@@ -19,7 +19,7 @@ After it's found the beatmap and replay, it'll analyze the misses and display th
 
 Not shown: In the newest update, the color of the missed hitcircle is tinted red and there are arrows to indicate the direction of movement.
 
-The colored lines represent what the accuracy of the hit would be if you clicked when the cursor was at that point. The circle is also colored to reflect what the accuracy would be (300 is blue, 100 is green, 50 is purple).
+The colored lines represent the hit windows (300, 100, 50) of the circle you missed, mapped onto where your cursor was during those windows. The circle is also colored to reflect what the accuracy would be (300 is blue, 100 is green, 50 is purple).
 
 ### Controls
 
