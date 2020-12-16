@@ -37,7 +37,9 @@
     <Compile Include="ServerReplayLoader.cs" />
     <Compile Include="SavedMiss.cs" />
     <Compile Include="UnixLogger.cs" />
+    <Compile Include="ServerContext.cs" />
     <Compile Include="Database\*" />
+    <Compile Include="Settings\*" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="Newtonsoft.Json, Version=10.0.0.0, Culture=neutral, processorArchitecture=MSIL">

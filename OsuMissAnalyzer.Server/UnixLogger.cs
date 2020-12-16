@@ -194,7 +194,7 @@ namespace OsuMissAnalyzer.Server
         {
             using (WebClient w = new WebClient())
             {
-                int maxLength = 1800;
+                int maxLength = 1000;
                 w.Headers[HttpRequestHeader.ContentType] = "application/x-www-form-urlencoded";
                 if (message.Length > maxLength)
                 {

@@ -35,8 +35,7 @@ namespace OsuMissAnalyzer.Server.Database
         }
         public void Close()
         {
-            using (FileStream file = File.OpenWrite(Path.Combine(folder, "beatmaps.db")))
-            using (StreamWriter writer = new StreamWriter(file))
+            using (StreamWriter writer = File.CreateText(Path.Combine(folder, "beatmaps.db")))
             {
                 JsonSerializer serializer = new JsonSerializer();
                 serializer.Serialize(writer, hashes);
