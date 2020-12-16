@@ -46,7 +46,7 @@ If you don't want to clutter your server with settings configuration, you can DM
 Right now, I have the bot running on a home server. This works fine for now, but if the bot gets super popular it might not be sustainable.
 It'd be nice to run the bot on a dedicated server but I'm not gonna throw money at one just so other people can use my bot.
 
-If anyone wants to put money towards getting a proper server host, please [let me know](#contact-me) - I'd be really grateful.
+If anyone wants to put money towards getting a proper server host, please [let me know](#contact) - I'd be really grateful.
 
 
 ## Contact
