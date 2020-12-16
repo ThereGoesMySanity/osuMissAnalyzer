@@ -40,7 +40,8 @@ Usage:
 Automatically responds to >rs from owo bot if the replay is saved online
 Automatically responds to uploaded replay files
 DM ThereGoesMySanity#2622 if you need help/want this bot on your server
-```";
+```
+Full readme at https://github.com/ThereGoesMySanity/osuMissAnalyzer/tree/missAnalyzer/OsuMissAnalyzer.Server";
         const string pfpPrefix = "https://a.ppy.sh/";
         private static Regex messageRegex = new Regex("^(user-recent|user-top|beatmap) (.+?)(?: (\\d+))?$");
         private static Regex settingsRegex = new Regex("^settings (\\d+ )?(get|set ([A-Za-z]+) (.+))?$");
