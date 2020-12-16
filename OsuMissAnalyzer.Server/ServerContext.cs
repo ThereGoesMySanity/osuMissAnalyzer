@@ -259,7 +259,14 @@ DM ThereGoesMySanity#2622 if you need help/want this bot on your server
                 }
             }
 
-            if (source != null) errorMessage ??= await replayLoader.Load(Api, ReplayDb, BeatmapDb);
+            try
+            {
+                if (source != null) errorMessage ??= await replayLoader.Load(Api, ReplayDb, BeatmapDb);
+            }
+            catch (ArgumentException ex)
+            {
+                errorMessage = ex.Message;
+            }
             if (replayLoader.Loaded)
             {
                 DiscordMessage message = null;

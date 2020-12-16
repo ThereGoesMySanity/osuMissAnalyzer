@@ -61,7 +61,9 @@ namespace OsuMissAnalyzer.Server
         public async Task<string> GetUserIdv1(string username)
         {
             Logger.Log(Logging.ApiGetUserv1);
-            return (string)(await ApiRequestv1("get_user", $"u={username}&type=string"))[0]["user_id"];
+            var result = await ApiRequestv1("get_user", $"u={username}&type=string");
+            if ((result as JArray).Count == 0) throw new ArgumentException($"No user named {username}");
+            return (string)result[0]["user_id"];
         }
         public async Task<string> DownloadBeatmapFromHashv1(string mapHash, string destinationFolder)
         {
