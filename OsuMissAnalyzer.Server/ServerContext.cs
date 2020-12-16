@@ -44,7 +44,7 @@ DM ThereGoesMySanity#2622 if you need help/want this bot on your server
 Full readme at https://github.com/ThereGoesMySanity/osuMissAnalyzer/tree/missAnalyzer/OsuMissAnalyzer.Server";
         const string pfpPrefix = "https://a.ppy.sh/";
         private static Regex messageRegex = new Regex("^(user-recent|user-top|beatmap) (.+?)(?: (\\d+))?$");
-        private static Regex settingsRegex = new Regex("^settings (\\d+ )?(get|set ([A-Za-z]+) (.+))?$");
+        private static Regex settingsRegex = new Regex("^settings (\\d+ )?(get|set ([A-Za-z]+) (.+))$");
         private static Regex beatmapRegex = new Regex("^(?:https?://(?:osu|old).ppy.sh/(?:beatmapsets/\\d+#osu|b)/)?(\\d+)");
         private static Regex partialBeatmapRegex = new Regex("^\\d+#osu/(\\d+)");
         private static Regex modRegex = new Regex("](?: \\+([A-Z]+))?\\n");
@@ -234,7 +234,7 @@ Full readme at https://github.com/ThereGoesMySanity/osuMissAnalyzer/tree/missAna
                     if (guildId != null) 
                     {
                         var user = await (await Discord.GetGuildAsync(guildId.Value)).GetMemberAsync(e.Author.Id);
-                        if (user.IsOwner)
+                        if (user.IsOwner || user.PermissionsIn(e.Channel).HasPermission(Permissions.Administrator))
                         {
                             var guild = Settings.GetGuild(guildId.Value);
                             if (!settingsMatch.Groups[2].Success || settingsMatch.Groups[2].Value.StartsWith("get"))
