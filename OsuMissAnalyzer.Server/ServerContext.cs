@@ -352,8 +352,11 @@ Full readme at https://github.com/ThereGoesMySanity/osuMissAnalyzer/tree/missAna
                             var response = await e.Message.RespondAsync(savedMiss.MissUrls[index]);
                             Logger.Log(Logging.MessageCreated);
                             savedMiss.Response = response;
-                            CachedMisses[response] = savedMiss;
-                            await SendReactions(response, savedMiss.MissAnalyzer.MissCount);
+                            if (!guildSettings.Compact)
+                            {
+                                CachedMisses[response] = savedMiss;
+                                await SendReactions(response, savedMiss.MissAnalyzer.MissCount);
+                            }
                         }
                     }
                     if (message != null)
