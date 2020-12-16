@@ -383,7 +383,7 @@ Full readme at https://github.com/ThereGoesMySanity/osuMissAnalyzer/tree/missAna
         public bool IsHelpRequest(MessageCreateEventArgs e, GuildSettings guildSettings)
         {
             return !e.Author.IsCurrent && (e.Message.Content.StartsWith(guildSettings.GetCommand("help"))
-                    || ((e.Message.Channel.IsPrivate || e.MentionedUsers.Any(u => u.IsCurrent)) 
+                    || ((e.Message.Channel.IsPrivate || (e.MentionedUsers?.Any(u => u?.IsCurrent ?? false) ?? false)) 
                             && e.Message.Content.IndexOf("help", StringComparison.InvariantCultureIgnoreCase) >= 0)
                     || e.Message.Content == guildSettings.Prefix);
         }
