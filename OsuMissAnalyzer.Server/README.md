@@ -49,6 +49,6 @@ It'd be nice to run the bot on a dedicated server but I'm not gonna throw money 
 If anyone wants to put money towards getting a proper server host, please [let me know](#contact-me) - I'd be really grateful.
 
 
-## Contact Me
+## Contact
 
 `ThereGoesMySanity#2622` on discord for any questions/concerns/suggestions/donations.
