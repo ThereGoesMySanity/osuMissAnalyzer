@@ -406,10 +406,9 @@ Full readme at https://github.com/ThereGoesMySanity/osuMissAnalyzer/tree/missAna
 
         public async Task Close()
         {
-            await Discord.DisconnectAsync();
             BeatmapDb.Close();
             Settings.Save();
-            Logger.Instance.Close();
+            await Discord.DisconnectAsync();
         }
 
         const ulong OWO = 289066747443675143;
