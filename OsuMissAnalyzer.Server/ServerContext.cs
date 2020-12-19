@@ -90,26 +90,26 @@ Full readme at https://github.com/ThereGoesMySanity/osuMissAnalyzer/tree/missAna
             status = new Stopwatch();
             status.Start();
 
-            Discord.MessageCreated += async e =>
+            Discord.MessageCreated += async (d, e) =>
             {
                 await CheckStatus();
-                await HandleMessage(e);
+                await HandleMessage(d, e);
             };
 
             Discord.MessageReactionAdded += HandleReaction;
 
-            Discord.ClientErrored += async e =>
+            Discord.ClientErrored += async (d, e) =>
             {
                 Logger.Log(Logging.ErrorUnhandled);
                 await Logger.WriteLine(e.EventName);
                 await Logger.WriteLine(e.Exception, Logger.LogLevel.ALERT);
             };
 
-            Discord.SocketErrored += async e =>
+            Discord.SocketErrored += async (d, e) =>
             {
                 Logger.Log(Logging.ErrorUnhandled);
                 await Logger.WriteLine(e.Exception, Logger.LogLevel.ALERT);
-                await Discord.ConnectAsync();
+                await d.ConnectAsync();
             };
 
             Logger.Instance.UpdateLogs += () => Logger.LogAbsolute(Logging.ServersJoined, Discord?.Guilds?.Count ?? 0);
@@ -129,11 +129,11 @@ Full readme at https://github.com/ThereGoesMySanity/osuMissAnalyzer/tree/missAna
                 status.Restart();
                 string stat = Settings.Test? "Down for maintenance - be back soon!"
                                            : ">miss help for help!";
-                await Discord.UpdateStatusAsync(new DiscordGame(stat));
+                await Discord.UpdateStatusAsync(new DiscordActivity(stat));
             }
         }
 
-        public async Task HandleMessage(MessageCreateEventArgs e)
+        public async Task HandleMessage(DiscordClient discord, MessageCreateEventArgs e)
         {
             Logger.Log(Logging.EventsHandled);
             if (Settings.Test && e.Guild?.Id != Settings.TestChannel) return;
@@ -315,7 +315,7 @@ Full readme at https://github.com/ThereGoesMySanity/osuMissAnalyzer/tree/missAna
             }
         }
 
-        public async Task HandleReaction(MessageReactionAddEventArgs e)
+        public async Task HandleReaction(DiscordClient discord, MessageReactionAddEventArgs e)
         {
             Logger.Log(Logging.EventsHandled);
             if (Settings.Test && e.Message.Channel.GuildId != Settings.TestChannel) return;
@@ -371,8 +371,8 @@ Full readme at https://github.com/ThereGoesMySanity/osuMissAnalyzer/tree/missAna
         private async Task<string> SendMissMessage(MissAnalyzer analyzer, int index)
         {
             analyzer.CurrentObject = index;
-            return (await (await Discord.GetChannelAsync(Settings.DumpChannel)).SendFileAsync(GetStream(analyzer.DrawSelectedHitObject(area)), 
-                    "miss.png", "")).Attachments[0].Url;
+            return (await (await Discord.GetChannelAsync(Settings.DumpChannel))
+                    .SendFileAsync("miss.png", GetStream(analyzer.DrawSelectedHitObject(area)), "")).Attachments[0].Url;
         }
         
         private static MemoryStream GetStream(Bitmap bitmap)
