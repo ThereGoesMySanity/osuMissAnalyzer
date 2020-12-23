@@ -1,4 +1,4 @@
-[Discord bot readme](OsuMissAnalyzer.Server/README.md)
+### [Discord bot readme](OsuMissAnalyzer.Server/README.md)
 
 # osu! Miss Analyzer
 A program to analyze misses in an osu! replay.
