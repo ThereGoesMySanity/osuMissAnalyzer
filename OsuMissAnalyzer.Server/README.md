@@ -1,5 +1,8 @@
 # osu! Miss Analyzer Server
 
+[![Discord Bots](https://top.gg/api/widget/752035690237394944.svg)](https://top.gg/bot/752035690237394944)
+
+
 A program to analyze misses in an osu! replay, now in discord bot form!
 
 ## How to Use
