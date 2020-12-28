@@ -174,7 +174,11 @@ Full readme at https://github.com/ThereGoesMySanity/osuMissAnalyzer/tree/missAna
                     if (embed != null)
                     {
                         string url = embed.Author.IconUrl.ToString();
-                        string? prefixStr = pfpPrefixes.Where(p => url.StartsWith(p)).FirstOrDefault(null);
+                        string prefixStr = null;
+                        foreach (var s in pfpPrefixes)
+                        {
+                            if (url.StartsWith(s)) prefixStr = s;
+                        }
                         if (prefixStr != null)
                         {
                             replayLoader.UserId = url.Substring(prefixStr.Length).Split('?')[0];
