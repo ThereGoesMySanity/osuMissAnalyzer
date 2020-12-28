@@ -43,7 +43,7 @@ Automatically responds to uploaded replay files
 DM ThereGoesMySanity#2622 if you need help/want this bot on your server
 ```
 Full readme at https://github.com/ThereGoesMySanity/osuMissAnalyzer/tree/missAnalyzer/OsuMissAnalyzer.Server";
-        const string pfpPrefix = "https://a.ppy.sh/";
+        private static string[] pfpPrefixes = {"https://a.ppy.sh/", "http://s.ppy.sh/a/"};
         private static Regex messageRegex = new Regex("^(user-recent|user-top|beatmap) (.+?)(?: (\\d+))?$");
         private static Regex settingsRegex = new Regex("^settings (\\d+ )?(get|set ([A-Za-z]+) (.+))$");
         private static Regex beatmapRegex = new Regex("^(?:https?://(?:osu|old).ppy.sh/(?:beatmapsets/\\d+#osu|b)/)?(\\d+)");
@@ -92,8 +92,8 @@ Full readme at https://github.com/ThereGoesMySanity/osuMissAnalyzer/tree/missAna
 
             Discord.MessageCreated += async (d, e) =>
             {
-                await CheckStatus();
                 await HandleMessage(d, e);
+                await CheckStatus();
             };
 
             Discord.MessageReactionAdded += HandleReaction;
@@ -174,9 +174,10 @@ Full readme at https://github.com/ThereGoesMySanity/osuMissAnalyzer/tree/missAna
                     if (embed != null)
                     {
                         string url = embed.Author.IconUrl.ToString();
-                        if (url.StartsWith(pfpPrefix))
+                        string? prefixStr = pfpPrefixes.Where(p => url.StartsWith(p)).FirstOrDefault(null);
+                        if (prefixStr != null)
                         {
-                            replayLoader.UserId = url.Substring(pfpPrefix.Length).Split('?')[0];
+                            replayLoader.UserId = url.Substring(prefixStr.Length).Split('?')[0];
                             await Logger.WriteLine($"found embed with userid {replayLoader.UserId}");
                             replayLoader.UserScores = "recent";
                             replayLoader.FailedScores = true;
@@ -414,6 +415,7 @@ Full readme at https://github.com/ThereGoesMySanity/osuMissAnalyzer/tree/missAna
         const ulong OWO = 289066747443675143;
         const ulong BISMARCK = 207856807677263874;
         const ulong BOATBOT = 185013154198061056;
+        const ulong TINYBOT = 470496878941962251;
 
         delegate bool BotCall(ServerReplayLoader server, MessageCreateEventArgs args, ref DiscordEmbed embed);
 
@@ -422,12 +424,22 @@ Full readme at https://github.com/ThereGoesMySanity/osuMissAnalyzer/tree/missAna
             [OWO] = "owo",
             [BOATBOT] = "boatbot",
             [BISMARCK] = "bismarck",
+            [TINYBOT] = "tinybot",
         };
         Dictionary<ulong, BotCall> rsFunc = new Dictionary<ulong, BotCall>
         {
             [OWO] = (ServerReplayLoader replayLoader, MessageCreateEventArgs e, ref DiscordEmbed embed) =>
             {
                 if (e.Message.Content.StartsWith("**Most Recent osu! Standard Play for"))
+                {
+                    embed = e.Message.Embeds[0];
+                    return true;
+                }
+                return false;
+            },
+            [TINYBOT] = (ServerReplayLoader replayLoader, MessageCreateEventArgs e, ref DiscordEmbed embed) =>
+            {
+                if (e.Message.Embeds.Count > 0 && e.Message.Embeds[0].Title.StartsWith("Most recent osu! Standard play for"))
                 {
                     embed = e.Message.Embeds[0];
                     return true;
