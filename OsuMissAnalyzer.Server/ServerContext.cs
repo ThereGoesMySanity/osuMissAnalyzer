@@ -20,6 +20,7 @@ using OsuMissAnalyzer.Server.Settings;
 
 namespace OsuMissAnalyzer.Server
 {
+    public enum Source { USER, BOT, ATTACHMENT }
     public class ServerContext
     {
         public OsuApi Api { get; private set; }
@@ -42,7 +43,7 @@ Automatically responds to uploaded replay files
 DM ThereGoesMySanity#2622 if you need help/want this bot on your server
 ```
 Full readme at https://github.com/ThereGoesMySanity/osuMissAnalyzer/tree/missAnalyzer/OsuMissAnalyzer.Server";
-        const string pfpPrefix = "https://a.ppy.sh/";
+        private static string[] pfpPrefixes = {"https://a.ppy.sh/", "http://s.ppy.sh/a/"};
         private static Regex messageRegex = new Regex("^(user-recent|user-top|beatmap) (.+?)(?: (\\d+))?$");
         private static Regex settingsRegex = new Regex("^settings (\\d+ )?(get|set ([A-Za-z]+) (.+))$");
         private static Regex beatmapRegex = new Regex("^(?:https?://(?:osu|old).ppy.sh/(?:beatmapsets/\\d+#osu|b)/)?(\\d+)");
@@ -57,7 +58,6 @@ Full readme at https://github.com/ThereGoesMySanity/osuMissAnalyzer/tree/missAna
 
         private ServerSettings Settings;
 
-        public enum Source { USER, BOT, ATTACHMENT }
 
         public async Task<bool> Init(string[] args)
         {
@@ -92,8 +92,8 @@ Full readme at https://github.com/ThereGoesMySanity/osuMissAnalyzer/tree/missAna
 
             Discord.MessageCreated += async (d, e) =>
             {
-                await CheckStatus();
                 await HandleMessage(d, e);
+                await CheckStatus();
             };
 
             Discord.MessageReactionAdded += HandleReaction;
@@ -144,10 +144,8 @@ Full readme at https://github.com/ThereGoesMySanity/osuMissAnalyzer/tree/missAna
                 Logger.Log(Logging.HelpMessageCreated);
                 return;
             }
-            ServerReplayLoader replayLoader = new ServerReplayLoader();
-            Source? source = null;
-            string errorMessage = null;
 
+            ServerReplayLoader replayLoader = new ServerReplayLoader();
             //attachment
             foreach (var attachment in e.Message.Attachments)
             {
@@ -161,7 +159,7 @@ Full readme at https://github.com/ThereGoesMySanity/osuMissAnalyzer/tree/missAna
                         w.DownloadFile(attachment.Url, dest);
                     }
                     replayLoader.ReplayFile = dest;
-                    source = Source.ATTACHMENT;
+                    replayLoader.Source = Source.ATTACHMENT;
                 }
             }
 
@@ -176,16 +174,17 @@ Full readme at https://github.com/ThereGoesMySanity/osuMissAnalyzer/tree/missAna
                     if (embed != null)
                     {
                         string url = embed.Author.IconUrl.ToString();
-                        if (url.StartsWith(pfpPrefix))
+                        string? prefixStr = pfpPrefixes.Where(p => url.StartsWith(p)).FirstOrDefault(null);
+                        if (prefixStr != null)
                         {
-                            replayLoader.UserId = url.Substring(pfpPrefix.Length).Split('?')[0];
+                            replayLoader.UserId = url.Substring(prefixStr.Length).Split('?')[0];
                             await Logger.WriteLine($"found embed with userid {replayLoader.UserId}");
                             replayLoader.UserScores = "recent";
                             replayLoader.FailedScores = true;
                             replayLoader.PlayIndex = 0;
                         }
                     }
-                    source = Source.BOT;
+                    replayLoader.Source = Source.BOT;
                 }
             }
 
@@ -198,7 +197,7 @@ Full readme at https://github.com/ThereGoesMySanity/osuMissAnalyzer/tree/missAna
                 {
                     await Logger.WriteLine("processing user call");
                     Logger.Log(Logging.UserCalls);
-                    source = Source.USER;
+                    replayLoader.Source = Source.USER;
 
                     replayLoader.PlayIndex = 0;
                     if (messageMatch.Groups.Count == 4 && messageMatch.Groups[3].Success)
@@ -219,7 +218,7 @@ Full readme at https://github.com/ThereGoesMySanity/osuMissAnalyzer/tree/missAna
                             }
                             else
                             {
-                                errorMessage = "Invalid beatmap link";
+                                replayLoader.ErrorMessage = "Invalid beatmap link";
                             }
                             break;
                     }
@@ -260,50 +259,59 @@ Full readme at https://github.com/ThereGoesMySanity/osuMissAnalyzer/tree/missAna
                 }
             }
 
+            if (replayLoader.Source != null)
+            {
+                Task.Run(() => ProcessMessage(e, guildSettings, replayLoader));
+            }
+        }
+
+        public async Task ProcessMessage(MessageCreateEventArgs e, GuildSettings guildSettings, ServerReplayLoader replayLoader)
+        {
             try
             {
-                if (source != null) errorMessage ??= await replayLoader.Load(Api, ReplayDb, BeatmapDb);
+                replayLoader.ErrorMessage ??= await replayLoader.Load(Api, ReplayDb, BeatmapDb);
+                if (replayLoader.Loaded)
+                {
+                    DiscordMessage message = null;
+                    MissAnalyzer missAnalyzer = new MissAnalyzer(replayLoader);
+                    if (missAnalyzer.MissCount == 0)
+                    {
+                        replayLoader.ErrorMessage = "No misses found.";
+                    }
+                    else if (replayLoader.Source == Source.BOT && guildSettings.Compact)
+                    {
+                        message = e.Message;
+                        await SendReactions(message, missAnalyzer.MissCount);
+                    }
+                    else if (missAnalyzer.MissCount == 1)
+                    {
+                        string miss = await SendMissMessage(missAnalyzer, 0);
+                        Logger.Log(Logging.MessageCreated);
+                        await e.Message.RespondAsync(miss);
+                    }
+                    else if (missAnalyzer.MissCount > 1)
+                    {
+                        Logger.Log(Logging.MessageCreated);
+                        message = await e.Message.RespondAsync($"Found **{missAnalyzer.MissCount}** misses");
+                        await SendReactions(message, missAnalyzer.MissCount);
+                    }
+                    if (message != null)
+                    {
+                        CachedMisses[message] = new SavedMiss(missAnalyzer);
+                        Logger.LogAbsolute(Logging.CachedMessages, CachedMisses.Count);
+                    }
+                }
             }
             catch (ArgumentException ex)
             {
-                errorMessage = ex.Message;
+                replayLoader.ErrorMessage = ex.Message;
             }
-            if (replayLoader.Loaded)
-            {
-                DiscordMessage message = null;
-                MissAnalyzer missAnalyzer = new MissAnalyzer(replayLoader);
-                if (missAnalyzer.MissCount == 0)
-                {
-                    errorMessage = "No misses found.";
-                }
-                else if (source == Source.BOT && guildSettings.Compact)
-                {
-                    message = e.Message;
-                    await SendReactions(message, missAnalyzer.MissCount);
-                }
-                else if (missAnalyzer.MissCount == 1)
-                {
-                    string miss = await SendMissMessage(missAnalyzer, 0);
-                    Logger.Log(Logging.MessageCreated);
-                    await e.Message.RespondAsync(miss);
-                }
-                else if (missAnalyzer.MissCount > 1)
-                {
-                    Logger.Log(Logging.MessageCreated);
-                    message = await e.Message.RespondAsync($"Found **{missAnalyzer.MissCount}** misses");
-                    await SendReactions(message, missAnalyzer.MissCount);
-                }
-                if (message != null)
-                {
-                    CachedMisses[message] = new SavedMiss(missAnalyzer);
-                    Logger.LogAbsolute(Logging.CachedMessages, CachedMisses.Count);
-                }
-            }
-            if (errorMessage != null && (source == Source.USER || source == Source.ATTACHMENT))
+
+            if (replayLoader.ErrorMessage != null && (replayLoader.Source == Source.USER || replayLoader.Source == Source.ATTACHMENT))
             {
                 Logger.Log(Logging.MessageCreated);
                 Logger.Log(Logging.ErrorHandled);
-                await e.Message.RespondAsync(errorMessage);
+                await e.Message.RespondAsync(replayLoader.ErrorMessage);
             }
         }
 
@@ -338,33 +346,39 @@ Full readme at https://github.com/ThereGoesMySanity/osuMissAnalyzer/tree/missAna
                 int index = Array.FindIndex(numberEmojis, t => t == e.Emoji) - 1;
                 if (index >= 0 && index < Math.Min(analyzer.MissCount, numberEmojis.Length - 1))
                 {
-                    Logger.Log(Logging.ReactionCalls);
-                    if (savedMiss.MissUrls[index] == null)
+                    Task.Run(() => ProcessReaction(e, guildSettings, savedMiss, index));
+                }
+            }
+        }
+
+        public async Task ProcessReaction(MessageReactionAddEventArgs e, GuildSettings guildSettings, SavedMiss savedMiss, int index)
+        {
+            var analyzer = savedMiss.MissAnalyzer;
+            Logger.Log(Logging.ReactionCalls);
+            if (savedMiss.MissUrls[index] == null)
+            {
+                savedMiss.MissUrls[index] = await SendMissMessage(analyzer, index);
+            }
+            var message = e.Message;
+            if (!message.Author.IsCurrent)
+            {
+                message = savedMiss.Response;
+                if (message == null)
+                {
+                    var response = await e.Message.RespondAsync(savedMiss.MissUrls[index]);
+                    Logger.Log(Logging.MessageCreated);
+                    savedMiss.Response = response;
+                    if (!guildSettings.Compact)
                     {
-                        savedMiss.MissUrls[index] = await SendMissMessage(analyzer, index);
-                    }
-                    var message = e.Message;
-                    if (!message.Author.IsCurrent)
-                    {
-                        message = savedMiss.Response;
-                        if (message == null)
-                        {
-                            var response = await e.Message.RespondAsync(savedMiss.MissUrls[index]);
-                            Logger.Log(Logging.MessageCreated);
-                            savedMiss.Response = response;
-                            if (!guildSettings.Compact)
-                            {
-                                CachedMisses[response] = savedMiss;
-                                await SendReactions(response, savedMiss.MissAnalyzer.MissCount);
-                            }
-                        }
-                    }
-                    if (message != null)
-                    {
-                        Logger.Log(Logging.MessageEdited);
-                        await message.ModifyAsync(savedMiss.MissUrls[index]);
+                        CachedMisses[response] = savedMiss;
+                        await SendReactions(response, analyzer.MissCount);
                     }
                 }
+            }
+            if (message != null)
+            {
+                Logger.Log(Logging.MessageEdited);
+                await message.ModifyAsync(savedMiss.MissUrls[index]);
             }
         }
 
@@ -393,15 +407,15 @@ Full readme at https://github.com/ThereGoesMySanity/osuMissAnalyzer/tree/missAna
 
         public async Task Close()
         {
-            await Discord.DisconnectAsync();
             BeatmapDb.Close();
             Settings.Save();
-            Logger.Instance.Close();
+            await Discord.DisconnectAsync();
         }
 
         const ulong OWO = 289066747443675143;
         const ulong BISMARCK = 207856807677263874;
         const ulong BOATBOT = 185013154198061056;
+        const ulong TINYBOT = 470496878941962251;
 
         delegate bool BotCall(ServerReplayLoader server, MessageCreateEventArgs args, ref DiscordEmbed embed);
 
@@ -410,12 +424,22 @@ Full readme at https://github.com/ThereGoesMySanity/osuMissAnalyzer/tree/missAna
             [OWO] = "owo",
             [BOATBOT] = "boatbot",
             [BISMARCK] = "bismarck",
+            [TINYBOT] = "tinybot",
         };
         Dictionary<ulong, BotCall> rsFunc = new Dictionary<ulong, BotCall>
         {
             [OWO] = (ServerReplayLoader replayLoader, MessageCreateEventArgs e, ref DiscordEmbed embed) =>
             {
                 if (e.Message.Content.StartsWith("**Most Recent osu! Standard Play for"))
+                {
+                    embed = e.Message.Embeds[0];
+                    return true;
+                }
+                return false;
+            },
+            [TINYBOT] = (ServerReplayLoader replayLoader, MessageCreateEventArgs e, ref DiscordEmbed embed) =>
+            {
+                if (e.Message.Embeds.Count > 0 && e.Message.Embeds[0].Title.StartsWith("Most recent osu! Standard play for"))
                 {
                     embed = e.Message.Embeds[0];
                     return true;

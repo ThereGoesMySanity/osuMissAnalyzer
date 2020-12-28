@@ -90,7 +90,7 @@ Bot link: https://discordapp.com/oauth2/authorize?client_id={DiscordId}&scope=bo
 
         public static ServerSettings Load()
         {
-            var file = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "settings.json");
+            var file = Path.Combine(AppContext.BaseDirectory, "settings.json");
             if (File.Exists(file)) 
                 return JsonConvert.DeserializeObject<ServerSettings>(File.ReadAllText(file));
             return new ServerSettings();
@@ -98,7 +98,7 @@ Bot link: https://discordapp.com/oauth2/authorize?client_id={DiscordId}&scope=bo
 
         public void Save()
         {
-            using (StreamWriter writer = File.CreateText(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "settings.json")))
+            using (StreamWriter writer = File.CreateText(Path.Combine(AppContext.BaseDirectory, "settings.json")))
             {
                 JsonSerializer serializer = new JsonSerializer();
                 serializer.Serialize(writer, this);

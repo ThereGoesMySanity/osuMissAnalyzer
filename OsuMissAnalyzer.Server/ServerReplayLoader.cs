@@ -10,6 +10,9 @@ namespace OsuMissAnalyzer.Server
 {
     public class ServerReplayLoader : IReplayLoader
     {
+        public Source? Source = null;
+        public string ErrorMessage = null;
+
         public string UserId;
         public string Username;
         public string UserScores;

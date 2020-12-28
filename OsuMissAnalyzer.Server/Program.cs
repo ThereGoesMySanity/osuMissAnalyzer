@@ -1,4 +1,4 @@
-using DSharpPlus;
+﻿using DSharpPlus;
 using System;
 using System.Threading.Tasks;
 using Mono.Unix;
@@ -54,8 +54,10 @@ namespace OsuMissAnalyzer.Server
                 await interruptPipe.Reading.ReadAsync(buffer, 0, 4);
             }
             catch (Exception e) { await Logger.WriteLine(e, Logger.LogLevel.ALERT); }
+            await Logger.WriteLine("Closing...");
             await context.Close();
             await Logger.WriteLine("Closed safely");
+            Logger.Instance.Close();
         }
     }
 }
