@@ -35,11 +35,11 @@ namespace OsuMissAnalyzer.UI
 		}
 		public BMAPI.v1.Beatmap GetBeatmapFromHash(string mapHash)
 		{
-			return Database.GetBeatmapFromHash(mapHash).Load(SongsFolder);
+			return Database.GetBeatmapFromHash(mapHash)?.Load(SongsFolder);
 		}
 		public BMAPI.v1.Beatmap GetBeatmapFromId(int mapId)
         {
-			return Database.GetBeatmapFromId(mapId).Load(SongsFolder);
+			return Database.GetBeatmapFromId(mapId)?.Load(SongsFolder);
         }
 		public List<Replay> GetReplaysFromBeatmap(string beatmapHash)
 		{
