@@ -164,32 +164,14 @@ Full readme at https://github.com/ThereGoesMySanity/osuMissAnalyzer/tree/missAna
             }
 
             //bot
-            if (botIds.ContainsKey(e.Author.Id))
+            if (botIds.ContainsKey(e.Author.Id) && rsFunc[e.Author.Id](replayLoader, e))
             {
-                DiscordEmbed embed = null;
-                if (rsFunc[e.Author.Id](replayLoader, e, ref embed))
-                {
-                    await Logger.WriteLine($"processing {botIds[e.Author.Id]} message");
-                    Logger.Log(Logging.BotCalls);
-                    if (embed != null)
-                    {
-                        string url = embed.Author.IconUrl.ToString();
-                        string prefixStr = null;
-                        foreach (var s in pfpPrefixes)
-                        {
-                            if (url.StartsWith(s)) prefixStr = s;
-                        }
-                        if (prefixStr != null)
-                        {
-                            replayLoader.UserId = url.Substring(prefixStr.Length).Split('?')[0];
-                            await Logger.WriteLine($"found embed with userid {replayLoader.UserId}");
-                            replayLoader.UserScores = "recent";
-                            replayLoader.FailedScores = true;
-                            replayLoader.PlayIndex = 0;
-                        }
-                    }
-                    replayLoader.Source = Source.BOT;
-                }
+                await Logger.WriteLine($"processing {botIds[e.Author.Id]} message");
+                Logger.Log(Logging.BotCalls);
+                replayLoader.UserScores = "recent";
+                replayLoader.FailedScores = true;
+                replayLoader.PlayIndex = 0;
+                replayLoader.Source = Source.BOT;
             }
 
             //user-triggered
@@ -315,6 +297,7 @@ Full readme at https://github.com/ThereGoesMySanity/osuMissAnalyzer/tree/missAna
             {
                 Logger.Log(Logging.MessageCreated);
                 Logger.Log(Logging.ErrorHandled);
+                Logger.WriteLine($"Error handled: {replayLoader.ErrorMessage}");
                 await e.Message.RespondAsync(replayLoader.ErrorMessage);
             }
         }
@@ -420,8 +403,9 @@ Full readme at https://github.com/ThereGoesMySanity/osuMissAnalyzer/tree/missAna
         const ulong BISMARCK = 207856807677263874;
         const ulong BOATBOT = 185013154198061056;
         const ulong TINYBOT = 470496878941962251;
+        const ulong BATHBOT = 297073686916366336;
 
-        delegate bool BotCall(ServerReplayLoader server, MessageCreateEventArgs args, ref DiscordEmbed embed);
+        delegate bool BotCall(ServerReplayLoader server, MessageCreateEventArgs args);
 
         Dictionary<ulong, string> botIds = new Dictionary<ulong, string>
         {
@@ -429,28 +413,43 @@ Full readme at https://github.com/ThereGoesMySanity/osuMissAnalyzer/tree/missAna
             [BOATBOT] = "boatbot",
             [BISMARCK] = "bismarck",
             [TINYBOT] = "tinybot",
+            [BATHBOT] = "bathbot",
         };
         Dictionary<ulong, BotCall> rsFunc = new Dictionary<ulong, BotCall>
         {
-            [OWO] = (ServerReplayLoader replayLoader, MessageCreateEventArgs e, ref DiscordEmbed embed) =>
+            [OWO] = (ServerReplayLoader replayLoader, MessageCreateEventArgs e) =>
             {
                 if (e.Message.Content.StartsWith("**Most Recent osu! Standard Play for"))
                 {
-                    embed = e.Message.Embeds[0];
+                    replayLoader.UserId = GetIdFromEmbed(e.Message.Embeds[0]);
                     return true;
                 }
                 return false;
             },
-            [TINYBOT] = (ServerReplayLoader replayLoader, MessageCreateEventArgs e, ref DiscordEmbed embed) =>
+            [TINYBOT] = (ServerReplayLoader replayLoader, MessageCreateEventArgs e) =>
             {
                 if (e.Message.Embeds.Count > 0 && e.Message.Embeds[0].Title.StartsWith("Most recent osu! Standard play for"))
                 {
-                    embed = e.Message.Embeds[0];
+                    replayLoader.UserId = GetIdFromEmbed(e.Message.Embeds[0]);
                     return true;
                 }
                 return false;
             },
-            [BISMARCK] = (ServerReplayLoader replayLoader, MessageCreateEventArgs e, ref DiscordEmbed embed) =>
+            [BATHBOT] = (ServerReplayLoader replayLoader, MessageCreateEventArgs e) =>
+            {
+                if (e.Message.Embeds.Count > 0 && e.Message.Content.StartsWith("Try #"))
+                {
+                    string prefix = "https://osu.ppy.sh/u/";
+                    string url = e.Message.Embeds[0].Url.AbsoluteUri;
+                    if (url.StartsWith(prefix))
+                    {
+                        replayLoader.UserId = url.Substring(prefix.Length);
+                        return true;
+                    }
+                }
+                return false;
+            },
+            [BISMARCK] = (ServerReplayLoader replayLoader, MessageCreateEventArgs e) =>
             {
                 if (e.Message.Content.Length == 0 && e.Message.Embeds.Count > 0)
                 {
@@ -471,20 +470,34 @@ Full readme at https://github.com/ThereGoesMySanity/osuMissAnalyzer/tree/missAna
                             return true;
                         }
                     }
-                    embed = em;
+                    replayLoader.UserId = GetIdFromEmbed(em);
                     return true;
                 }
                 return false;
             },
-            [BOATBOT] = (ServerReplayLoader replayLoader, MessageCreateEventArgs e, ref DiscordEmbed embed) =>
+            [BOATBOT] = (ServerReplayLoader replayLoader, MessageCreateEventArgs e) =>
             {
                 if (e.Message.Content.StartsWith("Try #") && e.Message.Embeds.Count > 0)
                 {
-                    embed = e.Message.Embeds[0];
+                    replayLoader.UserId = GetIdFromEmbed(e.Message.Embeds[0]);
                     return true;
                 }
                 return false;
             },
         };
+        private static string GetIdFromEmbed(DiscordEmbed embed)
+        {
+            string url = embed.Author.IconUrl.ToString();
+            string prefixStr = null;
+            foreach (var s in pfpPrefixes)
+            {
+                if (url.StartsWith(s)) prefixStr = s;
+            }
+            if (prefixStr != null)
+            {
+                return url.Substring(prefixStr.Length).Split('?')[0];
+            }
+            return null;
+        }
     }
 }
