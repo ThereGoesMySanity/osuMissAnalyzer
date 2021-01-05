@@ -77,7 +77,11 @@ Full readme at https://github.com/ThereGoesMySanity/osuMissAnalyzer/tree/missAna
             Discord = new DiscordClient(new DiscordConfiguration
             {
                 Token = Settings.DiscordToken,
-                TokenType = TokenType.Bot
+                TokenType = TokenType.Bot,
+                Intents = DiscordIntents.GuildMessages |
+                DiscordIntents.GuildMessageReactions |
+                DiscordIntents.DirectMessages |
+                DiscordIntents.DirectMessageReactions
             });
 
             numberEmojis = new DiscordEmoji[10];
