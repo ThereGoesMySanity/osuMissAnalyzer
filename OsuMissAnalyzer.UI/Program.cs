@@ -1,17 +1,18 @@
-using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.IO;
-using System.Windows.Forms;
-using Mono.Options;
-using OsuMissAnalyzer.Core;
+﻿using System;
+using Avalonia;
+using Avalonia.Controls.ApplicationLifetimes;
+using Avalonia.Logging.Serilog;
+using Avalonia.ReactiveUI;
 
 namespace OsuMissAnalyzer.UI
 {
-    public static class Program
+    class Program
     {
         public static bool headless = false;
-        [STAThread]
+        public static Dictionary<string, string> optList;
+        // Initialization code. Don't use any Avalonia, third-party APIs or any
+        // SynchronizationContext-reliant code before AppMain is called: things aren't initialized
+        // yet and stuff might break.
         public static void Main(string[] args)
         {
             MissAnalyzer missAnalyzer;
@@ -21,7 +22,7 @@ namespace OsuMissAnalyzer.UI
             Directory.SetCurrentDirectory(AppDomain.CurrentDomain.BaseDirectory);
             string replay = null, beatmap = null;
             List<string> extras;
-            Dictionary<string, string> optList = new Dictionary<string, string>();
+            optList = new Dictionary<string, string>();
             bool help = false;
             int getMiss = -1;
             string optionsFile = "options.cfg";
@@ -56,33 +57,14 @@ namespace OsuMissAnalyzer.UI
                 opts.WriteOptionDescriptions(Console.Out);
                 return;
             }
-
-            try
-            {
-                Options options = new Options("options.cfg", optList);
-                UIReplayLoader replayLoader = new UIReplayLoader(options);
-                if (!replayLoader.Load(replay, beatmap)) return;
-                if (replayLoader.Replay == null || replayLoader.Beatmap == null)
-                {
-                    ShowErrorDialog("Couldn't find " + (replayLoader.Replay == null ? "replay" : "beatmap"));
-                    return;
-                }
-
-                missAnalyzer = new MissAnalyzer(replayLoader);
-                controller = new MissWindowController(missAnalyzer, replayLoader);
-                window = new MissWindow(controller);
-                Application.Run(window);
-            } catch (Exception e)
-            {
-                ShowErrorDialog(e.Message);
-                File.WriteAllText("exception.log", e.ToString());
-            }
-        }
-        public static void ShowErrorDialog(string message)
-        {
-            if (!headless) MessageBox.Show(message, "Error");
-            else Debug.Print(message);
+            BuildAvaloniaApp().StartWithClassicDesktopLifetime();
         }
 
+        // Avalonia configuration, don't remove; also used by visual designer.
+        public static AppBuilder BuildAvaloniaApp()
+            => AppBuilder.Configure<App>()
+                .UsePlatformDetect()
+                .LogToDebug()
+                .UseReactiveUI();
     }
 }
