@@ -8,6 +8,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Threading.Tasks;
 
 namespace OsuMissAnalyzer.UI
 {
@@ -34,31 +35,54 @@ namespace OsuMissAnalyzer.UI
                 try
                 {
                     Window = desktop.MainWindow = new MissWindow();
-                    if (!await ReplayLoader.Load()) return;
+                    await ReplayLoader.Load();
                     if (ReplayLoader.Replay == null || ReplayLoader.Beatmap == null)
                     {
                         errorMessage = "Couldn't find " + (ReplayLoader.Replay == null ? "replay" : "beatmap");
-                        return;
                     }
-                    Window.DataContext = new MissWindowViewModel(ReplayLoader);
-                    Debug.WriteLine("testest");
-                } catch (Exception e)
+                    else
+                    {
+                        Window.DataContext = new MissWindowViewModel(ReplayLoader);
+                    }
+                }
+                catch (Exception e)
                 {
                     errorMessage = e.Message;
                     File.WriteAllText("exception.log", e.ToString());
                 }
                 if (errorMessage != null)
                 {
-                    ShowErrorDialog(errorMessage);
+                    await ShowMessageBox($"An error has occured.\n{errorMessage}");
+                    Window.Close();
                 }
             }
 
             base.OnFrameworkInitializationCompleted();
         }
 
-        public static void ShowErrorDialog(string message)
+        public static async Task ShowMessageBox(string message)
         {
-            //TODO: error message box
+            Button button;
+            var window = new Window
+            {
+                Height = 200,
+                Width = 200,
+                Content = new StackPanel
+                {
+                    Spacing = 4,
+                    Children =
+                    {
+                        new TextBlock { Text = message, HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Center },
+                        (button = new Button
+                        {
+                            HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Center,
+                            Content = "OK",
+                        })
+                    }
+                }
+            };
+            button.Click += (_, __) => window.Close();
+            await window.ShowDialog(Window);
         }
     }
 }

@@ -13,6 +13,13 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "OsuMissAnalyzer.Server", "O
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "OsuMissAnalyzer.UI", "OsuMissAnalyzer.UI\OsuMissAnalyzer.UI.csproj", "{10540D02-C0E2-41E4-A62D-ACCAEE82BE81}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "netdata", "netdata", "{C64660ED-7381-4C07-B6A7-5BD6F9FD440D}"
+	ProjectSection(SolutionItems) = preProject
+		netdata\missanalyzer.chart.py = netdata\missanalyzer.chart.py
+		netdata\missanalyzer.conf = netdata\missanalyzer.conf
+		netdata\missanalyzer.html = netdata\missanalyzer.html
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU

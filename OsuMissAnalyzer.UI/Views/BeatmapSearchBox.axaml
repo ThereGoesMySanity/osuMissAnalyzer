@@ -4,7 +4,8 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
         x:Class="OsuMissAnalyzer.UI.Views.BeatmapSearchBox"
-        Title="BeatmapSearchBox" Width="400" Height="640">
+        Title="BeatmapSearchBox" Width="400" Height="640"
+        WindowStartupLocation="CenterOwner">
   <DockPanel>
     <TextBox Name="SearchBox" Watermark="Search..." DockPanel.Dock="Top" Text="{Binding SearchText}"/>
     <StackPanel Orientation="Horizontal" DockPanel.Dock="Bottom">
@@ -14,8 +15,6 @@
       <Button Name="Close" Command="{Binding $parent[Window].Close}" 
               CommandParameter="False">Close</Button>
     </StackPanel>
-    <ScrollViewer>
-      <ListBox Name="ResultsBox" Items="{Binding Results}"/>
-    </ScrollViewer>
+    <ListBox Name="ResultsBox" Items="{Binding Results}" SelectionMode="Single" SelectedItem="{Binding Result}"/>
   </DockPanel>
 </Window>

@@ -94,7 +94,7 @@ namespace OsuMissAnalyzer.UI
                     case ReplayFind.BEATMAP:
                         var beatmapForm = new BeatmapSearchBox
                         {
-                            DataContext = new BeatmapSearchBoxViewModel(Options.Database)
+                            DataContext = new BeatmapSearchBoxViewModel(Options)
                         };
                         if (await beatmapForm.ShowDialog<bool>(App.Window))
                         {
@@ -127,14 +127,13 @@ namespace OsuMissAnalyzer.UI
                             }
                         };
                         string[] result = await fd.ShowAsync(App.Window);
-                        if (result != null)
+                        if (result != null && result.Length > 0)
                         {
                             replay = new Replay(result[0]);
                         }
                         break;
                 }
             }
-            //if (replay == null) Program.ShowErrorDialog("Couldn't find replay");
             return replay;
         }
 
@@ -145,14 +144,15 @@ namespace OsuMissAnalyzer.UI
             {
                 beatmap = Options.GetBeatmapFromHash(replay.MapHash);
             }
-            if (beatmap == null)
+            //if (beatmap == null)
+            else
             {
-                beatmap = GetBeatmapFromHash(Directory.GetCurrentDirectory(), false)
-                        ?? GetBeatmapFromHash(Options.SongsFolder, true);
+                beatmap = await GetBeatmapFromHash(Directory.GetCurrentDirectory(), false)
+                        ?? await GetBeatmapFromHash(Options.SongsFolder, true);
             }
             if (beatmap == null && dialog)
             {
-                //Program.ShowErrorDialog("Couldn't find beatmap automatically");
+                await App.ShowMessageBox("Couldn't find beatmap automatically");
                 OpenFileDialog fd = new OpenFileDialog();
                 fd.Title = "Choose beatmap";
                 fd.Filters.Add(new FileDialogFilter
@@ -161,7 +161,7 @@ namespace OsuMissAnalyzer.UI
                     Extensions = { "osu" },
                 });
                 string[] d = await fd.ShowAsync(App.Window);
-                if (d != null)
+                if (d != null && d.Length > 0)
                 {
                     beatmap = new Beatmap(d[0]);
                 }
@@ -169,7 +169,7 @@ namespace OsuMissAnalyzer.UI
             return beatmap;
         }
 
-        private Beatmap GetBeatmapFromHash(string dir, bool isSongsDir)
+        private async Task<Beatmap> GetBeatmapFromHash(string dir, bool isSongsDir)
         {
             Debug.Print("\nChecking API Key...");
             JArray j = JArray.Parse("[]");
@@ -184,32 +184,33 @@ namespace OsuMissAnalyzer.UI
                                                             "&h=" + Replay.MapHash));
                 }
             }
-            else
+            else if(isSongsDir)
             {
                 Debug.Print("No API key found, searching manually. It could take a while...");
-                //TODO
-                //Thread t = new Thread(() =>
-                //               MessageBox.Show("No API key found, searching manually. It could take a while..."));
+                App.ShowMessageBox("No API key found, searching manually.\nIt could take a while...");
             }
-            if (isSongsDir)
+            return await Task.Run(() =>
             {
-                string[] folders;
-
-                if (j.Count > 0) folders = Directory.GetDirectories(dir, j[0]["beatmapset_id"] + "*");
-                else folders = Directory.GetDirectories(dir);
-
-                foreach (string folder in folders)
+                if (isSongsDir)
                 {
-                    Beatmap map = ReadFolder(folder, j.Count > 0 ? (string)j[0]["beatmap_id"] : null);
+                    string[] folders;
+
+                    if (j.Count > 0) folders = Directory.GetDirectories(dir, j[0]["beatmapset_id"] + "*");
+                    else folders = Directory.GetDirectories(dir);
+
+                    foreach (string folder in folders)
+                    {
+                        Beatmap map = ReadFolder(folder, j.Count > 0 ? (string)j[0]["beatmap_id"] : null);
+                        if (map != null) return map;
+                    }
+                }
+                else
+                {
+                    Beatmap map = ReadFolder(dir, j.Count > 0 ? (string)j[0]["beatmap_id"] : null);
                     if (map != null) return map;
                 }
-            }
-            else
-            {
-                Beatmap map = ReadFolder(dir, j.Count > 0 ? (string)j[0]["beatmap_id"] : null);
-                if (map != null) return map;
-            }
-            return null;
+                return null;
+            });
         }
 
         private Beatmap ReadFolder(string folder, string id)

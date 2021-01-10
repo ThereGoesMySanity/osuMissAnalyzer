@@ -38,7 +38,7 @@ namespace OsuMissAnalyzer.UI.ViewModels
             Analyzer = new MissAnalyzer(loader);
             Loader = loader;
         }
-        public void OnKeyDown(object source, KeyEventArgs e)
+        public async void OnKeyDown(object source, KeyEventArgs e)
         {
             switch (e.Key)
             {
@@ -66,7 +66,12 @@ namespace OsuMissAnalyzer.UI.ViewModels
                     }
                     break;
                 case Key.R:
-                    //TODO
+                    var loader = new UIReplayLoader
+                    {
+                        Options = Loader.Options
+                    };
+                    await loader.Load();
+                    Initialize(loader);
                     break;
                 case Key.A:
                     Analyzer.ToggleDrawAllHitObjects();

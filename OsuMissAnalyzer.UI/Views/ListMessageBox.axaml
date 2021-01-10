@@ -5,7 +5,8 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
         x:Class="OsuMissAnalyzer.UI.Views.ListMessageBox"
-        Title="ListMessageBox" Width="540" Height="320">
+        Title="ListMessageBox" Width="540" Height="320"
+        WindowStartupLocation="CenterOwner">
     <Design.DataContext>
         <vm:ListMessageBoxViewModel/>
     </Design.DataContext>
@@ -18,8 +19,8 @@
       <Button Width="120" Name="Cancel" Command="{Binding $parent[Window].Close}" 
               CommandParameter="False">Cancel</Button>
     </StackPanel>
-      <DataGrid Items="{Binding Items}" SelectedItem="{Binding Result, Mode=TwoWay}" IsReadOnly="True" SelectionMode="Single"
-                SelectedIndex="0"
+      <DataGrid Name="Results" Items="{Binding Items}" SelectedItem="{Binding Result, Mode=TwoWay}"
+                IsReadOnly="True" SelectionMode="Single"
                 HorizontalScrollBarVisibility="Disabled" Margin="12">
         <DataGrid.Columns>
           <DataGridTextColumn Width="*" Binding="{Binding BeatmapName}" Header="Beatmap"/>

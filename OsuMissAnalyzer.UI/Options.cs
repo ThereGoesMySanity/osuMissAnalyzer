@@ -43,7 +43,7 @@ namespace OsuMissAnalyzer.UI
         }
 		public List<Replay> GetReplaysFromBeatmap(string beatmapHash)
 		{
-			return ScoresDb.scores[beatmapHash].Select(s => new Replay(Path.Combine(Settings["osudir"], "Data", "r", s.filename))).ToList();
+			return ScoresDb.scores.GetValueOrDefault(beatmapHash, new Score[] { }).Select(s => new Replay(Path.Combine(Settings["osudir"], "Data", "r", s.filename))).ToList();
 		}
 		private void AddOption(string key, string value)
 		{

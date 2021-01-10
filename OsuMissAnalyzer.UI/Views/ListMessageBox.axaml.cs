@@ -3,7 +3,10 @@ using Avalonia.Controls;
 using Avalonia.Markup.Xaml;
 using OsuMissAnalyzer.UI.Models;
 using OsuMissAnalyzer.UI.ViewModels;
-using System.Diagnostics;
+using System.Reactive.Linq;
+using System;
+using System.Linq;
+using Avalonia.Input;
 
 namespace OsuMissAnalyzer.UI.Views
 {
@@ -27,5 +30,26 @@ namespace OsuMissAnalyzer.UI.Views
         {
             AvaloniaXamlLoader.Load(this);
         }
+
+        protected override void OnKeyDown(KeyEventArgs e)
+        {
+            switch (e.Key)
+            {
+                //case Key.Tab:
+                //    DataGrid d = this.FindControl<DataGrid>("Results");
+                //    var vm = DataContext as ListMessageBoxViewModel;
+                //    d.SelectedIndex = (d.SelectedIndex + 1) % vm.Items.Count;
+                //    d.ScrollIntoView(vm.Result, null);
+                //    e.Handled = true;
+                //    break;
+                case Key.Enter:
+                    e.Handled = true;
+                    if (Result != null) Close(true);
+                    break;
+            }
+           
+            base.OnKeyDown(e);
+        }
+
     }
 }

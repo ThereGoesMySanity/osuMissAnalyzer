@@ -1,5 +1,6 @@
 ﻿using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Input;
 using Avalonia.Markup.Xaml;
 using OsuDbAPI;
 using OsuMissAnalyzer.UI.ViewModels;
@@ -26,7 +27,16 @@ namespace OsuMissAnalyzer.UI.Views
         private void InitializeComponent()
         {
             AvaloniaXamlLoader.Load(this);
+            this.FindControl<TextBox>("SearchBox").KeyDown += SearchBox_KeyDown;
         }
 
+        private void SearchBox_KeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.Key == Key.Enter)
+            {
+                e.Handled = true;
+                (DataContext as BeatmapSearchBoxViewModel).StartSearch(true);
+            }
+        }
     }
 }
