@@ -27,20 +27,20 @@ namespace OsuMissAnalyzer.UI
         public string ReplayFile { get; set; }
         public string BeatmapFile { get; set; }
 
-        public async Task<bool> Load()
+        public async Task<string> Load()
         {
             Debug.Print("Loading Replay file...");
 
             Replay = ReplayFile == null ? await LoadReplay() : new Replay(ReplayFile);
             if (Replay == null)
-                return false;
+                return "Couldn't find replay";
 
             Debug.Print("Loaded replay {0}", Replay.Filename);
             Debug.Print("Loading Beatmap file...");
 
             Beatmap ??= BeatmapFile == null ? await LoadBeatmap(Replay) : new Beatmap(BeatmapFile);
             if (Beatmap == null)
-                return false;
+                return "Couldn't find beatmap";
 
             Debug.Print("Loaded beatmap {0}", Beatmap.Filename);
             Debug.Print("Analyzing... ");
@@ -50,9 +50,9 @@ namespace OsuMissAnalyzer.UI
 
             if (ReplayAnalyzer.misses.Count == 0)
             {
-                return false;
+                return "No misses found";
             }
-            return true;
+            return null;
         }
 
         public async Task<Replay> LoadReplay()

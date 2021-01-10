@@ -15,6 +15,12 @@
       <Button Name="Close" Command="{Binding $parent[Window].Close}" 
               CommandParameter="False">Close</Button>
     </StackPanel>
-    <ListBox Name="ResultsBox" Items="{Binding Results}" SelectionMode="Single" SelectedItem="{Binding Result}"/>
+    <ListBox Name="ResultsBox" Items="{Binding Results}" SelectionMode="Single" SelectedItem="{Binding Result}">
+      <ListBox.ItemTemplate>
+        <DataTemplate>
+          <TextBlock Text="{Binding}" DoubleTapped="Text_DoubleTapped"/>
+        </DataTemplate>
+      </ListBox.ItemTemplate>
+    </ListBox>
   </DockPanel>
 </Window>

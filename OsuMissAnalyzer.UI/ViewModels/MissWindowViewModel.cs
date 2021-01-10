@@ -33,11 +33,6 @@ namespace OsuMissAnalyzer.UI.ViewModels
             Initialize(loader);
             this.WhenAnyValue(x => x.Bounds, x => x.Analyzer).Subscribe(((Rect, MissAnalyzer) _) => UpdateImage());
         }
-        public void Initialize(UIReplayLoader loader)
-        {
-            Analyzer = new MissAnalyzer(loader);
-            Loader = loader;
-        }
         public async void OnKeyDown(object source, KeyEventArgs e)
         {
             switch (e.Key)
@@ -66,12 +61,7 @@ namespace OsuMissAnalyzer.UI.ViewModels
                     }
                     break;
                 case Key.R:
-                    var loader = new UIReplayLoader
-                    {
-                        Options = Loader.Options
-                    };
-                    await loader.Load();
-                    Initialize(loader);
+                    App.Load(new UIReplayLoader { Options = Loader.Options });
                     break;
                 case Key.A:
                     Analyzer.ToggleDrawAllHitObjects();

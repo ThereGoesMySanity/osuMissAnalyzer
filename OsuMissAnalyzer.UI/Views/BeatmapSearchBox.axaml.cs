@@ -1,7 +1,9 @@
 ﻿using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
+using Avalonia.Interactivity;
 using Avalonia.Markup.Xaml;
+using Avalonia.Markup.Xaml.Templates;
 using OsuDbAPI;
 using OsuMissAnalyzer.UI.ViewModels;
 
@@ -22,6 +24,11 @@ namespace OsuMissAnalyzer.UI.Views
         public void Close(bool success)
         {
             base.Close(success);
+        }
+
+        public void Text_DoubleTapped(object? o, RoutedEventArgs e)
+        {
+            Close(Result != null);
         }
 
         private void InitializeComponent()

@@ -29,6 +29,11 @@ namespace OsuMissAnalyzer.UI.Views
         private void InitializeComponent()
         {
             AvaloniaXamlLoader.Load(this);
+            DataGrid d = this.FindControl<DataGrid>("Results");
+            d.LoadingRow += (_, e) =>
+            {
+                e.Row.DoubleTapped += (_, __) => Close(Result != null);
+            };
         }
 
         protected override void OnKeyDown(KeyEventArgs e)
@@ -50,6 +55,5 @@ namespace OsuMissAnalyzer.UI.Views
            
             base.OnKeyDown(e);
         }
-
     }
 }
