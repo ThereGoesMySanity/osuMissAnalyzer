@@ -1,15 +1,17 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 15
-VisualStudioVersion = 15.0.26124.0
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.30804.86
 MinimumVisualStudioVersion = 15.0.26124.0
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OsuMissAnalyzer.Core", "OsuMissAnalyzer.Core\OsuMissAnalyzer.Core.csproj", "{7CA9B803-EEED-47C7-BF0A-76196D649EF1}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "OsuMissAnalyzer.Core", "OsuMissAnalyzer.Core\OsuMissAnalyzer.Core.csproj", "{7CA9B803-EEED-47C7-BF0A-76196D649EF1}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "osuReplayAnalyzer", "osuReplayAnalyzer", "{3649507D-ED90-4ECA-BE57-E467C902C2C6}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "osuDodgyMomentsFinder", "osuReplayAnalyzer\osuDodgyMomentsFinder\osuDodgyMomentsFinder.csproj", "{CA3E7E21-4C2C-473F-AF1D-51BAEF2FAB8D}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "osuDodgyMomentsFinder", "osuReplayAnalyzer\osuDodgyMomentsFinder\osuDodgyMomentsFinder.csproj", "{CA3E7E21-4C2C-473F-AF1D-51BAEF2FAB8D}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OsuMissAnalyzer.Server", "OsuMissAnalyzer.Server\OsuMissAnalyzer.Server.csproj", "{729606B7-845D-4721-ACC7-C67977021BE5}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "OsuMissAnalyzer.Server", "OsuMissAnalyzer.Server\OsuMissAnalyzer.Server.csproj", "{729606B7-845D-4721-ACC7-C67977021BE5}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "OsuMissAnalyzer.UI", "OsuMissAnalyzer.UI\OsuMissAnalyzer.UI.csproj", "{10540D02-C0E2-41E4-A62D-ACCAEE82BE81}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -19,9 +21,6 @@ Global
 		Release|Any CPU = Release|Any CPU
 		Release|x64 = Release|x64
 		Release|x86 = Release|x86
-	EndGlobalSection
-	GlobalSection(SolutionProperties) = preSolution
-		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
 		{7CA9B803-EEED-47C7-BF0A-76196D649EF1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
@@ -60,8 +59,26 @@ Global
 		{729606B7-845D-4721-ACC7-C67977021BE5}.Release|x64.Build.0 = Release|Any CPU
 		{729606B7-845D-4721-ACC7-C67977021BE5}.Release|x86.ActiveCfg = Release|Any CPU
 		{729606B7-845D-4721-ACC7-C67977021BE5}.Release|x86.Build.0 = Release|Any CPU
+		{10540D02-C0E2-41E4-A62D-ACCAEE82BE81}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{10540D02-C0E2-41E4-A62D-ACCAEE82BE81}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{10540D02-C0E2-41E4-A62D-ACCAEE82BE81}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{10540D02-C0E2-41E4-A62D-ACCAEE82BE81}.Debug|x64.Build.0 = Debug|Any CPU
+		{10540D02-C0E2-41E4-A62D-ACCAEE82BE81}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{10540D02-C0E2-41E4-A62D-ACCAEE82BE81}.Debug|x86.Build.0 = Debug|Any CPU
+		{10540D02-C0E2-41E4-A62D-ACCAEE82BE81}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{10540D02-C0E2-41E4-A62D-ACCAEE82BE81}.Release|Any CPU.Build.0 = Release|Any CPU
+		{10540D02-C0E2-41E4-A62D-ACCAEE82BE81}.Release|x64.ActiveCfg = Release|Any CPU
+		{10540D02-C0E2-41E4-A62D-ACCAEE82BE81}.Release|x64.Build.0 = Release|Any CPU
+		{10540D02-C0E2-41E4-A62D-ACCAEE82BE81}.Release|x86.ActiveCfg = Release|Any CPU
+		{10540D02-C0E2-41E4-A62D-ACCAEE82BE81}.Release|x86.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{CA3E7E21-4C2C-473F-AF1D-51BAEF2FAB8D} = {3649507D-ED90-4ECA-BE57-E467C902C2C6}
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {B1F3F20A-DEC6-4808-9260-B13762B896C0}
 	EndGlobalSection
 EndGlobal

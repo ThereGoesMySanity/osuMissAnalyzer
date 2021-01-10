@@ -1,28 +1,26 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.IO;
 using Avalonia;
-using Avalonia.Controls.ApplicationLifetimes;
-using Avalonia.Logging.Serilog;
 using Avalonia.ReactiveUI;
+using Mono.Options;
 
 namespace OsuMissAnalyzer.UI
 {
     class Program
     {
         public static bool headless = false;
-        public static Dictionary<string, string> optList;
         // Initialization code. Don't use any Avalonia, third-party APIs or any
         // SynchronizationContext-reliant code before AppMain is called: things aren't initialized
         // yet and stuff might break.
         public static void Main(string[] args)
         {
-            MissAnalyzer missAnalyzer;
-            MissWindowController controller;
-            MissWindow window;
             Debug.Print("Starting MissAnalyser... ");
             Directory.SetCurrentDirectory(AppDomain.CurrentDomain.BaseDirectory);
             string replay = null, beatmap = null;
             List<string> extras;
-            optList = new Dictionary<string, string>();
+            var optList = new Dictionary<string, string>();
             bool help = false;
             int getMiss = -1;
             string optionsFile = "options.cfg";
@@ -57,14 +55,21 @@ namespace OsuMissAnalyzer.UI
                 opts.WriteOptionDescriptions(Console.Out);
                 return;
             }
-            BuildAvaloniaApp().StartWithClassicDesktopLifetime();
+            Options options = new Options("options.cfg", optList);
+            UIReplayLoader replayLoader = new UIReplayLoader
+            {
+                Options = options,
+                ReplayFile = replay,
+                BeatmapFile = beatmap,
+            };
+            BuildAvaloniaApp(replayLoader).StartWithClassicDesktopLifetime(new string[] { });
         }
 
         // Avalonia configuration, don't remove; also used by visual designer.
-        public static AppBuilder BuildAvaloniaApp()
-            => AppBuilder.Configure<App>()
+        public static AppBuilder BuildAvaloniaApp(UIReplayLoader replayLoader)
+            => AppBuilder.Configure<App>(() => new App(replayLoader))
                 .UsePlatformDetect()
-                .LogToDebug()
-                .UseReactiveUI();
+                .UseReactiveUI()
+                .LogToTrace();
     }
 }

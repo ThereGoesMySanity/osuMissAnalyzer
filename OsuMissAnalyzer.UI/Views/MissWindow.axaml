@@ -1,0 +1,12 @@
+﻿<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:converters="clr-namespace:OsuMissAnalyzer.UI.Converters;assembly=OsuMissAnalyzer.UI"
+        mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+        x:Class="OsuMissAnalyzer.UI.Views.MissWindow"
+        Title="Miss Analyzer" Width="640" Height="640">
+  <Canvas Name="MissCanvas">
+    <Image Source="{Binding Image, Converter={x:Static converters:BitmapImageConverter.BitmapToImage}}"/>
+  </Canvas>
+</Window>

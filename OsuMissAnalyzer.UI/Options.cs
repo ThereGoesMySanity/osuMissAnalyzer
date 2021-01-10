@@ -14,11 +14,11 @@ namespace OsuMissAnalyzer.UI
 		public Dictionary<string, string> Settings { get; private set; }
 		public OsuDbFile Database;
 		public ScoresDb ScoresDb;
-		public bool HasDatabase { get; private set; }
+		public bool OsuDirAccessible { get; private set; }
         public string SongsFolder => Settings.ContainsKey("songsdir") ? Settings["songsdir"] : Path.Combine(Settings["osudir"], "Songs");
 		public Options(string file, Dictionary<string, string> optList)
 		{
-			HasDatabase = false;
+			OsuDirAccessible = false;
 			Settings = new Dictionary<string, string>();
 			using (StreamReader f = new StreamReader(file))
 			{
@@ -48,11 +48,14 @@ namespace OsuMissAnalyzer.UI
 		private void AddOption(string key, string value)
 		{
 			if (value.Length > 0) Settings.Add(key, value);
-			if (key == "osudir" && File.Exists(Path.Combine(value, "osu!.db")))
+			if (key == "osudir"
+				&& File.Exists(Path.Combine(value, "osu!.db"))
+				&& File.Exists(Path.Combine(value, "scores.db"))
+				&& Directory.Exists(Path.Combine(value, "Data", "r")))
 			{
 				Database = new OsuDbFile(Path.Combine(value, "osu!.db"), byHash: true);
 				ScoresDb = new ScoresDb(Path.Combine(value, "scores.db"));
-				HasDatabase = true;
+				OsuDirAccessible = true;
 			}
 		}
 	}

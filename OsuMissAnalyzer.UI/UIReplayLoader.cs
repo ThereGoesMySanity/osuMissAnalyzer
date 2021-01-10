@@ -4,40 +4,41 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Threading;
-using System.Windows.Forms;
 using BMAPI.v1;
 using Newtonsoft.Json.Linq;
 using osuDodgyMomentsFinder;
 using ReplayAPI;
 using OsuMissAnalyzer.Core;
-using OsuMissAnalyzer.UI.UI;
+using Avalonia.Controls;
+using System.Threading.Tasks;
+using System.Collections.Generic;
+using OsuMissAnalyzer.UI.ViewModels;
+using OsuMissAnalyzer.UI.Views;
+using OsuMissAnalyzer.UI.Models;
 
 namespace OsuMissAnalyzer.UI
 {
     public class UIReplayLoader : IReplayLoader
     {
-        public Replay Replay { get; private set; }
-        public Beatmap Beatmap { get; private set; }
+        public Replay Replay { get; set; }
+        public Beatmap Beatmap { get; set; }
         public ReplayAnalyzer ReplayAnalyzer { get; private set; }
-        public Options Options { get; private set; }
+        public Options Options { get; set; }
+        public string ReplayFile { get; set; }
+        public string BeatmapFile { get; set; }
 
-        public UIReplayLoader(Options options)
-        {
-            Options = options;
-        }
-
-        public bool Load(string replayFile, string beatmapFile)
+        public async Task<bool> Load()
         {
             Debug.Print("Loading Replay file...");
 
-            Replay = replayFile == null ? LoadReplay() : new Replay(replayFile);
+            Replay = ReplayFile == null ? await LoadReplay() : new Replay(ReplayFile);
             if (Replay == null)
                 return false;
 
             Debug.Print("Loaded replay {0}", Replay.Filename);
             Debug.Print("Loading Beatmap file...");
 
-            Beatmap = beatmapFile == null ? LoadBeatmap(Replay) : new Beatmap(beatmapFile);
+            Beatmap ??= BeatmapFile == null ? await LoadBeatmap(Replay) : new Beatmap(BeatmapFile);
             if (Beatmap == null)
                 return false;
 
@@ -54,11 +55,14 @@ namespace OsuMissAnalyzer.UI
             return true;
         }
 
-        public Replay LoadReplay()
+        public async Task<Replay> LoadReplay()
         {
             Replay replay = null;
-            var messageBox = new ReplayOptionBox(Options);
-            if (messageBox.ShowDialog() == DialogResult.OK)
+            var messageBox = new ReplayOptionBox
+            {
+                DataContext = new ReplayOptionBoxViewModel(Options)
+            };
+            if (await messageBox.ShowDialog<bool>(App.Window))
             {
                 switch (messageBox.Result)
                 {
@@ -66,54 +70,78 @@ namespace OsuMissAnalyzer.UI
                         var files = new DirectoryInfo(Path.Combine(Options.Settings["osudir"], "Data", "r")).GetFiles();
                         var replayDir = new DirectoryInfo(Path.Combine(Options.Settings["osudir"], "Replays"));
                         if (replayDir.Exists) files.Concat(replayDir.GetFiles());
-                        var replays = files.Where(f => f.Name.EndsWith("osr"))
+                        var replays = await Task.WhenAll(files.Where(f => f.Name.EndsWith("osr"))
                                 .OrderByDescending(f => f.LastWriteTime)
-                                .Take(10).Select(file => new Replay(file.FullName))
+                                .Select(file => new Replay(file.FullName))
+                                .Where(re => re.GameMode == GameModes.osu)
+                                .Take(10)
                                 .OrderByDescending(re => re.PlayTime)
-                                .Select(re => new ReplayListItem() { replay = re, beatmap = LoadBeatmap(re, false) });
-                        var replayListForm = new ListMessageBox();
-                        replayListForm.SetContent(replays.ToList());
-                        if (replayListForm.ShowDialog() == DialogResult.OK && replayListForm.GetResult() != null)
+                                .Select(async re => new ReplayListItem() { Replay = re, Beatmap = await LoadBeatmap(re, false) }));
+                        var replayListForm = new ListMessageBox
                         {
-                            replay = replayListForm.GetResult().replay;
+                            DataContext = new ListMessageBoxViewModel
+                            {
+                                Items = replays.ToList(),
+                            },
+                        };
+                        if (await replayListForm.ShowDialog<bool>(App.Window))
+                        {
+                            replay = replayListForm.Result.Replay;
+                            Beatmap = replayListForm.Result.Beatmap;
                         }
+                        Debug.WriteLine("Test");
                         break;
                     case ReplayFind.BEATMAP:
-                        var beatmapForm = new BeatmapSearchBox();
-                        beatmapForm.SetContent(Options.Database);
-                        if (beatmapForm.ShowDialog() == DialogResult.OK)
+                        var beatmapForm = new BeatmapSearchBox
+                        {
+                            DataContext = new BeatmapSearchBoxViewModel(Options.Database)
+                        };
+                        if (await beatmapForm.ShowDialog<bool>(App.Window))
                         {
                             Beatmap b = beatmapForm.Result.Load(Options.SongsFolder);
-                            var beatmapListForm = new ListMessageBox();
-                            beatmapListForm.SetContent(Options.GetReplaysFromBeatmap(b.BeatmapHash).Select(r => new ReplayListItem {replay = r, beatmap = b}).ToList());
-                            if (beatmapListForm.ShowDialog() == DialogResult.OK && beatmapListForm.GetResult() != null)
+                            var beatmapListForm = new ListMessageBox
                             {
-                                replay = beatmapListForm.GetResult().replay;
+                                DataContext = new ListMessageBoxViewModel
+                                {
+                                    Items = Options.GetReplaysFromBeatmap(b.BeatmapHash).Select(r => new ReplayListItem { Replay = r, Beatmap = b }).ToList(),
+                                }
+                            };
+                            if (await beatmapListForm.ShowDialog<bool>(App.Window))
+                            {
+                                replay = beatmapListForm.Result.Replay;
+                                Beatmap = beatmapListForm.Result.Beatmap;
                             }
                         }
                         break;
                     case ReplayFind.MANUAL:
-                        using (OpenFileDialog fd = new OpenFileDialog())
+                        OpenFileDialog fd = new OpenFileDialog()
                         {
-                            fd.Title = "Choose replay file";
-                            fd.Filter = "osu! replay files (*.osr)|*.osr";
-                            DialogResult result = fd.ShowDialog();
-                            if (result == DialogResult.OK)
+                            Title = "Choose replay file",
+                            Filters = 
                             {
-                                replay = new Replay(fd.FileName);
+                                new FileDialogFilter
+                                {
+                                    Name = "osu! replay files (*.osr)",
+                                    Extensions = { "osr" },
+                                }
                             }
+                        };
+                        string[] result = await fd.ShowAsync(App.Window);
+                        if (result != null)
+                        {
+                            replay = new Replay(result[0]);
                         }
                         break;
                 }
             }
-            if (replay == null) Program.ShowErrorDialog("Couldn't find replay");
+            //if (replay == null) Program.ShowErrorDialog("Couldn't find replay");
             return replay;
         }
 
-        public Beatmap LoadBeatmap(Replay replay, bool dialog = true)
+        public async Task<Beatmap> LoadBeatmap(Replay replay, bool dialog = true)
         {
             Beatmap beatmap = null;
-            if (Options.Database != null)
+            if (Options.OsuDirAccessible)
             {
                 beatmap = Options.GetBeatmapFromHash(replay.MapHash);
             }
@@ -124,16 +152,18 @@ namespace OsuMissAnalyzer.UI
             }
             if (beatmap == null && dialog)
             {
-                Program.ShowErrorDialog("Couldn't find beatmap automatically");
-                using (OpenFileDialog fd = new OpenFileDialog())
+                //Program.ShowErrorDialog("Couldn't find beatmap automatically");
+                OpenFileDialog fd = new OpenFileDialog();
+                fd.Title = "Choose beatmap";
+                fd.Filters.Add(new FileDialogFilter
                 {
-                    fd.Title = "Choose beatmap";
-                    fd.Filter = "osu! beatmaps (*.osu)|*.osu";
-                    DialogResult d = fd.ShowDialog();
-                    if (d == DialogResult.OK)
-                    {
-                        beatmap = new Beatmap(fd.FileName);
-                    }
+                    Name = "osu! beatmaps",
+                    Extensions = { "osu" },
+                });
+                string[] d = await fd.ShowAsync(App.Window);
+                if (d != null)
+                {
+                    beatmap = new Beatmap(d[0]);
                 }
             }
             return beatmap;
@@ -157,8 +187,9 @@ namespace OsuMissAnalyzer.UI
             else
             {
                 Debug.Print("No API key found, searching manually. It could take a while...");
-                Thread t = new Thread(() =>
-                               MessageBox.Show("No API key found, searching manually. It could take a while..."));
+                //TODO
+                //Thread t = new Thread(() =>
+                //               MessageBox.Show("No API key found, searching manually. It could take a while..."));
             }
             if (isSongsDir)
             {

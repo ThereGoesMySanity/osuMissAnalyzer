@@ -1,0 +1,21 @@
+﻿<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+        x:Class="OsuMissAnalyzer.UI.Views.BeatmapSearchBox"
+        Title="BeatmapSearchBox" Width="400" Height="640">
+  <DockPanel>
+    <TextBox Name="SearchBox" Watermark="Search..." DockPanel.Dock="Top" Text="{Binding SearchText}"/>
+    <StackPanel Orientation="Horizontal" DockPanel.Dock="Bottom">
+      <Button Name="Ok" Command="{Binding $parent[Window].Close}" 
+              IsEnabled="{Binding Result, Converter={x:Static ObjectConverters.IsNotNull}}"
+              CommandParameter="True">Ok</Button>
+      <Button Name="Close" Command="{Binding $parent[Window].Close}" 
+              CommandParameter="False">Close</Button>
+    </StackPanel>
+    <ScrollViewer>
+      <ListBox Name="ResultsBox" Items="{Binding Results}"/>
+    </ScrollViewer>
+  </DockPanel>
+</Window>

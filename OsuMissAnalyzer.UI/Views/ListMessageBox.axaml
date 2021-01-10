@@ -1,0 +1,31 @@
+﻿<Window xmlns="https://github.com/avaloniaui"
+        xmlns:vm="clr-namespace:OsuMissAnalyzer.UI.ViewModels;assembly=OsuMissAnalyzer.UI"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+        x:Class="OsuMissAnalyzer.UI.Views.ListMessageBox"
+        Title="ListMessageBox" Width="540" Height="320">
+    <Design.DataContext>
+        <vm:ListMessageBoxViewModel/>
+    </Design.DataContext>
+  <DockPanel>
+    <StackPanel Orientation="Horizontal" DockPanel.Dock="Bottom" Margin="16" Spacing="16"
+                HorizontalAlignment="Center" >
+      <Button Width="120" Name="Ok" Command="{Binding $parent[Window].Close}" 
+              IsEnabled="{Binding Result, Converter={x:Static ObjectConverters.IsNotNull}}"
+              CommandParameter="True">Ok</Button>
+      <Button Width="120" Name="Cancel" Command="{Binding $parent[Window].Close}" 
+              CommandParameter="False">Cancel</Button>
+    </StackPanel>
+      <DataGrid Items="{Binding Items}" SelectedItem="{Binding Result, Mode=TwoWay}" IsReadOnly="True" SelectionMode="Single"
+                SelectedIndex="0"
+                HorizontalScrollBarVisibility="Disabled" Margin="12">
+        <DataGrid.Columns>
+          <DataGridTextColumn Width="*" Binding="{Binding BeatmapName}" Header="Beatmap"/>
+          <DataGridTextColumn Width="Auto" Binding="{Binding ReplayMods}" Header="Mods"/>
+          <DataGridTextColumn Width="Auto" Binding="{Binding TimeAgo}" Header="Date"/>
+        </DataGrid.Columns>
+      </DataGrid>
+  </DockPanel>
+</Window>

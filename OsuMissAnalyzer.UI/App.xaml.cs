@@ -1,42 +1,47 @@
 using Avalonia;
+using Avalonia.Controls;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
 using OsuMissAnalyzer.UI.ViewModels;
 using OsuMissAnalyzer.UI.Views;
+using System;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.IO;
 
 namespace OsuMissAnalyzer.UI
 {
     public class App : Application
     {
+        public static Window Window { get; private set; }
+        public UIReplayLoader ReplayLoader { get; }
+        public App() { }
+        public App(UIReplayLoader replayLoader)
+        {
+            ReplayLoader = replayLoader;
+        }
+
         public override void Initialize()
         {
             AvaloniaXamlLoader.Load(this);
         }
 
-        public override void OnFrameworkInitializationCompleted()
+        public override async void OnFrameworkInitializationCompleted()
         {
             if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
             {
                 string errorMessage = null;
                 try
                 {
-                    Options options = new Options("options.cfg", Program.optList);
-                    UIReplayLoader replayLoader = new UIReplayLoader(options);
-                    if (!replayLoader.Load(replay, beatmap)) return;
-                    if (replayLoader.Replay == null || replayLoader.Beatmap == null)
+                    Window = desktop.MainWindow = new MissWindow();
+                    if (!await ReplayLoader.Load()) return;
+                    if (ReplayLoader.Replay == null || ReplayLoader.Beatmap == null)
                     {
-                        errorMessage = "Couldn't find " + (replayLoader.Replay == null ? "replay" : "beatmap");
+                        errorMessage = "Couldn't find " + (ReplayLoader.Replay == null ? "replay" : "beatmap");
                         return;
                     }
-
-                    desktop.MainWindow = new MainWindow
-                    {
-                        DataContext = new MainWindowViewModel(),
-                    };
-                    // missAnalyzer = new MissAnalyzer(replayLoader);
-                    // controller = new MissWindowController(missAnalyzer, replayLoader);
-                    // window = new MissWindow(controller);
-                    // Application.Run(window);
+                    Window.DataContext = new MissWindowViewModel(ReplayLoader);
+                    Debug.WriteLine("testest");
                 } catch (Exception e)
                 {
                     errorMessage = e.Message;
@@ -44,7 +49,7 @@ namespace OsuMissAnalyzer.UI
                 }
                 if (errorMessage != null)
                 {
-                    ShowErrorDialog(message);
+                    ShowErrorDialog(errorMessage);
                 }
             }
 
@@ -53,8 +58,7 @@ namespace OsuMissAnalyzer.UI
 
         public static void ShowErrorDialog(string message)
         {
-            if (!headless) //TODO: error message box
-            else Debug.Print(message);
+            //TODO: error message box
         }
     }
 }

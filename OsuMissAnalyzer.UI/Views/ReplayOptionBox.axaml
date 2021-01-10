@@ -1,0 +1,20 @@
+﻿<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:vm="clr-namespace:OsuMissAnalyzer.UI.ViewModels;assembly=OsuMissAnalyzer.UI"
+        mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+        x:Class="OsuMissAnalyzer.UI.Views.ReplayOptionBox"
+        Title="Choose Replay"
+        Height="120" CanResize="False" SizeToContent="Width"
+        WindowStartupLocation="CenterOwner">
+  <!--Width=300-->
+  <DockPanel>
+    <StackPanel Margin="8" Spacing="4" Name="Buttons" DockPanel.Dock="Bottom" Orientation="Horizontal" HorizontalAlignment="Stretch">
+      <Button Command="{Binding Close}" CommandParameter="{x:Static vm:ReplayFind.RECENT}" Name="RecentButton" IsEnabled="{Binding Options.OsuDirAccessible}">Recent</Button>
+      <Button Command="{Binding Close}" CommandParameter="{x:Static vm:ReplayFind.BEATMAP}" Name="BeatmapButton" IsEnabled="{Binding Options.OsuDirAccessible}">By beatmap</Button>
+      <Button Command="{Binding Close}" CommandParameter="{x:Static vm:ReplayFind.MANUAL}" Name="ManualButton">Manual</Button>
+    </StackPanel>
+    <TextBlock TextAlignment="Center" VerticalAlignment="Center">Choose replay...</TextBlock>
+  </DockPanel>
+</Window>
