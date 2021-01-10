@@ -95,34 +95,31 @@ namespace OsuMissAnalyzer.Core
             };
             Pen p = new Pen(Color.White);
             g.FillRectangle(p.Brush, area);
-            RectangleF bounds = new RectangleF(PointF.Subtract(hitObject.Location.ToPointF(), MathUtils.Scale(area.Size, scale / 2)),
-                MathUtils.Scale(area.Size, scale));
+            RectangleF bounds = new RectangleF(PointF.Subtract(hitObject.Location.ToPointF(), Scale(area.Size, scale / 2)),
+                Scale(area.Size, scale));
 
             int replayFramesStart, replayFramesEnd, hitObjectsStart, hitObjectsEnd;
+
             for (hitObjectsStart = Beatmap.HitObjects.Count(x => x.StartTime <= hitObject.StartTime) - 1;
                 hitObjectsStart >= 0 && bounds.Contains(Beatmap.HitObjects[hitObjectsStart].Location.ToPointF())
                 && hitObject.StartTime - Beatmap.HitObjects[hitObjectsStart].StartTime < maxTime;
-                hitObjectsStart--)
-            {
-            }
+                hitObjectsStart--) ;
+
             for (hitObjectsEnd = Beatmap.HitObjects.Count(x => x.StartTime <= hitObject.StartTime) - 1;
                 hitObjectsEnd < Beatmap.HitObjects.Count && bounds.Contains(Beatmap.HitObjects[hitObjectsEnd].Location.ToPointF())
                 && Beatmap.HitObjects[hitObjectsEnd].StartTime - hitObject.StartTime < maxTime;
-                hitObjectsEnd++)
-            {
-            }
+                hitObjectsEnd++) ;
+
             for (replayFramesStart = Replay.ReplayFrames.Count(x => x.Time <= Beatmap.HitObjects[hitObjectsStart + 1].StartTime);
                 replayFramesStart > 1 && replayFramesStart < Replay.ReplayFrames.Count && bounds.Contains(Replay.ReplayFrames[replayFramesStart].GetPointF())
                 && hitObject.StartTime - Replay.ReplayFrames[replayFramesStart].Time < maxTime;
-                replayFramesStart--)
-            {
-            }
+                replayFramesStart--) ;
+
             for (replayFramesEnd = Replay.ReplayFrames.Count(x => x.Time <= Beatmap.HitObjects[hitObjectsEnd - 1].StartTime);
-                replayFramesEnd < Replay.ReplayFrames.Count - 1 && bounds.Contains(Replay.ReplayFrames[replayFramesEnd].GetPointF())
+                replayFramesEnd < Replay.ReplayFrames.Count - 1 && (replayFramesEnd < 2 || bounds.Contains(Replay.ReplayFrames[replayFramesEnd - 2].GetPointF()))
                 && Replay.ReplayFrames[replayFramesEnd].Time - hitObject.StartTime < maxTime;
-                replayFramesEnd++)
-            {
-            }
+                replayFramesEnd++) ;
+
             p.Color = Color.DarkGray;
             g.DrawRectangle(p, Rectangle.Round(ScaleToRect(new RectangleF(pSub(new PointF(0, hr? 384 : 0), bounds, hr), new SizeF(512, 384)), bounds, area)));
             p.Color = Color.Gray;
@@ -180,7 +177,7 @@ namespace OsuMissAnalyzer.Core
                 {
                     distance += new Point2(p1.X - p2.X, p1.Y - p2.Y).Length;
                 }
-                if (ReplayAnalyzer.getKey(k == 0 ? ReplayAPI.Keys.None : Replay.ReplayFrames[k - 1].Keys, Replay.ReplayFrames[k].Keys) > 0)
+                if (ReplayAnalyzer.getKey(k == 0 ? Keys.None : Replay.ReplayFrames[k - 1].Keys, Replay.ReplayFrames[k].Keys) > 0)
                 {
                     g.DrawEllipse(p, ScaleToRect(new RectangleF(PointF.Subtract(p1, new Size(3, 3)), new Size(6, 6)),
                         bounds, area));
