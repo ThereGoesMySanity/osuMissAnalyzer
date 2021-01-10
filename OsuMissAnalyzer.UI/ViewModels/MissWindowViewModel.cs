@@ -30,7 +30,8 @@ namespace OsuMissAnalyzer.UI.ViewModels
 
         public MissWindowViewModel(UIReplayLoader loader)
         {
-            Initialize(loader);
+            Loader = loader;
+            Analyzer = new MissAnalyzer(loader);
             this.WhenAnyValue(x => x.Bounds, x => x.Analyzer).Subscribe(((Rect, MissAnalyzer) _) => UpdateImage());
         }
         public async void OnKeyDown(object source, KeyEventArgs e)
@@ -38,10 +39,10 @@ namespace OsuMissAnalyzer.UI.ViewModels
             switch (e.Key)
             {
                 case Key.Up:
-                    Analyzer.ScaleChange(1);
+                    Analyzer.ScaleChange(-1);
                     break;
                 case Key.Down:
-                    Analyzer.ScaleChange(-1);
+                    Analyzer.ScaleChange(1);
                     break;
                 case Key.Right:
                     Analyzer.NextObject();
@@ -72,7 +73,7 @@ namespace OsuMissAnalyzer.UI.ViewModels
 
         public void OnMouseWheel(object source, PointerWheelEventArgs e)
         {
-            Analyzer.ScaleChange(Math.Sign(e.Delta.Y));
+            Analyzer.ScaleChange(-Math.Sign(e.Delta.Y));
             UpdateImage();
         }
 
