@@ -132,7 +132,7 @@ namespace OsuMissAnalyzer.Core
                     PointF[] pt = slider.Curves.SelectMany(curve => curve.CurveSnapshots).Select(s => ScaleToRect(
                             pSub(s.point.ToPointF(), bounds, hr), bounds, area)).ToArray();
                     circle.Color = Color.FromArgb(80, Color.DarkGoldenrod);
-                    g.DrawLines(circle, pt);
+                    if (pt.Length > 1) g.DrawLines(circle, pt);
                 }
 
                 p.Color = Color.FromArgb(c == 100 ? c + 50 : c, c, c);
