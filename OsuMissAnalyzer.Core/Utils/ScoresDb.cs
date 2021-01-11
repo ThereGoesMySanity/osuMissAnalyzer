@@ -36,6 +36,8 @@ namespace OsuMissAnalyzer.Core
         public void ReadBeatmap()
         {
             string hash = readNullableString();
+            if (hash == null)
+                return;
             uint count = fileReader.ReadUInt32();
             scores[hash] = new Score[count];
             for (int i = 0; i < count; i++)

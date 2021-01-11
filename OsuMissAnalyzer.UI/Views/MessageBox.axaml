@@ -4,7 +4,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
         x:Class="OsuMissAnalyzer.UI.Views.MessageBox"
-        Title="MessageBox" Height="200" Width="300">
+        Title="MessageBox" Height="160" Width="240">
   <DockPanel>
     <Panel Name="ButtonsOuter" HorizontalAlignment="Stretch" VerticalAlignment="Bottom" DockPanel.Dock="Bottom" Margin="12">
       <StackPanel Name="Buttons" Orientation="Horizontal" Spacing="4" HorizontalAlignment="Center"/>
