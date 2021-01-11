@@ -1,7 +1,8 @@
 using System;
-using System.IO;
 using System.Linq;
 using NUnit.Framework;
+using OsuMissAnalyzer.Core;
+
 namespace OsuMissAnalyzer.Tests
 {
     [TestFixture]
@@ -15,5 +16,16 @@ namespace OsuMissAnalyzer.Tests
             Assert.True(db.Beatmaps.All(b => db.BeatmapsByHash.ContainsKey(b.Hash)));
             Console.WriteLine(db.BeatmapsByHash.Count);
         }
+        [TestCase("Resources/scores.db")]
+        public void TestScoresDb(string file)
+        {
+            ScoresDb db = null;
+            Assert.DoesNotThrow(() => db = new ScoresDb(file));
+            foreach (string name in db.scores.Values.SelectMany(s => s).Select(s => s.playerName).ToHashSet())
+            {
+                Console.WriteLine(name);
+            }
+        }
+
     }
 }

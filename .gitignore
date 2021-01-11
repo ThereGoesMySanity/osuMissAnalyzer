@@ -53,3 +53,4 @@ TestResult.xml
 OsuMissAnalyzer.Tests/Resources/osu!.db
 upload.sh
 libMonoPosixHelper.so
+/OsuMissAnalyzer.Tests/Resources
