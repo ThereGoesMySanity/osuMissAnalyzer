@@ -164,6 +164,11 @@ namespace OsuMissAnalyzer.UI
                 if (d != null && d.Length > 0)
                 {
                     beatmap = new Beatmap(d[0]);
+                    if (beatmap.BeatmapHash != replay.MapHash)
+                    {
+                        string dir = Path.GetDirectoryName(d[0]);
+                        beatmap = ReadFolder(dir, null);
+                    }
                 }
             }
             return beatmap;
@@ -217,30 +222,31 @@ namespace OsuMissAnalyzer.UI
         {
             foreach (string file in Directory.GetFiles(folder, "*.osu"))
             {
-                using (StreamReader f = new StreamReader(file))
+                if (id != null)
                 {
-                    string line = f.ReadLine();
-                    if (line == null)
-                        continue;
-                    while (!f.EndOfStream
-                           && !line.StartsWith("BeatmapID"))
+                    using (StreamReader f = new StreamReader(file))
                     {
-                        line = f.ReadLine();
-                    }
-                    if (line.StartsWith("BeatmapID") && id != null)
-                    {
-                        if (line.Substring(10) == id)
+                        string line = f.ReadLine();
+                        if (line == null)
+                            continue;
+                        while (!f.EndOfStream
+                               && !line.StartsWith("BeatmapID"))
                         {
-                            return new Beatmap(file);
+                            line = f.ReadLine();
+                        }
+                        if (line.StartsWith("BeatmapID") && id != null)
+                        {
+                            if (line.Substring(10) == id)
+                            {
+                                return new Beatmap(file);
+                            }
                         }
                     }
-                    else
-                    {
-                        if (Replay.MapHash == Beatmap.MD5FromFile(file))
-                        {
-                            return new Beatmap(file);
-                        }
-                    }
+
+                }
+                else if (Replay.MapHash == Beatmap.MD5FromFile(file))
+                {
+                    return new Beatmap(file);
                 }
             }
             return null;
