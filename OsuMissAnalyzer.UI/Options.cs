@@ -15,7 +15,7 @@ namespace OsuMissAnalyzer.UI
 		public OsuDbFile Database;
 		public ScoresDb ScoresDb;
 		public bool OsuDirAccessible { get; private set; }
-        public string SongsFolder => Settings.ContainsKey("songsdir") ? Settings["songsdir"] : Path.Combine(Settings["osudir"], "Songs");
+        public string SongsFolder => Settings.GetValueOrDefault("songsdir", Settings.ContainsKey("osudir") ? Path.Combine(Settings["osudir"], "Songs") : null);
 		public Options(string file, Dictionary<string, string> optList)
 		{
 			OsuDirAccessible = false;

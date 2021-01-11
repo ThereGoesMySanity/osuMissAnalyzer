@@ -147,8 +147,8 @@ namespace OsuMissAnalyzer.UI
             //if (beatmap == null)
             else
             {
-                beatmap = await GetBeatmapFromHash(Directory.GetCurrentDirectory(), false)
-                        ?? await GetBeatmapFromHash(Options.SongsFolder, true);
+                beatmap = await GetBeatmapFromHash(Directory.GetCurrentDirectory(), false);
+                if (Options.SongsFolder != null) beatmap ??= await GetBeatmapFromHash(Options.SongsFolder, true);
             }
             if (beatmap == null && dialog)
             {

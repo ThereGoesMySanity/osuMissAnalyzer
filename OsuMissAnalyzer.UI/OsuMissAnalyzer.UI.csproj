@@ -25,4 +25,9 @@
   <ItemGroup>
     <ProjectReference Include="..\OsuMissAnalyzer.Core\OsuMissAnalyzer.Core.csproj" />
   </ItemGroup>
+  <ItemGroup>
+    <None Update="options.cfg">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
 </Project>
