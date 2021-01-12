@@ -78,7 +78,8 @@ Full readme at https://github.com/ThereGoesMySanity/osuMissAnalyzer/tree/missAna
             {
                 Token = Settings.DiscordToken,
                 TokenType = TokenType.Bot,
-                Intents = DiscordIntents.GuildMessages |
+                Intents = DiscordIntents.Guilds |
+                DiscordIntents.GuildMessages |
                 DiscordIntents.GuildMessageReactions |
                 DiscordIntents.DirectMessages |
                 DiscordIntents.DirectMessageReactions
