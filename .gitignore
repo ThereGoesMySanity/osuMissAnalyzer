@@ -55,3 +55,4 @@ upload.sh
 libMonoPosixHelper.so
 /OsuMissAnalyzer.Tests/Resources
 /publish
+OsuMissAnalyzer.Server/Resources/GitCommit.txt

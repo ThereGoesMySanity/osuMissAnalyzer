@@ -64,6 +64,8 @@ Full readme at https://github.com/ThereGoesMySanity/osuMissAnalyzer/tree/missAna
             Settings = ServerSettings.Load();
             if (!await Settings.Init(args)) return false;
             Logger.Instance = new Logger(Path.Combine(Settings.ServerDir, "log.csv"), Settings.WebHook);
+            if (Settings.Test) await Logger.WriteLine("Started in test mode");
+            await Logger.WriteLine(Settings.GitCommit);
             Api = new OsuApi(Settings.OsuId, Settings.OsuSecret, Settings.OsuApiKey);
             var apiToken = Api.RefreshToken();
 

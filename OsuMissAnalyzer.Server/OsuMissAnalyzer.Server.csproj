@@ -15,5 +15,15 @@
     <OutputType>Exe</OutputType>
     <TargetFramework>net5.0</TargetFramework>
   </PropertyGroup>
+  <Target Name="GetCommit" AfterTargets="Restore" BeforeTargets="Build">
+    <Exec Command="git log -1 > $(ProjectDir)/Resources/GitCommit.txt"/>
+  </Target>
+
+  <ItemGroup>
+    <Content Remove="Resources/GitCommit.txt"/>
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Resources/GitCommit.txt"/>
+  </ItemGroup>
 
 </Project>

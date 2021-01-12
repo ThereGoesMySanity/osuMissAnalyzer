@@ -6,6 +6,8 @@ using DSharpPlus.Entities;
 using DSharpPlus.EventArgs;
 using Mono.Options;
 using Newtonsoft.Json;
+using System.Reflection;
+using System.Text;
 
 namespace OsuMissAnalyzer.Server.Settings
 {
@@ -30,6 +32,8 @@ namespace OsuMissAnalyzer.Server.Settings
         public bool Reload = false;
         [JsonIgnore]
         public string Apiv2Req = null;
+        [JsonIgnore]
+        public string GitCommit = null;
 
         public ulong DumpChannel = 753788360425734235L;
         public ulong TestChannel = 753465280465862757L;
@@ -70,6 +74,16 @@ Bot link: https://discordapp.com/oauth2/authorize?client_id={DiscordId}&scope=bo
                 Console.WriteLine(await api2.GetApiv2(Apiv2Req));
                 return false;
             }
+            
+            try
+            {
+                using (var stream = Assembly.GetEntryAssembly().GetManifestResourceStream("OsuMissAnalyzer.Server.Resources.GitCommit.txt"))
+                using (var streamReader = new StreamReader(stream, Encoding.UTF8))
+                {
+                    GitCommit = streamReader.ReadToEnd();
+                }
+            }
+            catch (Exception e) { return false; }
 
             return true;
         }
