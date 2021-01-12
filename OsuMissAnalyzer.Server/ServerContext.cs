@@ -376,8 +376,8 @@ Full readme at https://github.com/ThereGoesMySanity/osuMissAnalyzer/tree/missAna
         private async Task<string> SendMissMessage(MissAnalyzer analyzer, int index)
         {
             analyzer.CurrentObject = index;
-            return (await (await Discord.GetChannelAsync(Settings.DumpChannel))
-                    .SendFileAsync("miss.png", GetStream(analyzer.DrawSelectedHitObject(area)), "")).Attachments[0].Url;
+            DiscordMessageBuilder message = new DiscordMessageBuilder().WithFile("miss.png", GetStream(analyzer.DrawSelectedHitObject(area)));
+            return (await (await Discord.GetChannelAsync(Settings.DumpChannel)).SendMessageAsync(message)).Attachments[0].Url;
         }
         
         private static MemoryStream GetStream(Bitmap bitmap)
