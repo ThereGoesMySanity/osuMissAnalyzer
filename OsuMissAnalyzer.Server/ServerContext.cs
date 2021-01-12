@@ -113,7 +113,7 @@ Full readme at https://github.com/ThereGoesMySanity/osuMissAnalyzer/tree/missAna
             {
                 Logger.Log(Logging.ErrorUnhandled);
                 await Logger.WriteLine(e.Exception, Logger.LogLevel.ALERT);
-                await d.ConnectAsync();
+                // await d.ConnectAsync();
             };
 
             Logger.Instance.UpdateLogs += () => Logger.LogAbsolute(Logging.ServersJoined, Discord?.Guilds?.Count ?? 0);
