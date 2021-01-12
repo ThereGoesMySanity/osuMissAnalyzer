@@ -304,7 +304,7 @@ Full readme at https://github.com/ThereGoesMySanity/osuMissAnalyzer/tree/missAna
             {
                 Logger.Log(Logging.MessageCreated);
                 Logger.Log(Logging.ErrorHandled);
-                Logger.WriteLine($"Error handled: {replayLoader.ErrorMessage}");
+                await Logger.WriteLine($"Error handled: {replayLoader.ErrorMessage}");
                 await e.Message.RespondAsync(replayLoader.ErrorMessage);
             }
         }

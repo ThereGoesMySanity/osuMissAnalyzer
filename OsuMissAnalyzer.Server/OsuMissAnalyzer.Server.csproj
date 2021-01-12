@@ -14,7 +14,9 @@
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <TargetFramework>net5.0</TargetFramework>
+    <AssemblyName>MissAnalyzerServer</AssemblyName>
   </PropertyGroup>
+
   <Target Name="GetCommit" AfterTargets="Restore" BeforeTargets="Build">
     <Exec Command="git log -1 > $(ProjectDir)/Resources/GitCommit.txt"/>
   </Target>

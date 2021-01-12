@@ -77,13 +77,13 @@ Bot link: https://discordapp.com/oauth2/authorize?client_id={DiscordId}&scope=bo
             
             try
             {
-                using (var stream = Assembly.GetEntryAssembly().GetManifestResourceStream("OsuMissAnalyzer.Server.Resources.GitCommit.txt"))
+                using (var stream = Assembly.GetEntryAssembly().GetManifestResourceStream("MissAnalyzerServer.Resources.GitCommit.txt"))
                 using (var streamReader = new StreamReader(stream, Encoding.UTF8))
                 {
                     GitCommit = streamReader.ReadToEnd();
                 }
             }
-            catch (Exception e) { return false; }
+            catch (Exception) { return false; }
 
             return true;
         }
