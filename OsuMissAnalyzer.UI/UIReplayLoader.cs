@@ -67,9 +67,10 @@ namespace OsuMissAnalyzer.UI
                 switch (messageBox.Result)
                 {
                     case ReplayFind.RECENT:
-                        var files = new DirectoryInfo(Path.Combine(Options.Settings["osudir"], "Data", "r")).GetFiles();
+                        IEnumerable<FileInfo> files = new DirectoryInfo(Path.Combine(Options.Settings["osudir"], "Data", "r")).GetFiles();
                         var replayDir = new DirectoryInfo(Path.Combine(Options.Settings["osudir"], "Replays"));
-                        if (replayDir.Exists) files.Concat(replayDir.GetFiles());
+                        if (replayDir.Exists) files = files.Concat(replayDir.GetFiles());
+
                         var replays = await Task.WhenAll(files.Where(f => f.Name.EndsWith("osr"))
                                 .OrderByDescending(f => f.LastWriteTime)
                                 .Select(file => new Replay(file.FullName))
