@@ -435,7 +435,7 @@ Full readme at https://github.com/ThereGoesMySanity/osuMissAnalyzer/tree/missAna
             },
             [TINYBOT] = (ServerReplayLoader replayLoader, MessageCreateEventArgs e) =>
             {
-                if (e.Message.Embeds.Count > 0 && e.Message.Embeds[0].Title.StartsWith("Most recent osu! Standard play for"))
+                if (e.Message.Embeds.Count > 0 && e.Message.Embeds[0].Author.Name.StartsWith("Most recent osu! Standard play for"))
                 {
                     replayLoader.UserId = GetIdFromEmbed(e.Message.Embeds[0]);
                     return true;
