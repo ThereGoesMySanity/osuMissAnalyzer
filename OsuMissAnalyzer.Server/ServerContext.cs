@@ -447,7 +447,7 @@ Full readme at https://github.com/ThereGoesMySanity/osuMissAnalyzer/tree/missAna
                 if (e.Message.Embeds.Count > 0 && e.Message.Content.StartsWith("Try #"))
                 {
                     string prefix = "https://osu.ppy.sh/u/";
-                    string url = e.Message.Embeds[0].Url.AbsoluteUri;
+                    string url = e.Message.Embeds[0].Author.Url.AbsoluteUri;
                     if (url.StartsWith(prefix))
                     {
                         replayLoader.UserId = url.Substring(prefix.Length);
