@@ -171,7 +171,7 @@ Full readme at https://github.com/ThereGoesMySanity/osuMissAnalyzer/tree/missAna
             }
 
             //bot
-            if (botIds.ContainsKey(e.Author.Id) && rsFunc[e.Author.Id](replayLoader, e))
+            if (botIds.ContainsKey(e.Author.Id) && rsFunc[e.Author.Id](replayLoader, guildSettings, e))
             {
                 await Logger.WriteLine($"processing {botIds[e.Author.Id]} message");
                 Logger.Log(Logging.BotCalls);
@@ -412,7 +412,7 @@ Full readme at https://github.com/ThereGoesMySanity/osuMissAnalyzer/tree/missAna
         const ulong TINYBOT = 470496878941962251;
         const ulong BATHBOT = 297073686916366336;
 
-        delegate bool BotCall(ServerReplayLoader server, MessageCreateEventArgs args);
+        delegate bool BotCall(ServerReplayLoader server, GuildSettings guildSettings, MessageCreateEventArgs args);
 
         Dictionary<ulong, string> botIds = new Dictionary<ulong, string>
         {
@@ -424,7 +424,7 @@ Full readme at https://github.com/ThereGoesMySanity/osuMissAnalyzer/tree/missAna
         };
         Dictionary<ulong, BotCall> rsFunc = new Dictionary<ulong, BotCall>
         {
-            [OWO] = (ServerReplayLoader replayLoader, MessageCreateEventArgs e) =>
+            [OWO] = (ServerReplayLoader replayLoader, GuildSettings guildSettings, MessageCreateEventArgs e) =>
             {
                 if (e.Message.Content.StartsWith("**Most Recent osu! Standard Play for"))
                 {
@@ -433,16 +433,21 @@ Full readme at https://github.com/ThereGoesMySanity/osuMissAnalyzer/tree/missAna
                 }
                 return false;
             },
-            [TINYBOT] = (ServerReplayLoader replayLoader, MessageCreateEventArgs e) =>
+            [TINYBOT] = (ServerReplayLoader replayLoader, GuildSettings guildSettings, MessageCreateEventArgs e) =>
             {
-                if (e.Message.Embeds.Count > 0 && e.Message.Embeds[0].Author.Name.StartsWith("Most recent osu! Standard play for"))
+                if (e.Message.Embeds.Count > 0)
                 {
-                    replayLoader.UserId = GetIdFromEmbed(e.Message.Embeds[0]);
-                    return true;
+                    string header = e.Message.Embeds[0].Author.Name;
+                    if (header.StartsWith("Most recent osu! Standard play for")
+                        || (guildSettings.Tracking && header.StartsWith("New #") && header.EndsWith("in osu!Standard:")))
+                    {
+                        replayLoader.UserId = GetIdFromEmbed(e.Message.Embeds[0]);
+                        return true;
+                    }
                 }
                 return false;
             },
-            [BATHBOT] = (ServerReplayLoader replayLoader, MessageCreateEventArgs e) =>
+            [BATHBOT] = (ServerReplayLoader replayLoader, GuildSettings guildSettings, MessageCreateEventArgs e) =>
             {
                 if (e.Message.Embeds.Count > 0 && e.Message.Content.StartsWith("Try #"))
                 {
@@ -456,7 +461,7 @@ Full readme at https://github.com/ThereGoesMySanity/osuMissAnalyzer/tree/missAna
                 }
                 return false;
             },
-            [BISMARCK] = (ServerReplayLoader replayLoader, MessageCreateEventArgs e) =>
+            [BISMARCK] = (ServerReplayLoader replayLoader, GuildSettings guildSettings, MessageCreateEventArgs e) =>
             {
                 if (e.Message.Content.Length == 0 && e.Message.Embeds.Count > 0)
                 {
@@ -482,7 +487,7 @@ Full readme at https://github.com/ThereGoesMySanity/osuMissAnalyzer/tree/missAna
                 }
                 return false;
             },
-            [BOATBOT] = (ServerReplayLoader replayLoader, MessageCreateEventArgs e) =>
+            [BOATBOT] = (ServerReplayLoader replayLoader, GuildSettings guildSettings, MessageCreateEventArgs e) =>
             {
                 if (e.Message.Content.StartsWith("Try #") && e.Message.Embeds.Count > 0)
                 {

@@ -41,8 +41,9 @@ The owner of the server can view/change settings with:
 |-|-|
 |compact|When compact is true, replies to other bots are not sent. Instead, the "miss #" reactions are placed on the original bot's message. (Default: false)|
 |prefix|Sets prefix for the bot. (Default: ">miss")|
+|tracking|(currently TinyBot only) Whether the bot responds to "tracking" messages from other bots that are automatically posted when a user sets a new top play. (Default: false)|
 
-If you don't want to clutter your server with settings configuration, you can DM the bot instead and specify the server id of the server you want to edit.
+If you don't want to clutter your channels with settings configuration, you can DM the bot instead and specify the server id of the server you want to edit.
 
 ## Donate
 
