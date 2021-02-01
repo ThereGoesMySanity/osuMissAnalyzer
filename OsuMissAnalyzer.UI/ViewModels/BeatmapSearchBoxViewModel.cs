@@ -32,7 +32,7 @@ namespace OsuMissAnalyzer.UI.ViewModels
         public BeatmapSearchBoxViewModel(Options options)
         {
             Results = new ObservableCollection<Beatmap>();
-            beatmaps = options.Database.Beatmaps.Where(b => options.ScoresDb.scores.ContainsKey(b.Hash)).ToList();
+            beatmaps = options.Database.Beatmaps.Where(b => b.Hash != null && options.ScoresDb.scores.ContainsKey(b.Hash)).ToList();
             beatmaps.ForEach(b => Results.Add(b));
             this.WhenAnyValue(x => x.SearchText).Subscribe(value => StartSearch(false));
         }
