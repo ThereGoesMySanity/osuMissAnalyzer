@@ -47,15 +47,18 @@ namespace OsuMissAnalyzer.UI
 		}
 		private void AddOption(string key, string value)
 		{
-			if (value.Length > 0) Settings.Add(key, value);
-			if (key == "osudir"
-				&& File.Exists(Path.Combine(value, "osu!.db"))
-				&& File.Exists(Path.Combine(value, "scores.db"))
-				&& Directory.Exists(Path.Combine(value, "Data", "r")))
+			if (value.Length > 0)
 			{
-				Database = new OsuDbFile(Path.Combine(value, "osu!.db"), byHash: true);
-				ScoresDb = new ScoresDb(Path.Combine(value, "scores.db"));
-				OsuDirAccessible = true;
+				Settings.Add(key, value);
+				if (key == "osudir"
+					&& File.Exists(Path.Combine(value, "osu!.db"))
+					&& File.Exists(Path.Combine(value, "scores.db"))
+					&& Directory.Exists(Path.Combine(value, "Data", "r")))
+				{
+					Database = new OsuDbFile(Path.Combine(value, "osu!.db"), byHash: true);
+					ScoresDb = new ScoresDb(Path.Combine(value, "scores.db"));
+					OsuDirAccessible = true;
+				}
 			}
 		}
 	}
