@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using System.Threading.Tasks;
 using BMAPI.v1;
+using Newtonsoft.Json.Linq;
 using NUnit.Framework;
 using ReplayAPI;
 
@@ -28,7 +29,7 @@ namespace OsuMissAnalyzer.Tests
             Beatmap b = await beatmaps.GetBeatmap("d41d8cd98f00b204e9800998ecf8427e");
         }
 
-        // [TestCase("3243485950", "replay-osu_1859001_3243485950.osr")]
+        [TestCase("3243485950", "replay-osu_1859001_3243485950.osr")]
         public async Task TestApiDownload(string scoreId, string compareFile)
         {
             Replay compare = new Replay($"Resources/{compareFile}");
@@ -42,6 +43,13 @@ namespace OsuMissAnalyzer.Tests
             Assert.AreEqual(compare.MapHash, r.MapHash);
             Assert.AreEqual(compare.Mods, r.Mods);
             Assert.AreEqual(compare.OnlineId, r.OnlineId);
+        }
+
+        [TestCase("3243485950")]
+        public async Task TestApiv2(string scoreId)
+        {
+            JToken s = await api.GetApiv2($"scores/osu/{scoreId}/download");
+            Console.WriteLine(s);
         }
     }
 }
