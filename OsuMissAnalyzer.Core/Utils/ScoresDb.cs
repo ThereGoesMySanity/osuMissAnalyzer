@@ -1,6 +1,7 @@
 
 using System.Collections.Generic;
 using System.IO;
+using ReplayAPI;
 
 namespace OsuMissAnalyzer.Core
 {
@@ -68,6 +69,10 @@ namespace OsuMissAnalyzer.Core
             score.timestamp = fileReader.ReadUInt64();
             fileReader.ReadInt32();
             score.onlineId = fileReader.ReadUInt64();
+            if (((Mods)score.mods).HasFlag(Mods.TargetPractice))
+            {
+                fileReader.ReadDouble();
+            }
             score.filename = $"{score.beatmapHash}-{score.timestamp-504911232000000000}.osr";
             return score;
         }
