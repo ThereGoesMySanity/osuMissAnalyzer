@@ -426,7 +426,7 @@ Full readme at https://github.com/ThereGoesMySanity/osuMissAnalyzer/tree/missAna
         {
             [OWO] = (ServerReplayLoader replayLoader, GuildSettings guildSettings, MessageCreateEventArgs e) =>
             {
-                if (e.Message.Content.StartsWith("**Most Recent osu! Standard Play for"))
+                if (e.Message.Content.StartsWith("**Recent osu! Standard Play for"))
                 {
                     replayLoader.UserId = GetIdFromEmbed(e.Message.Embeds[0]);
                     return true;
