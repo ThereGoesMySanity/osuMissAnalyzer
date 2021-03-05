@@ -1,4 +1,6 @@
 using System;
+using System.Drawing.Imaging;
+using System.IO;
 using System.Linq;
 using BMAPI.v1;
 using BMAPI.v1.HitObjects;
@@ -42,6 +44,19 @@ namespace OsuMissAnalyzer.Tests
             Console.WriteLine(string.Join(", ", s.Points));
             Console.WriteLine(string.Join(", ", s.Curves.SelectMany(curve => curve.CurveSnapshots)));
 
+        }
+        [TestCase("Resources/3489388060.osr")]
+        [TestCase("Resources/replay-osu_151229_2646617863.osr")]
+        public void TestStacking(string replayFile)
+        {
+            Replay r = new Replay(replayFile);
+            var db = new OsuDbAPI.OsuDbFile("/home/will/osu!/osu!.db", byHash: true);
+            Beatmap b = db.BeatmapsByHash[r.MapHash].Load("/home/will/A/osu!/Songs");
+            MissAnalyzer analyzer = new MissAnalyzer(r, b);
+            //127002
+            analyzer.DrawAllMisses(new System.Drawing.Rectangle(0, 0, 320, 320))
+                .First()
+                .Save("miss.png", ImageFormat.Png);
         }
     }
 }
