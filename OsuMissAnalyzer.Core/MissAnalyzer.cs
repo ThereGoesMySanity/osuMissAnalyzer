@@ -129,8 +129,9 @@ namespace OsuMissAnalyzer.Core
                 if (Beatmap.HitObjects[q].Type.HasFlag(HitObjectType.Slider))
                 {
                     SliderObject slider = (SliderObject)Beatmap.HitObjects[q];
-                    PointF[] pt = slider.Curves.SelectMany(curve => curve.CurveSnapshots).Select(s => ScaleToRect(
-                            pSub(s.point.ToPointF(), bounds, hr), bounds, area)).ToArray();
+                    PointF[] pt = slider.Curves.SelectMany(curve => curve.CurveSnapshots)
+                        .Select(c => c.point + slider.StackOffset.ToVector2())
+                        .Select(s => ScaleToRect(pSub(s.ToPointF(), bounds, hr), bounds, area)).ToArray();
                     circle.Color = Color.FromArgb(80, Color.DarkGoldenrod);
                     if (pt.Length > 1) g.DrawLines(circle, pt);
                 }

@@ -45,7 +45,10 @@ namespace OsuMissAnalyzer.Tests
             Console.WriteLine(string.Join(", ", s.Curves.SelectMany(curve => curve.CurveSnapshots)));
 
         }
+        //127002 to 127641
         [TestCase("Resources/3489388060.osr")]
+        //15246
+        [TestCase("Resources/3534866519.osr")]
         [TestCase("Resources/replay-osu_151229_2646617863.osr")]
         public void TestStacking(string replayFile)
         {
@@ -53,10 +56,10 @@ namespace OsuMissAnalyzer.Tests
             var db = new OsuDbAPI.OsuDbFile("/home/will/osu!/osu!.db", byHash: true);
             Beatmap b = db.BeatmapsByHash[r.MapHash].Load("/home/will/A/osu!/Songs");
             MissAnalyzer analyzer = new MissAnalyzer(r, b);
-            //127002
-            analyzer.DrawAllMisses(new System.Drawing.Rectangle(0, 0, 320, 320))
-                .First()
-                .Save("miss.png", ImageFormat.Png);
+            int i = 0;
+            Assert.AreEqual(0, analyzer.MissCount);
+            // foreach(var m in analyzer.DrawAllMisses(new System.Drawing.Rectangle(0, 0, 320, 320)))
+            //     m.Save($"miss{Path.GetFileName(replayFile)}{i++}.png", ImageFormat.Png);
         }
     }
 }
