@@ -56,7 +56,6 @@ namespace OsuMissAnalyzer.Tests
             var db = new OsuDbAPI.OsuDbFile("/home/will/osu!/osu!.db", byHash: true);
             Beatmap b = db.BeatmapsByHash[r.MapHash].Load("/home/will/A/osu!/Songs");
             MissAnalyzer analyzer = new MissAnalyzer(r, b);
-            int i = 0;
             Assert.AreEqual(0, analyzer.MissCount);
             // foreach(var m in analyzer.DrawAllMisses(new System.Drawing.Rectangle(0, 0, 320, 320)))
             //     m.Save($"miss{Path.GetFileName(replayFile)}{i++}.png", ImageFormat.Png);

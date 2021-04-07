@@ -67,18 +67,26 @@ namespace OsuMissAnalyzer.Server
             if (File.Exists(ENDPOINT)) File.Delete(ENDPOINT);
             socket = new Socket(AddressFamily.Unix, SocketType.Stream, ProtocolType.IP);
             endpoint = new UnixEndPoint(ENDPOINT);
-            socket.Bind(endpoint);
-            socket.Listen(1);
-            socket.BeginAccept(new AsyncCallback(AcceptCallback), null);
-            var fileInfo = new Mono.Unix.UnixFileInfo(ENDPOINT);
-            Syscall.chown(ENDPOINT, Syscall.getuid(), Syscall.getgrnam("netdata").gr_gid);
-            Syscall.chmod(ENDPOINT, FilePermissions.S_IWGRP | FilePermissions.S_IWUSR | FilePermissions.S_IRGRP | FilePermissions.S_IRUSR);
-            this.webHook = webHook;
+            try
+            {
+                socket.Bind(endpoint);
+                socket.Listen(1);
+                socket.BeginAccept(new AsyncCallback(AcceptCallback), null);
+                var fileInfo = new Mono.Unix.UnixFileInfo(ENDPOINT);
+                Syscall.chown(ENDPOINT, Syscall.getuid(), Syscall.getgrnam("netdata").gr_gid);
+                Syscall.chmod(ENDPOINT, FilePermissions.S_IWGRP | FilePermissions.S_IWUSR | FilePermissions.S_IRGRP | FilePermissions.S_IRUSR);
+                this.webHook = webHook;
+            } catch (Exception) 
+            {
+                socket.Close();
+                socket = null;
+            }
         }
+
         public void Close()
         {
             file.Close();
-            socket.Close();
+            socket?.Close();
             File.Delete(ENDPOINT);
         }
         public void AcceptCallback(IAsyncResult result)

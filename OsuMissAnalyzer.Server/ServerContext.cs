@@ -223,10 +223,11 @@ Full readme at https://github.com/ThereGoesMySanity/osuMissAnalyzer/tree/missAna
                     ulong? guildId = settingsMatch.Groups[1].Success? (ulong?)ulong.Parse(settingsMatch.Groups[1].Value) : null;
                     guildId ??= (!e.Channel.IsPrivate)? (ulong?)e.Channel.GuildId : null;
                     string response = null;
-                    if (guildId != null) 
+                    if (guildId != null)
                     {
-                        var user = await (await Discord.GetGuildAsync(guildId.Value)).GetMemberAsync(e.Author.Id);
-                        if (user.IsOwner || user.PermissionsIn(e.Channel).HasPermission(Permissions.Administrator))
+                        var dGuild = await Discord.GetGuildAsync(guildId.Value);
+                        var user = await dGuild.GetMemberAsync(e.Author.Id);
+                        if (user.IsOwner || user.PermissionsIn(dGuild.GetDefaultChannel()).HasPermission(Permissions.Administrator))
                         {
                             var guild = Settings.GetGuild(guildId.Value);
                             if (!settingsMatch.Groups[2].Success || settingsMatch.Groups[2].Value.StartsWith("get"))
