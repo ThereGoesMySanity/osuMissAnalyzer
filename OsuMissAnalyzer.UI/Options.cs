@@ -25,7 +25,7 @@ namespace OsuMissAnalyzer.UI
 				while (!f.EndOfStream)
 				{
 					string[] s = f.ReadLine().Trim().Split(new char[] { '=' }, 2);
-					AddOption(s[0].ToLower(), s[1]);
+					AddOption(s[0].ToLower(), s[1].Trim());
 				}
 			}
 			foreach(var kv in optList)
