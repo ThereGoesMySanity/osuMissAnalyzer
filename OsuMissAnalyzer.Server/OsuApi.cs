@@ -68,12 +68,17 @@ namespace OsuMissAnalyzer.Server
         public async Task<string> DownloadBeatmapFromHashv1(string mapHash, string destinationFolder)
         {
             Logger.Log(Logging.ApiGetBeatmapsv1);
-            var j = JArray.Parse(webClient.DownloadString($"https://osu.ppy.sh/api/get_beatmaps?k={apiKeyv1}&h={mapHash}"));
+            string response = webClient.DownloadString($"https://osu.ppy.sh/api/get_beatmaps?k={apiKeyv1}&h={mapHash}");
+            var j = JArray.Parse(response);
             if (j.Count > 0)
             {
                 string beatmapId = (string)j[0]["beatmap_id"];
                 await DownloadBeatmapFromId(beatmapId, destinationFolder);
                 return beatmapId;
+            }
+            else
+            {
+                await Logger.WriteLine($"Beatmap download failed, result: {response}", Logger.LogLevel.ALERT);
             }
             return null;
         }
