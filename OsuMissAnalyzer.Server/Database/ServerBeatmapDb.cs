@@ -51,9 +51,9 @@ namespace OsuMissAnalyzer.Server.Database
                     var result = await api.DownloadBeatmapFromHashv1(mapHash, Path.Combine(folder, "beatmaps"));
                     if (result != null)
                     {
-                        await Logger.WriteLine(hashes.Count);
+                        await Logger.WriteLine($"Before add: {hashes.Count}");
                         hashes[mapHash] = result;
-                        await Logger.WriteLine(hashes.Count);
+                        await Logger.WriteLine($"After add: {hashes.Count}");
                         Logger.LogAbsolute(Logging.BeatmapsDbSize, hashes.Count);
                         Logger.Log(Logging.BeatmapsCacheMiss);
                     }
