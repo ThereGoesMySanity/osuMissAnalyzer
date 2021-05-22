@@ -48,18 +48,20 @@ namespace OsuMissAnalyzer.Server.Database
                 if (!hashes.ContainsKey(mapHash))
                 {
                     await Logger.WriteLine("beatmap not found, downloading...");
+                    Console.WriteLine("Test");
                     var result = await api.DownloadBeatmapFromHashv1(mapHash, Path.Combine(folder, "beatmaps"));
+                    Console.WriteLine("Test2");
                     if (result != null)
                     {
-                        await Logger.WriteLine($"Before add: {hashes.Count}");
+                        Console.WriteLine($"Before add: {hashes.Count}");
                         hashes[mapHash] = result;
-                        await Logger.WriteLine($"After add: {hashes.Count}");
+                        Console.WriteLine($"After add: {hashes.Count}");
                         Logger.LogAbsolute(Logging.BeatmapsDbSize, hashes.Count);
                         Logger.Log(Logging.BeatmapsCacheMiss);
                     }
                     else
                     {
-                        await Logger.WriteLine("beatmap result is null!");
+                        Console.WriteLine("beatmap result is null!");
                         return null;
                     }
                 }
