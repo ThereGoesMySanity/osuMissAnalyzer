@@ -16,10 +16,9 @@ namespace OsuMissAnalyzer.Server.Database
             this.api = api;
             folder = serverDir;
             string db = Path.Combine(serverDir, "beatmaps.db");
-            if (File.Exists(db))
+            if (File.Exists(db) && !reload)
             {
                 hashes = JsonConvert.DeserializeObject<Dictionary<string, string>>(File.ReadAllText(db));
-                Logger.LogAbsolute(Logging.BeatmapsDbSize, hashes.Count);
             }
             else
             {
@@ -32,6 +31,7 @@ namespace OsuMissAnalyzer.Server.Database
                     hashes[Beatmap.MD5FromFile(file)] = Path.GetFileNameWithoutExtension(file);
                 }
             }
+            Logger.LogAbsolute(Logging.BeatmapsDbSize, hashes.Count);
         }
         public void Close()
         {
@@ -51,12 +51,15 @@ namespace OsuMissAnalyzer.Server.Database
                     var result = await api.DownloadBeatmapFromHashv1(mapHash, Path.Combine(folder, "beatmaps"));
                     if (result != null)
                     {
+                        await Logger.WriteLine(hashes.Count);
                         hashes[mapHash] = result;
+                        await Logger.WriteLine(hashes.Count);
                         Logger.LogAbsolute(Logging.BeatmapsDbSize, hashes.Count);
                         Logger.Log(Logging.BeatmapsCacheMiss);
                     }
                     else
                     {
+                        await Logger.WriteLine("beatmap result is null!");
                         return null;
                     }
                 }
