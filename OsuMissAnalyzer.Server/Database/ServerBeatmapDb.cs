@@ -80,7 +80,14 @@ namespace OsuMissAnalyzer.Server.Database
             {
                 await Logger.WriteLine("beatmap not found, downloading...");
                 await api.DownloadBeatmapFromId(beatmap_id, Path.Combine(folder, "beatmaps"));
-                hashes[Beatmap.MD5FromFile(file)] = beatmap_id;
+                string hash = Beatmap.MD5FromFile(file);
+                if (hashes.ContainsKey(hash))
+                {
+                    await Logger.WriteLine($"identical hashes: {file} {hashes[hash]}");
+                }
+                Console.WriteLine($"Before add: {hashes.Count}");
+                hashes[hash] = beatmap_id;
+                Console.WriteLine($"After add: {hashes.Count}");
                 Logger.LogAbsolute(Logging.BeatmapsDbSize, hashes.Count);
                 Logger.Log(Logging.BeatmapsCacheMiss);
             }
