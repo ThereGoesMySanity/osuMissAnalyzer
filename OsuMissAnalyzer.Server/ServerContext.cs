@@ -107,16 +107,13 @@ Full readme at https://github.com/ThereGoesMySanity/osuMissAnalyzer/tree/missAna
 
             Discord.ClientErrored += async (d, e) =>
             {
-                Logger.Log(Logging.ErrorUnhandled);
                 await Logger.WriteLine(e.EventName);
-                await Logger.WriteLine(e.Exception, Logger.LogLevel.ALERT);
+                await Logger.LogException(e.Exception);
             };
 
             Discord.SocketErrored += async (d, e) =>
             {
-                Logger.Log(Logging.ErrorUnhandled);
-                await Logger.WriteLine(e.Exception, Logger.LogLevel.ALERT);
-                // await d.ConnectAsync();
+                await Logger.LogException(e.Exception);
             };
 
             Logger.Instance.UpdateLogs += () => Logger.LogAbsolute(Logging.ServersJoined, Discord?.Guilds?.Count ?? 0);
@@ -255,7 +252,11 @@ Full readme at https://github.com/ThereGoesMySanity/osuMissAnalyzer/tree/missAna
 
             if (replayLoader.Source != null)
             {
-                Task.Run(() => ProcessMessage(e, guildSettings, replayLoader));
+                Task.Run(() => ProcessMessage(e, guildSettings, replayLoader))
+                    .ContinueWith(t => 
+                    {
+                        Console.WriteLine((t.Exception as AggregateException).InnerException)
+                    }, TaskContinuationOptions.OnlyOnFaulted);
             }
         }
 
@@ -299,6 +300,10 @@ Full readme at https://github.com/ThereGoesMySanity/osuMissAnalyzer/tree/missAna
             catch (ArgumentException ex)
             {
                 replayLoader.ErrorMessage = ex.Message;
+            }
+            catch (Exception exc)
+            {
+                await Logger.LogException(exc);
             }
 
             if (replayLoader.ErrorMessage != null && (replayLoader.Source == Source.USER || replayLoader.Source == Source.ATTACHMENT))

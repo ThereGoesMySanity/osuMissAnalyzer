@@ -161,6 +161,11 @@ namespace OsuMissAnalyzer.Server
             }
             return null;
         }
+        public static async Task LogException(Exception exception)
+        {
+            Logger.Log(Logging.ErrorUnhandled);
+            await Logger.WriteLine(exception, Logger.LogLevel.ALERT);
+        }
         public static void Log(Logging type, int count = 1)
         {
             if (Instance == null) return;
