@@ -18,14 +18,12 @@ namespace OsuMissAnalyzer.Server
         private Queue<DateTime> replayDls;
         private int tokenTime;
         private string token;
-        private WebClient webClient;
         private TimeSpan TokenTimeRemaining => TimeSpan.FromSeconds(tokenTime).Subtract(tokenExpiry.Elapsed);
         public OsuApi(string clientId, string clientSecret, string apiKeyv1)
         {
             this.clientId = clientId;
             this.apiKeyv1 = apiKeyv1;
             this.clientSecret = clientSecret;
-            webClient = new WebClient();
             tokenExpiry = new Stopwatch();
             replayDls = new Queue<DateTime>();
         }
@@ -68,17 +66,12 @@ namespace OsuMissAnalyzer.Server
         public async Task<string> DownloadBeatmapFromHashv1(string mapHash, string destinationFolder)
         {
             Logger.Log(Logging.ApiGetBeatmapsv1);
-            string response = webClient.DownloadString($"https://osu.ppy.sh/api/get_beatmaps?k={apiKeyv1}&h={mapHash}");
-            var j = JArray.Parse(response);
+            JArray j = (JArray)(await ApiRequestv1("get_beatmaps", $"h={mapHash}"));
             if (j.Count > 0)
             {
                 string beatmapId = (string)j[0]["beatmap_id"];
                 await DownloadBeatmapFromId(beatmapId, destinationFolder);
                 return beatmapId;
-            }
-            else
-            {
-                await Logger.WriteLine($"Beatmap download failed, result: {response}", Logger.LogLevel.ALERT);
             }
             return null;
         }
@@ -86,15 +79,17 @@ namespace OsuMissAnalyzer.Server
         {
             Logger.Log(Logging.ApiDownloadBeatmap);
             string file = Path.Combine(destinationFolder, $"{beatmapId}.osu");
-            try
+            while(!File.Exists(file))
             {
-                await webClient.DownloadFileTaskAsync($"https://osu.ppy.sh/osu/{beatmapId}", file);
-            }
-            catch (Exception e)
-            {
-                await Logger.LogException(e);
-                webClient.Dispose();
-                webClient = new WebClient();
+                try
+                {
+                    await new WebClient().DownloadFileTaskAsync($"https://osu.ppy.sh/osu/{beatmapId}", file);
+                }
+                catch (WebException e)
+                {
+                    await Logger.WriteLine("Exception caught in DownloadBeatmap");
+                    await Logger.LogException(e);
+                }
             }
         }
         public async Task<JToken> GetUserScoresv2(string userId, string type, int index, bool failedScores)
@@ -150,7 +145,7 @@ namespace OsuMissAnalyzer.Server
                 await Task.Delay(TimeSpan.FromMinutes(1).Subtract(DateTime.Now - replayDls.Peek()));
             }
             replayDls.Enqueue(DateTime.Now);
-            var res = JToken.Parse(await webClient.DownloadStringTaskAsync($"https://osu.ppy.sh/api/get_replay?k={apiKeyv1}&s={onlineId}"));
+            var res = await ApiRequestv1("get_replay", $"s={onlineId}");
             return res["content"] != null? Convert.FromBase64String((string)res["content"]) : null;
         }
 
