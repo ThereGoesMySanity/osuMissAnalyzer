@@ -252,7 +252,11 @@ Full readme at https://github.com/ThereGoesMySanity/osuMissAnalyzer/tree/missAna
 
             if (replayLoader.Source != null)
             {
-                Task.Run(() => ProcessMessage(e, guildSettings, replayLoader));
+                Task.Run(() => ProcessMessage(e, guildSettings, replayLoader))
+                    .ContinueWith(t => 
+                    {
+                        Console.WriteLine((t.Exception as AggregateException).InnerException)
+                    }, TaskContinuationOptions.OnlyOnFaulted);
             }
         }
 
