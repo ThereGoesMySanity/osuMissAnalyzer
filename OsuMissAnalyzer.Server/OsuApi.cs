@@ -86,7 +86,15 @@ namespace OsuMissAnalyzer.Server
         {
             Logger.Log(Logging.ApiDownloadBeatmap);
             string file = Path.Combine(destinationFolder, $"{beatmapId}.osu");
-            await webClient.DownloadFileTaskAsync($"https://osu.ppy.sh/osu/{beatmapId}", file);
+            try
+            {
+                await webClient.DownloadFileTaskAsync($"https://osu.ppy.sh/osu/{beatmapId}", file);
+            }
+            catch (Exception)
+            {
+                webClient.Dispose();
+                webClient = new WebClient();
+            }
         }
         public async Task<JToken> GetUserScoresv2(string userId, string type, int index, bool failedScores)
         {
