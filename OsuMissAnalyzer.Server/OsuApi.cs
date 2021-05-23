@@ -90,8 +90,9 @@ namespace OsuMissAnalyzer.Server
             {
                 await webClient.DownloadFileTaskAsync($"https://osu.ppy.sh/osu/{beatmapId}", file);
             }
-            catch (Exception)
+            catch (Exception e)
             {
+                await Logger.LogException(e);
                 webClient.Dispose();
                 webClient = new WebClient();
             }
