@@ -299,8 +299,7 @@ Full readme at https://github.com/ThereGoesMySanity/osuMissAnalyzer/tree/missAna
             }
             catch (Exception exc)
             {
-                await Logger.LogException(exc);
-                if (exc is AggregateException a) await Logger.LogException(a.InnerException);
+                await Logger.LogException(exc, Logger.LogLevel.NORMAL);
             }
 
             if (replayLoader.ErrorMessage != null && (replayLoader.Source == Source.USER || replayLoader.Source == Source.ATTACHMENT))
