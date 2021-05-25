@@ -161,10 +161,10 @@ namespace OsuMissAnalyzer.Server
             }
             return null;
         }
-        public static async Task LogException(Exception exception)
+        public static async Task LogException(Exception exception, LogLevel level = LogLevel.ALERT)
         {
             Logger.Log(Logging.ErrorUnhandled);
-            await Logger.WriteLine(exception, Logger.LogLevel.ALERT);
+            await Logger.WriteLine(exception, level);
         }
         public static void Log(Logging type, int count = 1)
         {

@@ -88,7 +88,7 @@ namespace OsuMissAnalyzer.Server
                 catch (WebException e)
                 {
                     await Logger.WriteLine("Exception caught in DownloadBeatmap");
-                    await Logger.LogException(e);
+                    await Logger.LogException(e, Logger.LogLevel.NORMAL);
                 }
             }
         }
