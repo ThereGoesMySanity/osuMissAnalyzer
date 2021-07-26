@@ -9,6 +9,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Threading.Tasks;
+using Avalonia.Threading;
 
 namespace OsuMissAnalyzer.UI
 {
@@ -33,13 +34,28 @@ namespace OsuMissAnalyzer.UI
             {
                 Window = desktop.MainWindow = new MissWindow();
                 await Load(ReplayLoader);
+                if (ReplayLoader.Options.WatchDogMode)
+                {
+                    ReplayLoader.NewReplay += ReplayLoaderOnNewReplay;
+                    ReplayLoader.WatchForNewReplays();
+                }
             }
 
             base.OnFrameworkInitializationCompleted();
         }
 
+        private void ReplayLoaderOnNewReplay(object? sender, EventArgs e)
+        {
+            _ = Load(ReplayLoader);
+        }
+
         public static async Task Load(UIReplayLoader loader)
         {
+            if (!Dispatcher.UIThread.CheckAccess())
+            {
+                await Dispatcher.UIThread.InvokeAsync(() => Load(loader));
+                return;
+            }
             string errorMessage, result = null;
             do
             {
@@ -50,6 +66,9 @@ namespace OsuMissAnalyzer.UI
                         Window.DataContext = new MissWindowViewModel(loader);
                         return;
                     }
+
+                    if (loader.Options.WatchDogMode)
+                        return;
                 }
                 catch (Exception e)
                 {

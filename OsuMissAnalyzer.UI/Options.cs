@@ -16,6 +16,7 @@ namespace OsuMissAnalyzer.UI
 		public ScoresDb ScoresDb;
 		public bool OsuDirAccessible { get; private set; }
         public string SongsFolder => Settings.GetValueOrDefault("songsdir", Settings.ContainsKey("osudir") ? Path.Combine(Settings["osudir"], "Songs") : null);
+        public bool WatchDogMode => "true" == Settings.GetValueOrDefault("watchdogmode", Settings.ContainsKey("watchdogmode") ? Settings["watchdogmode"].ToLowerInvariant() : "false");
 		public Options(string file, Dictionary<string, string> optList)
 		{
 			OsuDirAccessible = false;

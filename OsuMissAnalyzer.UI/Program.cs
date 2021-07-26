@@ -29,6 +29,7 @@ namespace OsuMissAnalyzer.UI
                 { "o|osudir=", "Set osu! directory", o => optList["osudir"] = o},
                 { "c|config=", "Set options.cfg", f => optionsFile = f},
                 { "s|songsdir=", "Set songs directory", s => optList["songsdir"] = s},
+                { "w|watchdogmode=", "watch and automatically load newest replays, requires osudir to be set", s => optList["watchdogmode"] = s},
                 { "d|daemon", "Run without dialogs", d => headless = d != null},
                 { "h|help", "Displays help", h => help = h != null},
                 { "m|miss=", "Export miss #", (int m) => getMiss = m}

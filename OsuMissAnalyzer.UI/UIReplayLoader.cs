@@ -26,6 +26,8 @@ namespace OsuMissAnalyzer.UI
         public Options Options { get; set; }
         public string ReplayFile { get; set; }
         public string BeatmapFile { get; set; }
+        public event EventHandler NewReplay;
+        private FileSystemWatcher[] fileSystemWatchers;
 
         public async Task<string> Load()
         {
@@ -55,6 +57,22 @@ namespace OsuMissAnalyzer.UI
             return null;
         }
 
+        private string osuReplaysDir => Path.Combine(Options.Settings["osudir"], "Data", "r");
+        private string userReplaysDir => Path.Combine(Options.Settings["osudir"], "Replays");
+
+        private IEnumerable<FileInfo> LocalReplaysList
+        {
+            get
+            {
+                IEnumerable<FileInfo> files = new DirectoryInfo(osuReplaysDir).GetFiles();
+                var replayDir = new DirectoryInfo(userReplaysDir);
+                if (replayDir.Exists)
+                    files = files.Concat(replayDir.GetFiles());
+
+                return files;
+            }
+        }
+
         public async Task<Replay> LoadReplay()
         {
             Replay replay = null;
@@ -62,22 +80,25 @@ namespace OsuMissAnalyzer.UI
             {
                 DataContext = new ReplayOptionBoxViewModel(Options)
             };
-            if (await messageBox.ShowDialog<bool>(App.Window))
+
+            bool skipLoadDialog = Options.WatchDogMode;
+            if (skipLoadDialog || await messageBox.ShowDialog<bool>(App.Window))
             {
-                switch (messageBox.Result)
+                var userResult = skipLoadDialog ? ReplayFind.WATCHDOG : messageBox.Result;
+                switch (userResult)
                 {
                     case ReplayFind.RECENT:
-                        IEnumerable<FileInfo> files = new DirectoryInfo(Path.Combine(Options.Settings["osudir"], "Data", "r")).GetFiles();
-                        var replayDir = new DirectoryInfo(Path.Combine(Options.Settings["osudir"], "Replays"));
-                        if (replayDir.Exists) files = files.Concat(replayDir.GetFiles());
+                    case ReplayFind.WATCHDOG:
+                        var files = LocalReplaysList;
+                        var replaysEnumerable = files.Where(f => f.Name.EndsWith("osr"))
+                            .OrderByDescending(f => f.LastWriteTime)
+                            .Select(file => new Replay(file.FullName))
+                            .Where(re => re.GameMode == GameModes.osu)
+                            .Take(10);
+                        if (userResult != ReplayFind.WATCHDOG)
+                            replaysEnumerable = replaysEnumerable.OrderByDescending(re => re.PlayTime);
 
-                        var replays = await Task.WhenAll(files.Where(f => f.Name.EndsWith("osr"))
-                                .OrderByDescending(f => f.LastWriteTime)
-                                .Select(file => new Replay(file.FullName))
-                                .Where(re => re.GameMode == GameModes.osu)
-                                .Take(10)
-                                .OrderByDescending(re => re.PlayTime)
-                                .Select(async re => new ReplayListItem() { Replay = re, Beatmap = await LoadBeatmap(re, false) }));
+                        var replays = await Task.WhenAll(replaysEnumerable.Select(async re => new ReplayListItem() { Replay = re, Beatmap = await LoadBeatmap(re, false) }));
                         var replayListForm = new ListMessageBox
                         {
                             DataContext = new ListMessageBoxViewModel
@@ -85,7 +106,12 @@ namespace OsuMissAnalyzer.UI
                                 Items = replays.ToList(),
                             },
                         };
-                        if (await replayListForm.ShowDialog<bool>(App.Window))
+                        if (userResult == ReplayFind.WATCHDOG)
+                        {
+                            replay = replays[0].Replay;
+                            Beatmap = replays[0].Beatmap;
+                        }
+                        else if (await replayListForm.ShowDialog<bool>(App.Window))
                         {
                             replay = replayListForm.Result.Replay;
                             Beatmap = replayListForm.Result.Beatmap;
@@ -253,5 +279,42 @@ namespace OsuMissAnalyzer.UI
             return null;
         }
 
+        public void WatchForNewReplays()
+        {
+            if (fileSystemWatchers != null)
+                return;
+            fileSystemWatchers = new[] { new FileSystemWatcher(osuReplaysDir), new FileSystemWatcher(userReplaysDir) };
+            foreach (var fileSystemWatcher in fileSystemWatchers)
+            {
+                fileSystemWatcher.Filter = "*.osr";
+                fileSystemWatcher.Created += FileSystemWatcherOnCreated;
+                fileSystemWatcher.Changed += FileSystemWatcherOnCreated;
+                fileSystemWatcher.EnableRaisingEvents = true;
+            }
+        }
+
+        public void StopWatchingForNewReplays()
+        {
+            if (fileSystemWatchers == null)
+                return;
+
+            foreach (var fileSystemWatcher in fileSystemWatchers)
+            {
+                fileSystemWatcher.EnableRaisingEvents = false;
+                fileSystemWatcher.Dispose();
+            }
+
+            fileSystemWatchers = null;
+        }
+
+        private void FileSystemWatcherOnCreated(object sender, FileSystemEventArgs e)
+        {
+            OnNewReplay();
+        }
+
+        protected virtual void OnNewReplay()
+        {
+            NewReplay?.Invoke(this, EventArgs.Empty);
+        }
     }
 }

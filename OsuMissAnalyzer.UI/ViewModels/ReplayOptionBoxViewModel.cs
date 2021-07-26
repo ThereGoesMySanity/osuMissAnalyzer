@@ -3,7 +3,7 @@ using System;
 
 namespace OsuMissAnalyzer.UI.ViewModels
 {
-    public enum ReplayFind { RECENT, BEATMAP, MANUAL }
+    public enum ReplayFind { WATCHDOG, RECENT, BEATMAP, MANUAL }
     public class ReplayOptionBoxViewModel : ViewModelBase
     {
         private ReplayFind? result;
