@@ -49,6 +49,7 @@ namespace OsuMissAnalyzer.UI
                 Debug.Print("- Available settings : SongsDir | Value = Specify osu!'s songs dir.");
                 Debug.Print("-                       APIKey  | Value = Your osu! API key (https://osu.ppy.sh/api/");
                 Debug.Print("-                       OsuDir  | Value = Your osu! directory");
+                Debug.Print("-                 WatchDogMode  | Value = true or false");
             }
             if (help)
             {
