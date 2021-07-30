@@ -52,7 +52,7 @@ To add these to options.cfg, add a new line formatted `<Setting Name>=<Value>`
 |OsuDir|Specify the osu! directory. Make sure that osu!.db is in here. If the program takes a while to start, please add this option.|
 |SongsDir|Specify osu!'s songs dir. Only necessary if it isn't OsuDir/Songs.|
 |APIKey|osu! API key|
-|WatchDogMode|Enable watch dog mode, in with newest replays in OsuDir are loaded as they appear. OsuDir is required and SongsDir is recommended for best experience.|
+|WatchDogMode|Enable watch dog mode, in with newest replays in OsuDir are loaded as they appear.|
 
 ## Alternate Usage
 
