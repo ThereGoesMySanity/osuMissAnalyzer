@@ -9,6 +9,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Threading.Tasks;
+using Avalonia.Threading;
 
 namespace OsuMissAnalyzer.UI
 {
@@ -32,14 +33,36 @@ namespace OsuMissAnalyzer.UI
             if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
             {
                 Window = desktop.MainWindow = new MissWindow();
+                if (ReplayLoader.Options.WatchDogMode && (!ReplayLoader.Options.Settings.ContainsKey("osudir") || string.IsNullOrEmpty(ReplayLoader.Options.Settings["osudir"])))
+                {
+                    await ShowMessageBox("OsuDir is required when WatchDogMode is enabled.");
+                    Window.Close();
+                    return;
+                }
+
                 await Load(ReplayLoader);
+                if (ReplayLoader.Options.WatchDogMode)
+                {
+                    ReplayLoader.NewReplay += ReplayLoaderOnNewReplay;
+                    ReplayLoader.WatchForNewReplays();
+                }
             }
 
             base.OnFrameworkInitializationCompleted();
         }
 
+        private void ReplayLoaderOnNewReplay(object? sender, EventArgs e)
+        {
+            _ = Load(ReplayLoader);
+        }
+
         public static async Task Load(UIReplayLoader loader)
         {
+            if (!Dispatcher.UIThread.CheckAccess())
+            {
+                await Dispatcher.UIThread.InvokeAsync(() => Load(loader));
+                return;
+            }
             string errorMessage, result = null;
             do
             {
@@ -50,6 +73,9 @@ namespace OsuMissAnalyzer.UI
                         Window.DataContext = new MissWindowViewModel(loader);
                         return;
                     }
+
+                    if (loader.Options.WatchDogMode)
+                        return;
                 }
                 catch (Exception e)
                 {
