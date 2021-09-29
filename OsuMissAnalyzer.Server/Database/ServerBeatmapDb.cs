@@ -68,12 +68,12 @@ namespace OsuMissAnalyzer.Server.Database
             }
             return null;
         }
-        public async Task<Beatmap> GetBeatmapFromId(string beatmap_id)
+        public async Task<Beatmap> GetBeatmapFromId(string beatmap_id, bool forceRedl = false)
         {
             string file = Path.Combine(folder, "beatmaps", $"{beatmap_id}.osu");
-            if (!File.Exists(file))
+            if (!File.Exists(file) || forceRedl)
             {
-                await Logger.WriteLine("beatmap not found, downloading...");
+                await Logger.WriteLine(forceRedl? "hash out of date, redownloading..." : "beatmap not found, downloading...");
                 await api.DownloadBeatmapFromId(beatmap_id, Path.Combine(folder, "beatmaps"));
                 string hash = Beatmap.MD5FromFile(file);
                 hashes[hash] = beatmap_id;
