@@ -343,6 +343,7 @@ Full readme at https://github.com/ThereGoesMySanity/osuMissAnalyzer/tree/missAna
                 if (index >= 0 && index < Math.Min(analyzer.MissCount, numberEmojis.Length - 1))
                 {
                     Task.Run(() => ProcessReaction(e, guildSettings, savedMiss, index));
+                    await Task.CompletedTask;
                 }
             }
         }
@@ -453,11 +454,11 @@ Full readme at https://github.com/ThereGoesMySanity/osuMissAnalyzer/tree/missAna
             {
                 if (e.Message.Embeds.Count > 0 && e.Message.Content.StartsWith("Try #"))
                 {
-                    string prefix = "https://osu.ppy.sh/u/";
+                    string prefix = "https://osu.ppy.sh/users/";
                     string url = e.Message.Embeds[0].Author.Url.AbsoluteUri;
-                    if (url.StartsWith(prefix))
+                    if (url.StartsWith(prefix) && url.EndsWith("osu"))
                     {
-                        replayLoader.UserId = url.Substring(prefix.Length);
+                        replayLoader.UserId = url.Substring(prefix.Length).Split('/')[0];
                         return true;
                     }
                 }
