@@ -438,7 +438,7 @@ Full readme at https://github.com/ThereGoesMySanity/osuMissAnalyzer/tree/missAna
             },
             [TINYBOT] = (ServerReplayLoader replayLoader, GuildSettings guildSettings, MessageCreateEventArgs e) =>
             {
-                if (e.Message.Embeds.Count > 0)
+                if (e.Message.Embeds.Count > 0 && e.Message.Embeds[0].Author != null)
                 {
                     string header = e.Message.Embeds[0].Author.Name;
                     if (header.StartsWith("Most recent osu! Standard play for")
