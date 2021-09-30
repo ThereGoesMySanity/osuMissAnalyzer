@@ -90,7 +90,7 @@ Bot link: https://discordapp.com/oauth2/authorize?client_id={DiscordId}&scope=bo
 
         public GuildSettings GetGuild(DiscordChannel channel)
         {
-            if (channel.IsPrivate) return GuildSettings.Default;
+            if (!channel.GuildId.HasValue) return GuildSettings.Default;
             else return GetGuild(channel.GuildId.Value);
         }
         public GuildSettings GetGuild(ulong id)
