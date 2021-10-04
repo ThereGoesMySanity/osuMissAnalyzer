@@ -357,6 +357,10 @@ Full readme at https://github.com/ThereGoesMySanity/osuMissAnalyzer/tree/missAna
                 savedMiss.MissUrls[index] = await SendMissMessage(analyzer, index);
             }
             var message = e.Message;
+            if (message.Author == null)
+            {
+                message = await e.Guild.GetChannel(message.ChannelId).GetMessageAsync(e.Message.Id);
+            }
             if (!message.Author.IsCurrent)
             {
                 message = savedMiss.Response;
