@@ -11,6 +11,7 @@ namespace OsuMissAnalyzer.Server.Settings
         public bool Compact { get; set; } = false;
         public string Prefix { get; set; } = ">miss";
         public bool Tracking { get; set; } = false;
+        public bool AutoResponses { get; set; } = true;
         public GuildSettings(ulong guildId)
         {
             Id = guildId;

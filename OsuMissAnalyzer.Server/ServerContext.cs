@@ -168,7 +168,7 @@ Full readme at https://github.com/ThereGoesMySanity/osuMissAnalyzer/tree/missAna
             }
 
             //bot
-            if (botIds.ContainsKey(e.Author.Id) && rsFunc[e.Author.Id](replayLoader, guildSettings, e))
+            if (guildSettings.AutoResponses && botIds.ContainsKey(e.Author.Id) && rsFunc[e.Author.Id](replayLoader, guildSettings, e))
             {
                 await Logger.WriteLine($"processing {botIds[e.Author.Id]} message");
                 Logger.Log(Logging.BotCalls);
