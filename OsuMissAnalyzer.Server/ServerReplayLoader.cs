@@ -73,7 +73,7 @@ namespace OsuMissAnalyzer.Server
             if (_replay != null && !_replay.fullLoaded)
                 return "Replay does not contain any cursor data - can't analyze";
 
-            if (_replay != null && _beatmap != null)
+            if (_replay != null && _beatmap != null && _beatmap.Mode == GameMode.osu)
             {
                 _analyzer = new ReplayAnalyzer(_beatmap, _replay);
                 Loaded = true;
