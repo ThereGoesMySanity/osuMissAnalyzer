@@ -71,7 +71,8 @@ namespace OsuMissAnalyzer.Server.Database
         public async Task<Beatmap> GetBeatmapFromId(string beatmap_id, bool forceRedl = false)
         {
             string file = Path.Combine(folder, "beatmaps", $"{beatmap_id}.osu");
-            if (!File.Exists(file) || forceRedl)
+            if (forceRedl) File.Delete(file);
+            if (!File.Exists(file))
             {
                 await Logger.WriteLine(forceRedl? "hash out of date, redownloading..." : "beatmap not found, downloading...");
                 await api.DownloadBeatmapFromId(beatmap_id, Path.Combine(folder, "beatmaps"));
