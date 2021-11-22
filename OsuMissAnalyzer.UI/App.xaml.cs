@@ -33,6 +33,7 @@ namespace OsuMissAnalyzer.UI
             if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
             {
                 Window = desktop.MainWindow = new MissWindow();
+                Window.Show();
                 if (ReplayLoader.Options.WatchDogMode && (!ReplayLoader.Options.Settings.ContainsKey("osudir") || string.IsNullOrEmpty(ReplayLoader.Options.Settings["osudir"])))
                 {
                     await ShowMessageBox("OsuDir is required when WatchDogMode is enabled.");
