@@ -70,7 +70,7 @@ namespace OsuMissAnalyzer.Server.Database
 
                 replay = new Replay();
                 replay.GameMode = (GameModes)((int)score["mode_int"]);
-                replay.MapHash = beatmap.BeatmapHash;
+                replay.MapHash = (string)score["beatmap"]["checksum"] ?? beatmap.BeatmapHash;
                 replay.PlayerName = (string)score["user"]["username"];
                 // r.ReplayHash = 
                 replay.Count300 = (ushort)score["statistics"]["count_300"];
