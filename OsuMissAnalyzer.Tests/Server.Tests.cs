@@ -45,6 +45,16 @@ namespace OsuMissAnalyzer.Tests
             Assert.AreEqual(compare.OnlineId, r.OnlineId);
         }
 
+        [TestCase("3205642-old?.osu","3205642.osu","3205642","replay-osu_3205642_3960657933.osr")]
+        public async Task TestRedownload(string oldFile, string copyTo, string id, string replay)
+        {
+            File.Copy(Path.Combine("Resources", oldFile), Path.Combine("serverdata", "beatmaps", copyTo), true);
+            Replay r = new Replay(Path.Combine("Resources", replay));
+            Beatmap old = await beatmaps.GetBeatmapFromId(id);
+            Beatmap newBeatmap = await beatmaps.GetBeatmapFromId(id, true);
+            Assert.AreNotEqual(old.BeatmapHash, newBeatmap.BeatmapHash);
+        }
+
         [TestCase("3243485950")]
         public async Task TestApiv2(string scoreId)
         {

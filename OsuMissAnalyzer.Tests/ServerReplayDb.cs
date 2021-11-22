@@ -28,7 +28,6 @@ namespace OsuMissAnalyzer.Tests
                 if (data != null)
                 {
                     replay = new Replay();
-                    replay.MapHash = beatmap.BeatmapHash;
                     replay.Mods = ConvertMods.StringToMods(mods);
                     replay.headerLoaded = true;
                     using (MemoryStream ms = new MemoryStream())
@@ -46,8 +45,8 @@ namespace OsuMissAnalyzer.Tests
                             replay.Load();
                         }
                     }
+                    replay.Save(file);
                 }
-                replay.Save(file);
             }
             else
             {
