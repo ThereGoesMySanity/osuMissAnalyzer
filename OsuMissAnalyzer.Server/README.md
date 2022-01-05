@@ -27,7 +27,7 @@ If you're not familiar with command-line argument notation, <> is something you 
 ## Info for Server Owners
 
 ### Invite link
-https://discord.com/oauth2/authorize?client_id=752035690237394944&scope=bot&permissions=100416
+https://discord.com/api/oauth2/authorize?client_id=752035690237394944&permissions=117824&scope=bot
 
 ### Server-specific Settings
 The owner of the server can view/change settings with:
