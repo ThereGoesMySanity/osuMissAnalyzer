@@ -7,12 +7,10 @@ namespace OsuMissAnalyzer.Server
     {
         public MissAnalyzer MissAnalyzer;
         public string[] MissUrls;
-        public DiscordMessage Response;
         public SavedMiss(MissAnalyzer analyzer)
         {
             MissAnalyzer = analyzer;
             MissUrls = new string[analyzer.MissCount];
-            Response = null;
         } 
     }
 }
