@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Net;
+using System.Net.Http;
 using System.Net.Sockets;
 using System.Text;
 using System.Threading.Tasks;
@@ -60,7 +60,9 @@ namespace OsuMissAnalyzer.Server
         private UnixEndPoint endpoint;
         public event Action UpdateLogs;
 
-        public Logger(string logFile, string webHook)
+        public HttpClient webClient;
+
+        public Logger(HttpClient webClient, string logFile, string webHook)
         {
             file = new StreamWriter(logFile, true);
             counts = new int[Enum.GetValues(typeof(Logging)).Length];
@@ -81,6 +83,8 @@ namespace OsuMissAnalyzer.Server
                 socket.Close();
                 socket = null;
             }
+
+            this.webClient = webClient;
         }
 
         public void Close()
@@ -205,42 +209,40 @@ namespace OsuMissAnalyzer.Server
 
         public async Task LogToDiscord(string message)
         {
-            using (WebClient w = new WebClient())
+            int maxLength = 1000;
+            if (message.Length > maxLength)
             {
-                int maxLength = 1000;
-                w.Headers[HttpRequestHeader.ContentType] = "application/x-www-form-urlencoded";
-                if (message.Length > maxLength)
+                List<string> parts = new List<string>();
+                var breaks = message.Split(new[] { '\n' }, StringSplitOptions.RemoveEmptyEntries);
+                int i = 0;
+                while (i < breaks.Length)
                 {
-                    List<string> parts = new List<string>();
-                    var breaks = message.Split(new[] { '\n' }, StringSplitOptions.RemoveEmptyEntries);
-                    int i = 0;
-                    while (i < breaks.Length)
+                    StringBuilder sb = new StringBuilder();
+                    if (breaks[i].Length > maxLength)
                     {
-                        StringBuilder sb = new StringBuilder();
-                        if (breaks[i].Length > maxLength)
-                        {
-                            breaks[i] = breaks[i].Substring(0, maxLength - 3) + "...";
-                        }
-                        while (i < breaks.Length && sb.Length + breaks[i].Length <= maxLength)
-                        {
-                            if (sb.Length != 0) sb.Append('\n');
-                            sb.Append(breaks[i]);
-                            i++;
-                        }
-                        if (sb.Length != 0)
-                        {
-                            await w.UploadStringTaskAsync(webHook, $"content={sb.ToString()}");
-                        }
-                        else
-                        {
-                            i++;
-                        }
+                        breaks[i] = breaks[i].Substring(0, maxLength - 3) + "...";
+                    }
+                    while (i < breaks.Length && sb.Length + breaks[i].Length <= maxLength)
+                    {
+                        if (sb.Length != 0) sb.Append('\n');
+                        sb.Append(breaks[i]);
+                        i++;
+                    }
+                    if (sb.Length != 0)
+                    {
+                        var content = new FormUrlEncodedContent(new[] { new KeyValuePair<string, string>("content", sb.ToString()) });
+                        await webClient.PostAsync(webHook, content);
+                    }
+                    else
+                    {
+                        i++;
                     }
                 }
-                else
-                {
-                    string res = await w.UploadStringTaskAsync(webHook, $"content={message}");
-                }
+            }
+            else
+            {
+                var content = new FormUrlEncodedContent(new[] { new KeyValuePair<string, string>("content", message) });
+                await webClient.PostAsync(webHook, content);
             }
         }
         private static Logging? TryParse(String s)

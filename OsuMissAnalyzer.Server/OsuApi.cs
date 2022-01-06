@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Net;
-using System.Text;
+using System.Net.Http;
 using System.Threading.Tasks;
 using Newtonsoft.Json.Linq;
 
@@ -12,6 +12,7 @@ namespace OsuMissAnalyzer.Server
     public class OsuApi
     {
         private string apiKeyv1;
+        private readonly HttpClient webClient;
         private string clientId;
         private string clientSecret;
         private Stopwatch tokenExpiry;
@@ -19,8 +20,9 @@ namespace OsuMissAnalyzer.Server
         private int tokenTime;
         private string token;
         private TimeSpan TokenTimeRemaining => TimeSpan.FromSeconds(tokenTime).Subtract(tokenExpiry.Elapsed);
-        public OsuApi(string clientId, string clientSecret, string apiKeyv1)
+        public OsuApi(HttpClient webClient, string clientId, string clientSecret, string apiKeyv1)
         {
+            this.webClient = webClient;
             this.clientId = clientId;
             this.apiKeyv1 = apiKeyv1;
             this.clientSecret = clientSecret;
@@ -29,18 +31,16 @@ namespace OsuMissAnalyzer.Server
         }
         public async Task RefreshToken()
         {
-            WebRequest w = WebRequest.Create("https://osu.ppy.sh/oauth/token");
-            string postData = $"client_id={clientId}&client_secret={clientSecret}&grant_type=client_credentials&scope=public";
-            byte[] bytes = Encoding.UTF8.GetBytes(postData);
-            w.Method = "POST";
-            w.ContentType = "application/x-www-form-urlencoded";
-            w.ContentLength = bytes.Length;
-            Stream data = w.GetRequestStream();
-            data.Write(bytes, 0, bytes.Length);
-            data.Close();
+            HttpContent postContent = new FormUrlEncodedContent(new[]
+            {
+                new KeyValuePair<string, string>("client_id", clientId),
+                new KeyValuePair<string, string>("client_secret", clientSecret),
+                new KeyValuePair<string, string>("grant_type", "client_credentials"),
+                new KeyValuePair<string, string>("scope", "public"),
+            });
             tokenExpiry.Restart();
-            WebResponse res = await w.GetResponseAsync();
-            JToken j = JToken.Parse(new StreamReader(res.GetResponseStream()).ReadToEnd());
+            HttpResponseMessage res = await webClient.PostAsync("https://osu.ppy.sh/oauth/token", postContent);
+            JToken j = JToken.Parse(await res.Content.ReadAsStringAsync());
             tokenTime = (int)j["expires_in"];
             token = (string)j["access_token"];
             if (Logger.Instance != null) Logger.Instance.UpdateLogs += () => Logger.LogAbsolute(Logging.TokenExpiry, (int)Math.Max(TokenTimeRemaining.TotalMinutes, 0));
@@ -52,9 +52,8 @@ namespace OsuMissAnalyzer.Server
         }
         public async Task<JToken> ApiRequestv1(string endpoint, string query)
         {
-            WebRequest w = WebRequest.Create($"https://osu.ppy.sh/api/{endpoint}?k={apiKeyv1}&{query}");
-            WebResponse res = await w.GetResponseAsync();
-            return JToken.Parse(new StreamReader(res.GetResponseStream()).ReadToEnd());
+            string res = await webClient.GetStringAsync($"https://osu.ppy.sh/api/{endpoint}?k={apiKeyv1}&{query}");
+            return JToken.Parse(res);
         }
         public async Task<string> GetUserIdv1(string username)
         {
@@ -83,7 +82,7 @@ namespace OsuMissAnalyzer.Server
             {
                 try
                 {
-                    await new WebClient().DownloadFileTaskAsync($"https://osu.ppy.sh/osu/{beatmapId}", file);
+                    await (await webClient.GetStreamAsync($"https://osu.ppy.sh/osu/{beatmapId}")).CopyToAsync(File.Create(file));
                 }
                 catch (WebException e)
                 {
@@ -131,10 +130,10 @@ namespace OsuMissAnalyzer.Server
         public async Task<JToken> GetApiv2(string endpoint)
         {
             await CheckToken();
-            WebRequest w = WebRequest.Create($"https://osu.ppy.sh/api/v2/{endpoint}");
-            w.Headers.Add("Authorization", $"Bearer {token}");
-            WebResponse res = await w.GetResponseAsync();
-            return JToken.Parse(new StreamReader(res.GetResponseStream()).ReadToEnd());
+            var request = new HttpRequestMessage(HttpMethod.Get, $"https://osu.ppy.sh/api/v2/{endpoint}");
+            request.Headers.Add("Authorization", $"Bearer {token}");
+            var res = await webClient.SendAsync(request);
+            return JToken.Parse(await res.Content.ReadAsStringAsync());
         }
         public async Task<byte[]> DownloadReplayFromId(string onlineId)
         {

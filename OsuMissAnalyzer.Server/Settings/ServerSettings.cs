@@ -70,7 +70,7 @@ Bot link: https://discordapp.com/oauth2/authorize?client_id={DiscordId}&scope=bo
             }
             if (Apiv2Req != null)
             {
-                OsuApi api2 = new OsuApi(OsuId, OsuSecret, OsuApiKey);
+                OsuApi api2 = new OsuApi(ServerContext.webClient, OsuId, OsuSecret, OsuApiKey);
                 Console.WriteLine(await api2.GetApiv2(Apiv2Req));
                 return false;
             }

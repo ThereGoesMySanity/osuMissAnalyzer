@@ -4,7 +4,6 @@ using System.Diagnostics;
 using System.Drawing;
 using System.IO;
 using System.Linq;
-using System.Net;
 using System.Reflection;
 using System.Runtime.Caching.Generic;
 using System.Text.RegularExpressions;
@@ -12,11 +11,10 @@ using System.Threading.Tasks;
 using DSharpPlus;
 using DSharpPlus.Entities;
 using DSharpPlus.EventArgs;
-using Mono.Options;
-using Newtonsoft.Json;
 using OsuMissAnalyzer.Core;
 using OsuMissAnalyzer.Server.Database;
 using OsuMissAnalyzer.Server.Settings;
+using System.Net.Http;
 
 namespace OsuMissAnalyzer.Server
 {
@@ -59,15 +57,16 @@ Full readme at https://github.com/ThereGoesMySanity/osuMissAnalyzer/tree/missAna
 
         private ServerSettings Settings;
 
+        public static HttpClient webClient = new HttpClient();
 
         public async Task<bool> Init(string[] args)
         {
             Settings = ServerSettings.Load();
             if (!await Settings.Init(args)) return false;
-            Logger.Instance = new Logger(Path.Combine(Settings.ServerDir, "log.csv"), Settings.WebHook);
+            Logger.Instance = new Logger(webClient, Path.Combine(Settings.ServerDir, "log.csv"), Settings.WebHook);
             if (Settings.Test) await Logger.WriteLine("Started in test mode");
             await Logger.WriteLine(Settings.GitCommit);
-            Api = new OsuApi(Settings.OsuId, Settings.OsuSecret, Settings.OsuApiKey);
+            Api = new OsuApi(webClient, Settings.OsuId, Settings.OsuSecret, Settings.OsuApiKey);
             var apiToken = Api.RefreshToken();
 
             Directory.CreateDirectory(Path.Combine(Settings.ServerDir, "beatmaps"));
@@ -159,10 +158,7 @@ Full readme at https://github.com/ThereGoesMySanity/osuMissAnalyzer/tree/missAna
                     await Logger.WriteLine("processing attachment");
                     Logger.Log(Logging.AttachmentCalls);
                     string dest = Path.Combine(Settings.ServerDir, "replays", attachment.FileName);
-                    using (WebClient w = new WebClient())
-                    {
-                        w.DownloadFile(attachment.Url, dest);
-                    }
+                    await (await webClient.GetStreamAsync(attachment.Url)).CopyToAsync(File.OpenWrite(dest));
                     replayLoader.ReplayFile = dest;
                     replayLoader.Source = Source.ATTACHMENT;
                 }
