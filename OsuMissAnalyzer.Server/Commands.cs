@@ -35,7 +35,7 @@ namespace OsuMissAnalyzer.Server
             [SlashCommand("user", "Analyze a specific user's score")]
             public async Task MissUser(InteractionContext ctx,
                     [Option("Username", "osu! username")] string username,
-                    [Option("Play type", "Select from user's top or recent plays")] UserOptions type,
+                    [Option("PlayType", "Select from user's top or recent plays")] UserOptions type,
                     [Option("Index", "Index of play to analyze (default: 1)")] int index = 1)
             {
                 await Logger.WriteLine("processing user call");
@@ -107,8 +107,8 @@ namespace OsuMissAnalyzer.Server
 
             [SlashCommand("set", "Sets value of setting")]
             public async Task SettingsSet(InteractionContext ctx,
-                    [Option("Setting name", "Name of the setting to change")] string setting,
-                    [Option("New value", "The new value of the setting")] string value)
+                    [Option("Setting", "Name of the setting to change")] string setting,
+                    [Option("Value", "The new value of the setting")] string value)
             {
                 if (CheckPermissions(ctx.Member))
                 {
