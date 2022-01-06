@@ -40,7 +40,8 @@ Usage:
 
 Automatically responds to >rs from owo bot if the replay is saved online
 Automatically responds to uploaded replay files
-DM ThereGoesMySanity#2622 if you need help/want this bot on your server
+Click ""Add to Server"" on the bot's profile to get this bot in your server!
+DM ThereGoesMySanity#2622 if you need help
 ```
 Full readme at https://github.com/ThereGoesMySanity/osuMissAnalyzer/tree/missAnalyzer/OsuMissAnalyzer.Server";
         private static string[] pfpPrefixes = {"https://a.ppy.sh/", "http://s.ppy.sh/a/"};
