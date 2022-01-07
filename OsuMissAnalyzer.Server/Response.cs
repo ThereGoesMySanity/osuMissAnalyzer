@@ -31,7 +31,7 @@ namespace OsuMissAnalyzer.Server
                             GetMissRows(Math.Min(Math.Min(GuildSettings.MaxButtons, number), 25));
 
         private IEnumerable<DiscordComponent> GetMissRows(int number) =>
-                            Enumerable.Range(1, number / 5).Select(i => GetMissRow(i, number));
+                            Enumerable.Range(0, number / 5 + 1).Select(i => GetMissRow(i, number));
         protected DiscordComponent GetMissRow(int rowIndex, int totalCount) => 
                     new DiscordActionRowComponent(Enumerable.Range(5 * rowIndex + 1, totalCount - 5 * rowIndex)
                             .Select(i => new DiscordButtonComponent(ButtonStyle.Primary, i.ToString(), i.ToString())));
