@@ -89,7 +89,7 @@ namespace OsuMissAnalyzer.Server
             {
                 foreach(var row in GetMissComponents(misses)) builder.AddComponents(row);
             }
-            await source.RespondAsync(builder);
+            response = await source.RespondAsync(builder);
             return response?.Id;
         }
         public override async Task UpdateResponse(string content, int index)
