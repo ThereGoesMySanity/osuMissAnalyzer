@@ -24,16 +24,27 @@ namespace OsuMissAnalyzer.Server
 
         public int MissCount => Miss.MissAnalyzer.MissCount;
 
+
+        public abstract Task CreateErrorResponse(string errorMessage);
+        public abstract Task<ulong?> CreateResponse();
+        public abstract Task UpdateResponse(object e, int index);
+
+        protected DiscordMessageBuilder BuildMessage(string content)
+        {
+            var builder = new DiscordMessageBuilder().WithContent(content);
+            if (MissCount > 1)
+            {
+                foreach(var row in GetMissComponents()) builder.AddComponents(row);
+            }
+            return builder;
+        }
+
         public async Task<string> GetContent()
         {
             if (MissCount == 1) Miss.CurrentMiss = 0;
             if (Miss.CurrentMiss.HasValue) return await Miss.GetOrCreateMissMessage(Context);
             else return $"Found **{MissCount}** misses";
         }
-
-        public abstract Task CreateErrorResponse(string errorMessage);
-        public abstract Task<ulong?> CreateResponse();
-        public abstract Task UpdateResponse(object e, int index);
 
         protected IEnumerable<IEnumerable<DiscordComponent>> GetMissComponents() => 
                             GetMissRows(Math.Min(Math.Min(GuildSettings.MaxButtons, MissCount), 25));
@@ -73,7 +84,9 @@ namespace OsuMissAnalyzer.Server
         public override async Task UpdateResponse(object e, int index)
         {
             Miss.CurrentMiss = index;
-            await CreateResponse();
+            ComponentInteractionCreateEventArgs args = (ComponentInteractionCreateEventArgs)e;
+            await args.Interaction.CreateResponseAsync(InteractionResponseType.UpdateMessage,
+                    new DiscordInteractionResponseBuilder(BuildMessage(await GetContent())));
         }
     }
     public class MessageResponse : Response
@@ -89,15 +102,6 @@ namespace OsuMissAnalyzer.Server
         public override async Task CreateErrorResponse(string errorMessage)
         {
             await source.RespondAsync(errorMessage);
-        }
-        private DiscordMessageBuilder BuildMessage(string content)
-        {
-            var builder = new DiscordMessageBuilder().WithContent(content);
-            if (MissCount > 1)
-            {
-                foreach(var row in GetMissComponents()) builder.AddComponents(row);
-            }
-            return builder;
         }
 
         public override async Task<ulong?> CreateResponse()
