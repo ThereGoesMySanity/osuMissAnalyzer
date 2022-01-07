@@ -28,7 +28,7 @@ namespace OsuMissAnalyzer.Server
         public abstract Task UpdateResponse(string content, int index);
 
         protected IEnumerable<DiscordComponent> GetMissComponents(int number) => 
-                            GetMissRows(Math.Max(Math.Max(GuildSettings.MaxButtons, number), 25));
+                            GetMissRows(Math.Min(Math.Min(GuildSettings.MaxButtons, number), 25));
 
         private IEnumerable<DiscordComponent> GetMissRows(int number) =>
                             Enumerable.Range(1, number / 5).Select(i => GetMissRow(i, number));
@@ -56,7 +56,7 @@ namespace OsuMissAnalyzer.Server
             var builder = new DiscordWebhookBuilder().WithContent(content);
             if (misses > 1)
             {
-                builder.AddComponents(GetMissComponents(Math.Max(GuildSettings.MaxButtons, misses)));
+                builder.AddComponents(GetMissComponents(misses));
             }
             await ctx.EditResponseAsync(builder);
             return ctx.InteractionId;
@@ -87,7 +87,7 @@ namespace OsuMissAnalyzer.Server
             var builder = new DiscordMessageBuilder().WithContent(content);
             if (misses > 1)
             {
-                builder.AddComponents(GetMissComponents(Math.Max(GuildSettings.MaxButtons, misses)));
+                builder.AddComponents(GetMissComponents(misses));
             }
             await source.RespondAsync(builder);
             return response?.Id;
