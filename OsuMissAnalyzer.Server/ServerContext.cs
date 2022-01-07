@@ -3,9 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Drawing;
 using System.IO;
-using System.Linq;
 using System.Net;
-using System.Reflection;
 using System.Runtime.Caching.Generic;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
@@ -215,11 +213,7 @@ Full readme at https://github.com/ThereGoesMySanity/osuMissAnalyzer/tree/missAna
                     }
                     else
                     {
-                        string content;
-                        if (missAnalyzer.MissCount == 1) content = await SendMissMessage(missAnalyzer, 0);
-                        else content = $"Found **{missAnalyzer.MissCount}** misses";
-
-                        var key = await res.CreateResponse(content, missAnalyzer.MissCount);
+                        var key = await res.CreateResponse();
                         if (key.HasValue)
                         {
                             CachedMisses[key.Value] = res;
@@ -255,7 +249,7 @@ Full readme at https://github.com/ThereGoesMySanity/osuMissAnalyzer/tree/missAna
                 var response = CachedMisses[e.Message.Id];
                 int index = int.Parse(e.Id) - 1;
                 Logger.Log(Logging.ReactionCalls);
-                Task.Run(() => UpdateResponse(response, index));
+                Task.Run(() => UpdateResponse(e, response, index));
                 await Task.CompletedTask;
             }
         }
@@ -272,22 +266,16 @@ Full readme at https://github.com/ThereGoesMySanity/osuMissAnalyzer/tree/missAna
                 if (index >= 0 && index < Math.Min(analyzer.MissCount, numberEmojis.Length - 1))
                 {
                     Logger.Log(Logging.ReactionCalls);
-                    Task.Run(() => UpdateResponse(response, index));
+                    Task.Run(() => UpdateResponse(e, response, index));
                     await Task.CompletedTask;
                 }
             }
         }
 
-        public async Task UpdateResponse(Response response, int index)
+        public async Task UpdateResponse(object e, Response response, int index)
         {
             Logger.Log(Logging.MessageEdited);
-            string content = await GetOrCreateMissMessage(response.Miss, index);
-            await response.UpdateResponse(content, index);
-        }
-
-        public async Task<string> GetOrCreateMissMessage(SavedMiss miss, int index)
-        {
-            return miss.MissUrls[index] ?? await SendMissMessage(miss.MissAnalyzer, index);
+            await response.UpdateResponse(e, index);
         }
 
         public async Task<string> SendMissMessage(MissAnalyzer analyzer, int index)

@@ -6,7 +6,6 @@ using DSharpPlus;
 using DSharpPlus.Entities;
 using DSharpPlus.EventArgs;
 using DSharpPlus.SlashCommands;
-using OsuMissAnalyzer.Core;
 using OsuMissAnalyzer.Server.Settings;
 
 namespace OsuMissAnalyzer.Server
@@ -23,16 +22,25 @@ namespace OsuMissAnalyzer.Server
         public ServerContext Context { get; }
         public GuildSettings GuildSettings { get; }
 
-        public abstract Task CreateErrorResponse(string errorMessage);
-        public abstract Task<ulong?> CreateResponse(string content, int misses);
-        public abstract Task UpdateResponse(string content, int index);
+        public int MissCount => Miss.MissAnalyzer.MissCount;
 
-        protected IEnumerable<IEnumerable<DiscordComponent>> GetMissComponents(int number) => 
-                            GetMissRows(Math.Min(Math.Min(GuildSettings.MaxButtons, number), 25));
+        public async Task<string> GetContent()
+        {
+            if (MissCount == 1) Miss.CurrentMiss = 0;
+            if (Miss.CurrentMiss.HasValue) return await Miss.GetOrCreateMissMessage(Context);
+            else return $"Found **{MissCount}** misses";
+        }
+
+        public abstract Task CreateErrorResponse(string errorMessage);
+        public abstract Task<ulong?> CreateResponse();
+        public abstract Task UpdateResponse(object e, int index);
+
+        protected IEnumerable<IEnumerable<DiscordComponent>> GetMissComponents() => 
+                            GetMissRows(Math.Min(Math.Min(GuildSettings.MaxButtons, MissCount), 25));
 
         private IEnumerable<IEnumerable<DiscordComponent>> GetMissRows(int number) =>
                             Enumerable.Range(0, number / 5 + 1).Select(i => GetMissRow(i, number));
-        protected IEnumerable<DiscordComponent> GetMissRow(int rowIndex, int totalCount) =>
+        private IEnumerable<DiscordComponent> GetMissRow(int rowIndex, int totalCount) =>
                     Enumerable.Range(5 * rowIndex + 1, totalCount - 5 * rowIndex)
                             .Select(i => new DiscordButtonComponent(ButtonStyle.Primary, i.ToString(), i.ToString()));
     }
@@ -51,20 +59,21 @@ namespace OsuMissAnalyzer.Server
             await ctx.EditResponseAsync(new DiscordWebhookBuilder().WithContent(errorMessage));
         }
 
-        public override async Task<ulong?> CreateResponse(string content, int misses)
+        public override async Task<ulong?> CreateResponse()
         {
-            var builder = new DiscordWebhookBuilder().WithContent(content);
-            if (misses > 1)
+            var builder = new DiscordWebhookBuilder().WithContent(await GetContent());
+            if (MissCount > 1)
             {
-                foreach(var row in GetMissComponents(misses)) builder.AddComponents(row);
+                foreach(var row in GetMissComponents()) builder.AddComponents(row);
             }
             await ctx.EditResponseAsync(builder);
             return ctx.InteractionId;
         }
 
-        public override async Task UpdateResponse(string content, int index)
+        public override async Task UpdateResponse(object e, int index)
         {
-            await ctx.EditResponseAsync(new DiscordWebhookBuilder().WithContent(content));
+            Miss.CurrentMiss = index;
+            await CreateResponse();
         }
     }
     public class MessageResponse : Response
@@ -81,39 +90,47 @@ namespace OsuMissAnalyzer.Server
         {
             await source.RespondAsync(errorMessage);
         }
-
-        public override async Task<ulong?> CreateResponse(string content, int misses)
+        private DiscordMessageBuilder BuildMessage(string content)
         {
             var builder = new DiscordMessageBuilder().WithContent(content);
-            if (misses > 1)
+            if (MissCount > 1)
             {
-                foreach(var row in GetMissComponents(misses)) builder.AddComponents(row);
+                foreach(var row in GetMissComponents()) builder.AddComponents(row);
             }
-            response = await source.RespondAsync(builder);
+            return builder;
+        }
+
+        public override async Task<ulong?> CreateResponse()
+        {
+            response = await source.RespondAsync(BuildMessage(await GetContent()));
             return response?.Id;
         }
-        public override async Task UpdateResponse(string content, int index)
+        public override async Task UpdateResponse(object e, int index)
         {
-            await response.ModifyAsync(content);
+            Miss.CurrentMiss = index;
+            ComponentInteractionCreateEventArgs args = (ComponentInteractionCreateEventArgs)e;
+            await args.Interaction.CreateResponseAsync(InteractionResponseType.UpdateMessage,
+                    new DiscordInteractionResponseBuilder(BuildMessage(await GetContent())));
         }
     }
     public class CompactResponse : MessageResponse
     {
         public CompactResponse(ServerContext context, GuildSettings settings, MessageCreateEventArgs e) : base(context, settings, e) {}
-        public override async Task<ulong?> CreateResponse(string content, int misses)
+        public override async Task<ulong?> CreateResponse()
         {
-            await SendReactions(source, misses);
+            await SendReactions(source, MissCount);
             return source.Id;
         }
-        public override async Task UpdateResponse(string content, int index)
+        public override async Task UpdateResponse(object e, int index)
         {
+            Miss.CurrentMiss = index;
             if (response == null)
             {
-                await base.CreateResponse(await Context.GetOrCreateMissMessage(Miss, index), Miss.MissAnalyzer.MissCount);
+                await base.CreateResponse();
             }
             else
             {
-                await base.UpdateResponse(content, index);
+                await base.UpdateResponse(e, index);
             }
         }
         public override async Task CreateErrorResponse(string errorMessage)
