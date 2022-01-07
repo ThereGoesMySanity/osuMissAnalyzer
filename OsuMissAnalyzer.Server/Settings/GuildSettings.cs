@@ -12,15 +12,18 @@ namespace OsuMissAnalyzer.Server.Settings
         public string Prefix { get; set; } = ">miss";
         public bool Tracking { get; set; } = false;
         public bool AutoResponses { get; set; } = true;
+        public int MaxButtons { get; set; } = 10;
         public GuildSettings(ulong guildId)
         {
             Id = guildId;
         }
+
         public string GetCommand(string command)
         {
             if (char.IsLetter(Prefix.ToCharArray()[Prefix.Length-1])) return $"{Prefix} {command}";
             else return $"{Prefix}{command}";
         }
+
         public Dictionary<string, string> GetSettings()
         {
             return this.GetType().GetProperties().Where(p => p.SetMethod.IsPublic)
