@@ -261,7 +261,7 @@ Full readme and source at https://github.com/ThereGoesMySanity/osuMissAnalyzer/t
 
             Response response = null;
             if (CachedMisses.Contains(e.Message.Id)) response = CachedMisses[e.Message.Id];
-            if (CachedMisses.Contains(e.Message.Interaction.Id)) response = CachedMisses[e.Message.Interaction.Id];
+            if (e.Message.Interaction != null && CachedMisses.Contains(e.Message.Interaction.Id)) response = CachedMisses[e.Message.Interaction.Id];
 
             if (response != null && !e.User.IsCurrent && !e.User.IsBot)
             {
