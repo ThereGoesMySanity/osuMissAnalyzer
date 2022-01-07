@@ -47,6 +47,7 @@ namespace OsuMissAnalyzer.Server
                     UserScores = type.ToString(),
                     PlayIndex = (int)index - 1,
                 };
+                await HandleMissCommand(ctx, replayLoader);
             }
 
             private static Regex beatmapRegex = new Regex("^(?:https?://(?:osu|old).ppy.sh/(?:beatmapsets/\\d+#osu|b)/)?(\\d+)");
@@ -73,6 +74,7 @@ namespace OsuMissAnalyzer.Server
                 {
                     replayLoader.ErrorMessage = "Invalid beatmap link";
                 }
+                await HandleMissCommand(ctx, replayLoader);
             }
 
             public async Task HandleMissCommand(InteractionContext ctx, ServerReplayLoader replayLoader)
