@@ -30,7 +30,7 @@ namespace OsuMissAnalyzer.Server
         public DiscordClient Discord { get; private set; }
 
         const int size = 480;
-        const string HelpMessage = @"osu! Miss Analyzer (https://github.com/ThereGoesMySanity/osuMissAnalyzer) bot
+        public const string HelpMessage = @"osu! Miss Analyzer bot
 ```
 Usage:
   ${user-recent|user-top} <username> [<index>]
@@ -43,7 +43,7 @@ Automatically responds to uploaded replay files
 Click ""Add to Server"" on the bot's profile to get this bot in your server!
 DM ThereGoesMySanity#2622 if you need help
 ```
-Full readme at https://github.com/ThereGoesMySanity/osuMissAnalyzer/tree/missAnalyzer/OsuMissAnalyzer.Server";
+Full readme and source at https://github.com/ThereGoesMySanity/osuMissAnalyzer/tree/missAnalyzer/OsuMissAnalyzer.Server";
         private static string[] pfpPrefixes = {"https://a.ppy.sh/", "http://s.ppy.sh/a/"};
         private static Regex messageRegex = new Regex("^(user-recent|user-top|beatmap) (.+?)(?: (\\d+))?$");
         private static Regex settingsRegex = new Regex("^settings (\\d+ )?(get|set ([A-Za-z]+) (.+))$");
