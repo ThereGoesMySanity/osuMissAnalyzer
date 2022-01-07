@@ -15,6 +15,7 @@ using DSharpPlus.SlashCommands;
 using OsuMissAnalyzer.Core;
 using OsuMissAnalyzer.Server.Database;
 using OsuMissAnalyzer.Server.Settings;
+using System.Linq;
 
 namespace OsuMissAnalyzer.Server
 {
@@ -150,9 +151,17 @@ Full readme at https://github.com/ThereGoesMySanity/osuMissAnalyzer/tree/missAna
             {
                 status.Restart();
                 string stat = Settings.Test? "Down for maintenance - be back soon!"
-                                           : ">miss help for help!";
+                                           : "/help for help!";
                 await Discord.UpdateStatusAsync(new DiscordActivity(stat));
             }
+        }
+
+        public bool IsHelpRequest(MessageCreateEventArgs e, GuildSettings guildSettings)
+        {
+            return !e.Author.IsCurrent && (e.Message.Content.StartsWith(guildSettings.GetCommand("help"))
+                    || ((e.Message.Channel.IsPrivate || (e.MentionedUsers?.Any(u => u?.IsCurrent ?? false) ?? false)) 
+                            && e.Message.Content.IndexOf("help", StringComparison.InvariantCultureIgnoreCase) >= 0)
+                    || e.Message.Content == guildSettings.Prefix);
         }
 
         public async Task HandleMessage(DiscordClient discord, MessageCreateEventArgs e)
@@ -160,6 +169,11 @@ Full readme at https://github.com/ThereGoesMySanity/osuMissAnalyzer/tree/missAna
             Logger.Log(Logging.EventsHandled);
             if (Settings.Test && e.Guild?.Id != Settings.TestGuild) return;
             var guildSettings = Settings.GetGuild(e.Channel);
+
+            if (IsHelpRequest(e, guildSettings)) 
+            {
+                await e.Message.RespondAsync("MissAnalyzer now uses slash commands! Type /help for help.");
+            }
 
             ServerReplayLoader replayLoader = new ServerReplayLoader();
             //attachment
