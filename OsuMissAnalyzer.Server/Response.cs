@@ -27,14 +27,14 @@ namespace OsuMissAnalyzer.Server
         public abstract Task<ulong?> CreateResponse(string content, int misses);
         public abstract Task UpdateResponse(string content, int index);
 
-        protected IEnumerable<DiscordComponent> GetMissComponents(int number) => 
+        protected IEnumerable<IEnumerable<DiscordComponent>> GetMissComponents(int number) => 
                             GetMissRows(Math.Min(Math.Min(GuildSettings.MaxButtons, number), 25));
 
-        private IEnumerable<DiscordComponent> GetMissRows(int number) =>
+        private IEnumerable<IEnumerable<DiscordComponent>> GetMissRows(int number) =>
                             Enumerable.Range(0, number / 5 + 1).Select(i => GetMissRow(i, number));
-        protected DiscordComponent GetMissRow(int rowIndex, int totalCount) => 
-                    new DiscordActionRowComponent(Enumerable.Range(5 * rowIndex + 1, totalCount - 5 * rowIndex)
-                            .Select(i => new DiscordButtonComponent(ButtonStyle.Primary, i.ToString(), i.ToString())));
+        protected IEnumerable<DiscordComponent> GetMissRow(int rowIndex, int totalCount) =>
+                    Enumerable.Range(5 * rowIndex + 1, totalCount - 5 * rowIndex)
+                            .Select(i => new DiscordButtonComponent(ButtonStyle.Primary, i.ToString(), i.ToString()));
     }
     public class InteractionResponse : Response
     {
@@ -56,7 +56,7 @@ namespace OsuMissAnalyzer.Server
             var builder = new DiscordWebhookBuilder().WithContent(content);
             if (misses > 1)
             {
-                builder.AddComponents(GetMissComponents(misses));
+                foreach(var row in GetMissComponents(misses)) builder.AddComponents(row);
             }
             await ctx.EditResponseAsync(builder);
             return ctx.InteractionId;
@@ -87,7 +87,7 @@ namespace OsuMissAnalyzer.Server
             var builder = new DiscordMessageBuilder().WithContent(content);
             if (misses > 1)
             {
-                builder.AddComponents(GetMissComponents(misses));
+                foreach(var row in GetMissComponents(misses)) builder.AddComponents(row);
             }
             await source.RespondAsync(builder);
             return response?.Id;
