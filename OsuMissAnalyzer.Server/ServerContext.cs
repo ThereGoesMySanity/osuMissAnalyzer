@@ -244,9 +244,13 @@ Full readme at https://github.com/ThereGoesMySanity/osuMissAnalyzer/tree/missAna
         {
             Logger.Log(Logging.EventsHandled);
             if (Settings.Test && e.Message.Channel.GuildId != Settings.TestGuild) return;
-            if (CachedMisses.Contains(e.Message.Id) && !e.User.IsCurrent && !e.User.IsBot)
+
+            Response response = null;
+            if (CachedMisses.Contains(e.Message.Id)) response = CachedMisses[e.Message.Id];
+            if (CachedMisses.Contains(e.Message.Interaction.Id)) response = CachedMisses[e.Message.Interaction.Id];
+
+            if (response != null && !e.User.IsCurrent && !e.User.IsBot)
             {
-                var response = CachedMisses[e.Message.Id];
                 int index = int.Parse(e.Id) - 1;
                 Logger.Log(Logging.ReactionCalls);
                 Task.Run(() => UpdateResponse(e, response, index));
