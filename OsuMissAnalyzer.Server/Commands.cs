@@ -85,16 +85,25 @@ namespace OsuMissAnalyzer.Server
             }
         }
 
+        [RequireAdmin]
         [SlashCommandGroup("settings", "Guild-specific settings for MissAnalyzer")]
         public class SettingsCommands : ApplicationCommandModule
         {
+            public class RequireAdminAttribute : SlashCheckBaseAttribute
+            {
+                public override Task<bool> ExecuteChecksAsync(InteractionContext ctx)
+                {
+                    return Task.FromResult(CheckPermissions(ctx.Member));
+                }
+            }
             public ServerContext context { private get; set; }
-            public bool CheckPermissions(DiscordMember user)
+            public static bool CheckPermissions(DiscordMember user)
             {
                 return user.IsOwner || user.Permissions.HasFlag(Permissions.Administrator);
             }
 
-            [SlashCommand("get", "Gets current setting values")]
+            [RequireAdmin]
+            [SlashCommand("get", "Gets current setting values (Admin-only)")]
             public async Task SettingsGet(InteractionContext ctx)
             {
                 if (CheckPermissions(ctx.Member))
@@ -107,7 +116,8 @@ namespace OsuMissAnalyzer.Server
                 }
             }
 
-            [SlashCommand("set", "Sets value of setting")]
+            [RequireAdmin]
+            [SlashCommand("set", "Sets value of setting (Admin-only)")]
             public async Task SettingsSet(InteractionContext ctx,
                     [Option("Setting", "Name of the setting to change")] string setting,
                     [Option("Value", "The new value of the setting")] string value)
