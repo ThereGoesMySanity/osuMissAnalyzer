@@ -13,27 +13,35 @@ namespace OsuMissAnalyzer.Server
 {
     public abstract class Response
     {
-        public Response(ServerContext context)
+        public Response(ServerContext context, GuildSettings guildSettings)
         {
             Context = context;
+            GuildSettings = guildSettings;
         }
 
         public SavedMiss Miss { get; set; }
         public ServerContext Context { get; }
+        public GuildSettings GuildSettings { get; }
 
         public abstract Task CreateErrorResponse(string errorMessage);
-        public abstract Task<ulong?> CreateResponse(GuildSettings settings, string content, int misses);
-        public abstract Task UpdateResponse(GuildSettings settings, string content, int index);
+        public abstract Task<ulong?> CreateResponse(string content, int misses);
+        public abstract Task UpdateResponse(string content, int index);
 
-        protected IEnumerable<DiscordComponent> GetMissComponents(int number) => Enumerable.Range(1, Math.Max(number, 25))
-                            .Select(i => new DiscordButtonComponent(ButtonStyle.Primary, i.ToString(), i.ToString()));
+        protected IEnumerable<DiscordComponent> GetMissComponents(int number) => 
+                            GetMissRows(Math.Max(Math.Max(GuildSettings.MaxButtons, number), 25));
+
+        private IEnumerable<DiscordComponent> GetMissRows(int number) =>
+                            Enumerable.Range(1, number / 5).Select(i => GetMissRow(i, number));
+        protected DiscordComponent GetMissRow(int rowIndex, int totalCount) => 
+                    new DiscordActionRowComponent(Enumerable.Range(5 * rowIndex + 1, totalCount - 5 * rowIndex)
+                            .Select(i => new DiscordButtonComponent(ButtonStyle.Primary, i.ToString(), i.ToString())));
     }
     public class InteractionResponse : Response
     {
         private readonly InteractionContext ctx;
 
         //ctx must have deferred response already sent
-        public InteractionResponse(ServerContext context, InteractionContext ctx) : base(context)
+        public InteractionResponse(ServerContext context, GuildSettings settings, InteractionContext ctx) : base(context, settings)
         {
             this.ctx = ctx;
         }
@@ -43,18 +51,18 @@ namespace OsuMissAnalyzer.Server
             await ctx.EditResponseAsync(new DiscordWebhookBuilder().WithContent(errorMessage));
         }
 
-        public override async Task<ulong?> CreateResponse(GuildSettings settings, string content, int misses)
+        public override async Task<ulong?> CreateResponse(string content, int misses)
         {
             var builder = new DiscordWebhookBuilder().WithContent(content);
             if (misses > 1)
             {
-                builder.AddComponents(GetMissComponents(Math.Max(settings.MaxButtons, misses)));
+                builder.AddComponents(GetMissComponents(Math.Max(GuildSettings.MaxButtons, misses)));
             }
             await ctx.EditResponseAsync(builder);
             return ctx.InteractionId;
         }
 
-        public override async Task UpdateResponse(GuildSettings settings, string content, int index)
+        public override async Task UpdateResponse(string content, int index)
         {
             await ctx.EditResponseAsync(new DiscordWebhookBuilder().WithContent(content));
         }
@@ -63,7 +71,7 @@ namespace OsuMissAnalyzer.Server
     {
         protected DiscordMessage source;
         protected DiscordMessage response;
-        public MessageResponse(ServerContext context, MessageCreateEventArgs e) : base(context)
+        public MessageResponse(ServerContext context, GuildSettings settings, MessageCreateEventArgs e) : base(context, settings)
         {
             source = e.Message;
             response = null;
@@ -74,38 +82,38 @@ namespace OsuMissAnalyzer.Server
             await source.RespondAsync(errorMessage);
         }
 
-        public override async Task<ulong?> CreateResponse(GuildSettings guildSettings, string content, int misses)
+        public override async Task<ulong?> CreateResponse(string content, int misses)
         {
             var builder = new DiscordMessageBuilder().WithContent(content);
             if (misses > 1)
             {
-                builder.AddComponents(GetMissComponents(Math.Max(guildSettings.MaxButtons, misses)));
+                builder.AddComponents(GetMissComponents(Math.Max(GuildSettings.MaxButtons, misses)));
             }
             await source.RespondAsync(builder);
             return response?.Id;
         }
-        public override async Task UpdateResponse(GuildSettings settings, string content, int index)
+        public override async Task UpdateResponse(string content, int index)
         {
             await response.ModifyAsync(content);
         }
     }
     public class CompactResponse : MessageResponse
     {
-        public CompactResponse(ServerContext context, MessageCreateEventArgs e) : base(context, e) {}
-        public override async Task<ulong?> CreateResponse(GuildSettings guildSettings, string content, int misses)
+        public CompactResponse(ServerContext context, GuildSettings settings, MessageCreateEventArgs e) : base(context, settings, e) {}
+        public override async Task<ulong?> CreateResponse(string content, int misses)
         {
             await SendReactions(source, misses);
             return source.Id;
         }
-        public override async Task UpdateResponse(GuildSettings guildSettings, string content, int index)
+        public override async Task UpdateResponse(string content, int index)
         {
             if (response == null)
             {
-                await base.CreateResponse(guildSettings, await Context.GetOrCreateMissMessage(Miss, index), Miss.MissAnalyzer.MissCount);
+                await base.CreateResponse(await Context.GetOrCreateMissMessage(Miss, index), Miss.MissAnalyzer.MissCount);
             }
             else
             {
-                await base.UpdateResponse(guildSettings, content, index);
+                await base.UpdateResponse(content, index);
             }
         }
         public override async Task CreateErrorResponse(string errorMessage)

@@ -195,12 +195,12 @@ Full readme at https://github.com/ThereGoesMySanity/osuMissAnalyzer/tree/missAna
             if (replayLoader.Source != null)
             {
                 Response r = (replayLoader.Source == Source.BOT && guildSettings.Compact)
-                                ? new CompactResponse(this, e) : new MessageResponse(this, e);
-                Task.Run(() => CreateResponse(r, guildSettings, replayLoader));
+                                ? new CompactResponse(this, guildSettings, e) : new MessageResponse(this, guildSettings, e);
+                Task.Run(() => CreateResponse(r, replayLoader));
             }
         }
 
-        public async Task CreateResponse(Response res, GuildSettings guildSettings, ServerReplayLoader replayLoader)
+        public async Task CreateResponse(Response res, ServerReplayLoader replayLoader)
         {
             try
             {
@@ -219,7 +219,7 @@ Full readme at https://github.com/ThereGoesMySanity/osuMissAnalyzer/tree/missAna
                         if (missAnalyzer.MissCount == 1) content = await SendMissMessage(missAnalyzer, 0);
                         else content = $"Found **{missAnalyzer.MissCount}** misses";
 
-                        var key = await res.CreateResponse(guildSettings, content, missAnalyzer.MissCount);
+                        var key = await res.CreateResponse(content, missAnalyzer.MissCount);
                         if (key.HasValue)
                         {
                             CachedMisses[key.Value] = res;
@@ -250,13 +250,12 @@ Full readme at https://github.com/ThereGoesMySanity/osuMissAnalyzer/tree/missAna
         {
             Logger.Log(Logging.EventsHandled);
             if (Settings.Test && e.Message.Channel.GuildId != Settings.TestGuild) return;
-            var guildSettings = Settings.GetGuild(e.Channel);
             if (CachedMisses.Contains(e.Message.Id) && !e.User.IsCurrent && !e.User.IsBot)
             {
                 var response = CachedMisses[e.Message.Id];
                 int index = int.Parse(e.Id) - 1;
                 Logger.Log(Logging.ReactionCalls);
-                Task.Run(() => UpdateResponse(response, guildSettings, index));
+                Task.Run(() => UpdateResponse(response, index));
                 await Task.CompletedTask;
             }
         }
@@ -265,7 +264,6 @@ Full readme at https://github.com/ThereGoesMySanity/osuMissAnalyzer/tree/missAna
         {
             Logger.Log(Logging.EventsHandled);
             if (Settings.Test && e.Message.Channel.GuildId != Settings.TestGuild) return;
-            var guildSettings = Settings.GetGuild(e.Channel);
             if (CachedMisses.Contains(e.Message.Id) && !e.User.IsCurrent && !e.User.IsBot)
             {
                 var response = CachedMisses[e.Message.Id];
@@ -274,17 +272,17 @@ Full readme at https://github.com/ThereGoesMySanity/osuMissAnalyzer/tree/missAna
                 if (index >= 0 && index < Math.Min(analyzer.MissCount, numberEmojis.Length - 1))
                 {
                     Logger.Log(Logging.ReactionCalls);
-                    Task.Run(() => UpdateResponse(response, guildSettings, index));
+                    Task.Run(() => UpdateResponse(response, index));
                     await Task.CompletedTask;
                 }
             }
         }
 
-        public async Task UpdateResponse(Response response, GuildSettings guildSettings, int index)
+        public async Task UpdateResponse(Response response, int index)
         {
             Logger.Log(Logging.MessageEdited);
             string content = await GetOrCreateMissMessage(response.Miss, index);
-            await response.UpdateResponse(guildSettings, content, index);
+            await response.UpdateResponse(content, index);
         }
 
         public async Task<string> GetOrCreateMissMessage(SavedMiss miss, int index)

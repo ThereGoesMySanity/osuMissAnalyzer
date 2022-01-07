@@ -79,7 +79,7 @@ namespace OsuMissAnalyzer.Server
             {
                 await ctx.CreateResponseAsync(InteractionResponseType.DeferredChannelMessageWithSource);
                 var guildSettings = context.Settings.GetGuild(ctx.Channel);
-                Task.Run(() => context.CreateResponse(new InteractionResponse(context, ctx), guildSettings, replayLoader));
+                Task.Run(() => context.CreateResponse(new InteractionResponse(context, guildSettings, ctx), replayLoader));
             }
         }
 
