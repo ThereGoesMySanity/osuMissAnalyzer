@@ -41,7 +41,7 @@ namespace OsuMissAnalyzer.Server
         private IEnumerable<IEnumerable<DiscordComponent>> GetMissRows(int number) =>
                             Enumerable.Range(0, number / 5 + 1).Select(i => GetMissRow(i, number));
         private IEnumerable<DiscordComponent> GetMissRow(int rowIndex, int totalCount) =>
-                    Enumerable.Range(5 * rowIndex + 1, totalCount - 5 * rowIndex)
+                    Enumerable.Range(5 * rowIndex + 1, Math.Min(5, totalCount - 5 * rowIndex))
                             .Select(i => new DiscordButtonComponent(ButtonStyle.Primary, i.ToString(), i.ToString()));
     }
     public class InteractionResponse : Response
