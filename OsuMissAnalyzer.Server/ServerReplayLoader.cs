@@ -52,6 +52,8 @@ namespace OsuMissAnalyzer.Server
 
             if(_replay == null && PlayIndex.HasValue)
             {
+                if (PlayIndex.Value < 0) return "Index value must be greater than 0";
+
                 if (UserId != null && UserScores != null)
                     score = await api.GetUserScoresv2(UserId, UserScores, PlayIndex.Value, FailedScores);
                 else if (BeatmapId != null)
