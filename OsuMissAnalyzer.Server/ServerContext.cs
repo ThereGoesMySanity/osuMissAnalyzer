@@ -141,7 +141,7 @@ Full readme and source at https://github.com/ThereGoesMySanity/osuMissAnalyzer/t
         public async Task HandleMessage(DiscordClient discord, MessageCreateEventArgs e)
         {
             Logger.Log(Logging.EventsHandled);
-            if (Settings.Test && e.Guild?.Id != Settings.TestChannel) return;
+            if (Settings.Test && e.Guild?.Id != Settings.TestGuild) return;
             var guildSettings = Settings.GetGuild(e.Channel);
             if (IsHelpRequest(e, guildSettings))
             {
@@ -323,7 +323,7 @@ Full readme and source at https://github.com/ThereGoesMySanity/osuMissAnalyzer/t
         public async Task HandleReaction(DiscordClient discord, MessageReactionAddEventArgs e)
         {
             Logger.Log(Logging.EventsHandled);
-            if (Settings.Test && e.Message.Channel.GuildId != Settings.TestChannel) return;
+            if (Settings.Test && e.Message.Channel.GuildId != Settings.TestGuild) return;
             var guildSettings = Settings.GetGuild(e.Channel);
             if (CachedMisses.Contains(e.Message) && !e.User.IsCurrent && !e.User.IsBot)
             {
