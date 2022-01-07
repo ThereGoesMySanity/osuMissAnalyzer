@@ -36,7 +36,7 @@ namespace OsuMissAnalyzer.Server
             public async Task MissUser(InteractionContext ctx,
                     [Option("Username", "osu! username")] string username,
                     [Option("PlayType", "Select from user's top or recent plays")] UserOptions type,
-                    [Option("Index", "Index of play to analyze (default: 1)")] int index = 1)
+                    [Option("Index", "Index of play to analyze (default: 1)")] long index = 1)
             {
                 await Logger.WriteLine("processing user call");
                 Logger.Log(Logging.UserCalls);
@@ -45,7 +45,7 @@ namespace OsuMissAnalyzer.Server
                     Source = Source.USER,
                     Username = username,
                     UserScores = type.ToString(),
-                    PlayIndex = index - 1,
+                    PlayIndex = (int)index - 1,
                 };
             }
 
@@ -54,7 +54,7 @@ namespace OsuMissAnalyzer.Server
             [SlashCommand("beatmap", "Analyze a score on a specific map")]
             public async Task MissBeatmap(InteractionContext ctx,
                     [Option("Beatmap", "osu! beatmap link or id")] string beatmap,
-                    [Option("Index", "Index of play to analyze (default: 1)")] int index = 1)
+                    [Option("Index", "Index of play to analyze (default: 1)")] long index = 1)
             {
                 await Logger.WriteLine("processing user call");
                 Logger.Log(Logging.UserCalls);
@@ -62,7 +62,7 @@ namespace OsuMissAnalyzer.Server
                 ServerReplayLoader replayLoader = new ServerReplayLoader
                 {
                     Source = Source.USER,
-                    PlayIndex = index - 1,
+                    PlayIndex = (int)index - 1,
                 };
                 var bmMatch = beatmapRegex.Match(beatmap);
                 if (bmMatch.Success)
