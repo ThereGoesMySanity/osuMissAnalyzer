@@ -230,6 +230,7 @@ Full readme and source at https://github.com/ThereGoesMySanity/osuMissAnalyzer/t
                         var key = await res.CreateResponse();
                         if (key.HasValue)
                         {
+                            Logger.Log(Logging.MessageCreated);
                             CachedMisses[key.Value] = res;
                             Logger.LogAbsolute(Logging.CachedMessages, CachedMisses.Count);
                         }
