@@ -34,9 +34,9 @@ https://discord.com/api/oauth2/authorize?client_id=752035690237394944&permission
 ### Server-specific Settings
 The owner of the server can view/change settings with:
 ```
-/settings [<server-id>] get
+/settings get
   View current settings
-/settings [<server-id>] set <setting> <value>
+/settings set <setting> <value>
   Set the value of <setting> to <value>
 ```
 |Setting|Description|
