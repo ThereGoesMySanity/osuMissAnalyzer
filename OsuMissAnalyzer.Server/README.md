@@ -7,6 +7,8 @@ A program to analyze misses in an osu! replay, now in discord bot form!
 
 ## How to Use
 
+**!! Reinvite the bot if slash commands don't work, it might need new permissions !!**
+
 ```
 Usage:
   /help
