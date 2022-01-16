@@ -29,7 +29,7 @@ Discord's slash command guides should help you figure out what to put where.
 ## Info for Server Owners
 
 ### Invite link
-https://discord.com/api/oauth2/authorize?client_id=752035690237394944&permissions=117824&scope=bot
+https://discord.com/api/oauth2/authorize?client_id=752035690237394944&permissions=2147584064&scope=bot
 
 ### Server-specific Settings
 The owner of the server can view/change settings with:
