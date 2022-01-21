@@ -26,7 +26,7 @@ namespace OsuMissAnalyzer.Server
         public ServerBeatmapDb BeatmapDb { get; private set; }
         public ServerReplayDb ReplayDb { get; private set; }
         public MemoryCache<ulong, Response> CachedMisses { get; private set; }
-        public DiscordClient Discord { get; private set; }
+        public DiscordShardedClient Discord { get; private set; }
         public ServerSettings Settings { get; private set; }
 
         const int size = 480;
@@ -74,7 +74,7 @@ Full readme and source at https://github.com/ThereGoesMySanity/osuMissAnalyzer/t
             CachedMisses = new MemoryCache<ulong, Response>(128);
             CachedMisses.SetPolicy(typeof(LfuEvictionPolicy<,>));
 
-            Discord = new DiscordClient(new DiscordConfiguration
+            Discord = new DiscordShardedClient(new DiscordConfiguration
             {
                 Token = Settings.DiscordToken,
                 TokenType = TokenType.Bot,
@@ -84,8 +84,7 @@ Full readme and source at https://github.com/ThereGoesMySanity/osuMissAnalyzer/t
                 DiscordIntents.DirectMessages |
                 DiscordIntents.DirectMessageReactions
             });
-
-            var slash = Discord.UseSlashCommands(new SlashCommandsConfiguration
+            var slash = await Discord.UseSlashCommandsAsync(new SlashCommandsConfiguration
             {
                 Services = new ServiceCollection().AddSingleton(this).BuildServiceProvider(),
             });
@@ -102,7 +101,7 @@ Full readme and source at https://github.com/ThereGoesMySanity/osuMissAnalyzer/t
 
             for (int i = 0; i < 10; i++)
             {
-                numberEmojis[i] = DiscordEmoji.FromName(Discord, $":{numbers[i]}:");
+                numberEmojis[i] = DiscordEmoji.FromUnicode(i+"\ufe0f\u20e3");
             }
 
             status = new Stopwatch();
@@ -129,20 +128,22 @@ Full readme and source at https://github.com/ThereGoesMySanity/osuMissAnalyzer/t
                 await Logger.LogException(e.Exception);
             };
 
-            slash.SlashCommandErrored += async (d, e) =>
-            {
-                await Logger.WriteLine(e.Context.CommandName);
-                await Logger.LogException(e.Exception);
-            };
+            foreach (var s in slash) {
+                s.Value.SlashCommandErrored += async (d, e) =>
+                {
+                    await Logger.WriteLine(e.Context.CommandName);
+                    await Logger.LogException(e.Exception);
+                };
+            }
+            Logger.Instance.UpdateLogs += () => Logger.LogAbsolute(Logging.ServersJoined, Discord.ShardClients.Select(s => s.Value.Guilds?.Count ?? 0).Sum());
 
-            Logger.Instance.UpdateLogs += () => Logger.LogAbsolute(Logging.ServersJoined, Discord?.Guilds?.Count ?? 0);
             await apiToken;
             return true;
         }
 
         public async Task Start()
         {
-            await Discord.ConnectAsync();
+            await Discord.StartAsync();
         }
 
         public async Task CheckStatus()
@@ -208,11 +209,11 @@ Full readme and source at https://github.com/ThereGoesMySanity/osuMissAnalyzer/t
             {
                 Response r = (replayLoader.Source == Source.BOT && guildSettings.Compact)
                                 ? new CompactResponse(this, guildSettings, e) : new MessageResponse(this, guildSettings, e);
-                Task.Run(() => CreateResponse(r, replayLoader));
+                Task.Run(() => CreateResponse(discord, r, replayLoader));
             }
         }
 
-        public async Task CreateResponse(Response res, ServerReplayLoader replayLoader)
+        public async Task CreateResponse(DiscordClient discord, Response res, ServerReplayLoader replayLoader)
         {
             try
             {
@@ -220,20 +221,14 @@ Full readme and source at https://github.com/ThereGoesMySanity/osuMissAnalyzer/t
                 if (replayLoader.Loaded)
                 {
                     MissAnalyzer missAnalyzer = new MissAnalyzer(replayLoader);
-                    res.Miss = new SavedMiss(missAnalyzer);
+                    res.Miss = new SavedMiss(discord, missAnalyzer);
                     if (missAnalyzer.MissCount == 0)
                     {
                         replayLoader.ErrorMessage = "No misses found.";
                     }
                     else
                     {
-                        var key = await res.CreateResponse();
-                        if (key.HasValue)
-                        {
-                            Logger.Log(Logging.MessageCreated);
-                            CachedMisses[key.Value] = res;
-                            Logger.LogAbsolute(Logging.CachedMessages, CachedMisses.Count);
-                        }
+                        UpdateCache(res, await res.CreateResponse());
                     }
                 }
             }
@@ -252,6 +247,15 @@ Full readme and source at https://github.com/ThereGoesMySanity/osuMissAnalyzer/t
                 Logger.Log(Logging.ErrorHandled);
                 await Logger.WriteLine($"Error handled: {replayLoader.ErrorMessage}");
                 await res.CreateErrorResponse(replayLoader.ErrorMessage);
+            }
+        }
+
+        private void UpdateCache(Response res, ulong? key) {
+            if (key.HasValue)
+            {
+                Logger.Log(Logging.MessageCreated);
+                CachedMisses[key.Value] = res;
+                Logger.LogAbsolute(Logging.CachedMessages, CachedMisses.Count);
             }
         }
 
@@ -294,14 +298,14 @@ Full readme and source at https://github.com/ThereGoesMySanity/osuMissAnalyzer/t
         public async Task UpdateResponse(object e, Response response, int index)
         {
             Logger.Log(Logging.MessageEdited);
-            await response.UpdateResponse(e, index);
+            UpdateCache(response, await response.UpdateResponse(e, index));
         }
 
-        public async Task<string> SendMissMessage(MissAnalyzer analyzer, int index)
+        public async Task<string> SendMissMessage(DiscordClient discord, MissAnalyzer analyzer, int index)
         {
             analyzer.CurrentObject = index;
             DiscordMessageBuilder message = new DiscordMessageBuilder().WithFile("miss.png", GetStream(analyzer.DrawSelectedHitObject(area)));
-            return (await (await Discord.GetChannelAsync(Settings.DumpChannel)).SendMessageAsync(message)).Attachments[0].Url;
+            return (await (await discord.GetChannelAsync(Settings.DumpChannel)).SendMessageAsync(message)).Attachments[0].Url;
         }
         
 
@@ -317,7 +321,7 @@ Full readme and source at https://github.com/ThereGoesMySanity/osuMissAnalyzer/t
         {
             BeatmapDb.Close();
             Settings.Save();
-            await Discord.DisconnectAsync();
+            await Discord.StopAsync();
         }
 
         const ulong OWO = 289066747443675143;

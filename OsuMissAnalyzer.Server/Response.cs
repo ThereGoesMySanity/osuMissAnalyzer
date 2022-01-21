@@ -27,7 +27,7 @@ namespace OsuMissAnalyzer.Server
 
         public abstract Task CreateErrorResponse(string errorMessage);
         public abstract Task<ulong?> CreateResponse();
-        public abstract Task UpdateResponse(object e, int index);
+        public abstract Task<ulong?> UpdateResponse(object e, int index);
 
         protected DiscordMessageBuilder BuildMessage(string content)
         {
@@ -81,12 +81,13 @@ namespace OsuMissAnalyzer.Server
             return ctx.InteractionId;
         }
 
-        public override async Task UpdateResponse(object e, int index)
+        public override async Task<ulong?> UpdateResponse(object e, int index)
         {
             Miss.CurrentMiss = index;
             ComponentInteractionCreateEventArgs args = (ComponentInteractionCreateEventArgs)e;
             await args.Interaction.CreateResponseAsync(InteractionResponseType.UpdateMessage,
                     new DiscordInteractionResponseBuilder(BuildMessage(await GetContent())));
+            return null;
         }
     }
     public class MessageResponse : Response
@@ -109,12 +110,13 @@ namespace OsuMissAnalyzer.Server
             response = await source.RespondAsync(BuildMessage(await GetContent()));
             return response?.Id;
         }
-        public override async Task UpdateResponse(object e, int index)
+        public override async Task<ulong?> UpdateResponse(object e, int index)
         {
             Miss.CurrentMiss = index;
             ComponentInteractionCreateEventArgs args = (ComponentInteractionCreateEventArgs)e;
             await args.Interaction.CreateResponseAsync(InteractionResponseType.UpdateMessage,
                     new DiscordInteractionResponseBuilder(BuildMessage(await GetContent())));
+            return null;
         }
     }
     public class CompactResponse : MessageResponse
@@ -125,16 +127,16 @@ namespace OsuMissAnalyzer.Server
             await SendReactions(source, MissCount);
             return source.Id;
         }
-        public override async Task UpdateResponse(object e, int index)
+        public override async Task<ulong?> UpdateResponse(object e, int index)
         {
             Miss.CurrentMiss = index;
             if (response == null)
             {
-                await base.CreateResponse();
+                return await base.CreateResponse();
             }
             else
             {
-                await base.UpdateResponse(e, index);
+                return await base.UpdateResponse(e, index);
             }
         }
         public override async Task CreateErrorResponse(string errorMessage)
