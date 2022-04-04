@@ -171,10 +171,10 @@ Full readme and source at https://github.com/ThereGoesMySanity/osuMissAnalyzer/t
             if (Settings.Test && e.Guild?.Id != Settings.TestGuild) return;
             var guildSettings = Settings.GetGuild(e.Channel);
 
-            if (IsHelpRequest(e, guildSettings)) 
-            {
-                await e.Message.RespondAsync("MissAnalyzer now uses slash commands! Type /help for help.");
-            }
+            // if (IsHelpRequest(e, guildSettings)) 
+            // {
+            //     await e.Message.RespondAsync("MissAnalyzer now uses slash commands! Type /help for help.");
+            // }
 
             ServerReplayLoader replayLoader = new ServerReplayLoader();
             //attachment
