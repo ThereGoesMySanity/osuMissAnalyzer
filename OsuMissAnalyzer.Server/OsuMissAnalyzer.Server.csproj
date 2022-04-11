@@ -5,8 +5,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="DSharpPlus" Version="4.2.0-nightly-01056" />
-    <PackageReference Include="DSharpPlus.SlashCommands" Version="4.2.0-nightly-01056" />
+    <PackageReference Include="DSharpPlus" Version="4.2.0-nightly-01109" />
+    <PackageReference Include="DSharpPlus.SlashCommands" Version="4.2.0-nightly-01109" />
     <PackageReference Include="Mono.Options" Version="6.6.0.161" />
     <PackageReference Include="Mono.Posix.NETStandard" Version="5.20.1-preview" />
     <PackageReference Include="System.Runtime.Caching.Generic" Version="1.0.5" />
