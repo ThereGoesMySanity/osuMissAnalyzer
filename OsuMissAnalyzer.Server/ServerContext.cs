@@ -344,7 +344,7 @@ Full readme and source at https://github.com/ThereGoesMySanity/osuMissAnalyzer/t
         {
             [OWO] = (ServerReplayLoader replayLoader, GuildSettings guildSettings, MessageCreateEventArgs e) =>
             {
-                if (e.Message.Content.StartsWith("**Recent osu! Standard Play for"))
+                if (e.Message.Content != null && e.Message.Content.StartsWith("**Recent osu! Standard Play for") && e.Message.Embeds.Count > 0)
                 {
                     replayLoader.UserId = GetIdFromEmbed(e.Message.Embeds[0]);
                     return true;
