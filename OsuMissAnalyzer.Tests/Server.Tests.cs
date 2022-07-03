@@ -23,10 +23,10 @@ namespace OsuMissAnalyzer.Tests
             beatmaps = new ServerBeatmapDb(api, "serverdata");
         }
 
-        [Test]
-        public async Task GetBeatmap()
+        [TestCase("d41d8cd98f00b204e9800998ecf8427e")]
+        public async Task GetBeatmap(string beatmapHash)
         {
-            Beatmap b = await beatmaps.GetBeatmap("d41d8cd98f00b204e9800998ecf8427e");
+            Beatmap b = await beatmaps.GetBeatmap(beatmapHash);
         }
 
         [TestCase("3243485950", "replay-osu_1859001_3243485950.osr")]
@@ -60,6 +60,13 @@ namespace OsuMissAnalyzer.Tests
         {
             JToken s = await api.GetApiv2($"scores/osu/{scoreId}/download");
             Console.WriteLine(s);
+        }
+
+        [TestCase("312b50442dd47de159257dfac2c8da50-133009249532585046.osr")]
+        public async Task TestLoadBeatmap(string replayFile)
+        {
+            Replay r = new Replay(Path.Combine("Resources", replayFile));
+            Beatmap b = await beatmaps.GetBeatmap(r.MapHash);
         }
     }
 }
