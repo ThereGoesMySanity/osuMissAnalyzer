@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Net.Http;
 using System.Threading.Tasks;
 using BMAPI.v1;
 using Newtonsoft.Json.Linq;
@@ -11,6 +12,7 @@ namespace OsuMissAnalyzer.Tests
     [TestFixture]
     public class ServerTests
     {
+        private HttpClient client;
         private OsuApi api;
         private ServerReplayDb replays;
         private ServerBeatmapDb beatmaps;
@@ -18,7 +20,8 @@ namespace OsuMissAnalyzer.Tests
         public void Init()
         {
             string[] keys = File.ReadAllLines("Resources/keys.dat");
-            api = new OsuApi("2558", keys[0], keys[1]);
+            client = new HttpClient();
+            api = new OsuApi(client, "2558", keys[0], keys[1]);
             replays = new ServerReplayDb(api, "serverdata");
             beatmaps = new ServerBeatmapDb(api, "serverdata");
         }
