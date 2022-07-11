@@ -28,7 +28,7 @@ namespace OsuMissAnalyzer.Core
         public int MissCount => ReplayAnalyzer.misses.Count;
         public int CurrentObject { get; set; } = 0;
         private bool drawAllHitObjects;
-        private float scale = 1;
+        private float scale = 0.8f;
 
 
         public MissAnalyzer(IReplayLoader replayLoader) : this(replayLoader.Replay, replayLoader.Beatmap, replayLoader.ReplayAnalyzer)
@@ -100,7 +100,7 @@ namespace OsuMissAnalyzer.Core
                     JointStyle = JointStyle.Round,
                 };
 
-                Func<Color, Pen> linePen = color => new Pen(color, 1);
+                Func<Color, Pen> linePen = color => new Pen(color, 1.5f);
 
                 RectangleF bounds = new RectangleF(PointF.Subtract(hitObject.Location.ToPointF(), Scale(area.Size, scale / 2)),
                     Scale(area.Size, scale));
@@ -156,11 +156,14 @@ namespace OsuMissAnalyzer.Core
                     }
                 }
                 float distance = 10.0001f;
+                float? closestHit = null;
+                string verdict = null;
                 for (int k = replayFramesStart; k < replayFramesEnd - 2; k++)
                 {
                     PointF p1 = pSub(Replay.ReplayFrames[k].GetPointF(), bounds, hr);
                     PointF p2 = pSub(Replay.ReplayFrames[k + 1].GetPointF(), bounds, hr);
-                    var pen = linePen(GetHitColor(Beatmap.OverallDifficulty, (int)(hitObject.StartTime - Replay.ReplayFrames[k].Time)));
+                    float hitAcc = Replay.ReplayFrames[k].Time - hitObject.StartTime;
+                    var pen = linePen(GetHitColor(Beatmap.OverallDifficulty, hitAcc));
                     g.DrawLines(pen, ScaleToRect(p1, bounds, area), ScaleToRect(p2, bounds, area));
                     if (distance > 10 && Math.Abs(hitObject.StartTime - Replay.ReplayFrames[k + 1].Time) > 50)
                     {
@@ -183,10 +186,29 @@ namespace OsuMissAnalyzer.Core
                     {
                         distance += new Point2(p1.X - p2.X, p1.Y - p2.Y).Length;
                     }
+
+                    if (Replay.ReplayFrames[k].Time <= hitObject.StartTime && Replay.ReplayFrames[k+1].Time > hitObject.StartTime)
+                    {
+                        var lerp = (hitObject.StartTime - Replay.ReplayFrames[k].Time) 
+                                / (Replay.ReplayFrames[k+1].Time - Replay.ReplayFrames[k].Time);
+                        var p3 = new PointF(p1.X + (p2.X - p1.X) * lerp, p1.Y + (p2.Y - p1.Y) * lerp);
+
+                        EllipsePolygon circle = new EllipsePolygon(ScaleToRect(p3, bounds, area), ScaleToRect(new SizeF(2, 2), bounds, area));
+                        g.Draw(linePen(Color.Red), circle);
+
+                        if (hitObject.ContainsPoint(Replay.ReplayFrames[k].GetPoint2())) verdict = "Misclick";
+                        else verdict = "Misaim";
+                    }
+
                     if (ReplayAnalyzer.getKey(k == 0 ? Keys.None : Replay.ReplayFrames[k - 1].Keys, Replay.ReplayFrames[k].Keys) > 0)
                     {
                         EllipsePolygon circle = new EllipsePolygon(ScaleToRect(p1, bounds, area), ScaleToRect(new SizeF(6, 6), bounds, area));
                         g.Draw(pen, circle);
+                        if (Math.Abs(hitAcc) < GetHitWindow(Beatmap.OverallDifficulty, 50) 
+                            && (!closestHit.HasValue || Math.Abs(closestHit.Value) > Math.Abs(hitAcc)))
+                        {
+                            closestHit = hitAcc;
+                        }
                     }
                 }
 
@@ -210,6 +232,20 @@ namespace OsuMissAnalyzer.Core
                 else if (Replay.Mods.HasFlag(Mods.HalfTime)) time /= 0.75f;
                 TimeSpan ts = TimeSpan.FromMilliseconds(time);
                 g.DrawText($"Time: {ts:mm\\:ss\\.fff}", f, textColor, new PointF(0, area.Height - textSize * 1.5f));
+
+                if (closestHit.HasValue)
+                {
+                    opts = new TextOptions(f)
+                    {
+                        HorizontalAlignment = HorizontalAlignment.Right,
+                        VerticalAlignment = VerticalAlignment.Bottom,
+                        TextAlignment = TextAlignment.End,
+                        Origin = new System.Numerics.Vector2(area.Width, area.Height),
+                    };
+                    g.DrawText(opts, 
+$@"Closest click: {Math.Abs(closestHit.Value)}ms {(closestHit.Value < 0? "early":"late")}
+Verdict: {verdict}", textColor);
+                }
             });
             return img;
         }
@@ -251,10 +287,10 @@ namespace OsuMissAnalyzer.Core
         /// <returns>The hit color.</returns>
         /// <param name="od">OD of the map.</param>
         /// <param name="ms">Hit timing in ms (can be negative).</param>
-        private static Color GetHitColor(float od, int ms)
+        private static Color GetHitColor(float od, float ms)
         {
-            if (Math.Abs(ms) < GetHitWindow(od, 300)) return Color.SkyBlue;
-            if (Math.Abs(ms) < GetHitWindow(od, 100)) return Color.SpringGreen;
+            if (Math.Abs(ms) < GetHitWindow(od, 300)) return Color.FromRgb(23, 175, 235); //SkyBlue
+            if (Math.Abs(ms) < GetHitWindow(od, 100)) return Color.FromRgb(0, 255, 60); //SpringGreen
             if (Math.Abs(ms) < GetHitWindow(od, 50)) return Color.Purple;
             return Color.Black;
         }

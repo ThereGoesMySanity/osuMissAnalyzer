@@ -11,6 +11,10 @@ namespace OsuMissAnalyzer.Core.Utils
         {
             return new PointF(point.X, point.Y);
         }
+        public static Point2 GetPoint2(this ReplayFrame frame)
+        {
+            return new Point2(frame.X, frame.Y);
+        }
         public static PointF GetPointF(this ReplayFrame frame)
         {
             return new PointF(frame.X, frame.Y);
