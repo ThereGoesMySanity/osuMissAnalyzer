@@ -138,7 +138,7 @@ namespace OsuMissAnalyzer.Core
                         PointF[] pt = slider.Curves.SelectMany(curve => curve.CurveSnapshots)
                             .Select(c => c.point + slider.StackOffset.ToVector2())
                             .Select(s => ScaleToRect(pSub(s.ToPointF(), bounds, hr), bounds, area)).ToArray();
-                        if (pt.Length > 1) g.DrawLines(circlePen(Color.DarkGoldenrod.WithAlpha(80)), pt);
+                        if (pt.Length > 1) g.DrawLines(circlePen(Color.DarkGoldenrod.WithAlpha(80 / 255f)), pt);
                     }
 
                     var color = Color.FromRgb((byte)(c == 100 ? c + 50 : c), c, c);
@@ -191,17 +191,25 @@ namespace OsuMissAnalyzer.Core
                 }
 
                 var textColor = Color.Black;
-                Font f = new Font(SystemFonts.Get("Segoe UI"), 12);
-                g.DrawText(Beatmap.ToString(), f, textColor, new PointF(0, 0));
+                int textSize = 16;
+                Font f = new Font(SystemFonts.Get("Segoe UI"), textSize);
+                var opts = new TextOptions(f)
+                {
+                    WrappingLength = area.Width,
+                };
+                
+                var textBounds = TextMeasurer.MeasureBounds(Beatmap.ToString(), opts);
+                g.DrawText(opts, Beatmap.ToString(), textColor);
 
-                if (drawAllHitObjects) g.DrawText($"Object {num + 1} of {Beatmap.HitObjects.Count}", f, textColor, new PointF(0, f.FontMetrics.LineHeight));
-                else g.DrawText($"Miss {num + 1} of {MissCount}", f, textColor, new PointF(0, f.FontMetrics.LineHeight));
+
+                if (drawAllHitObjects) g.DrawText($"Object {num + 1} of {Beatmap.HitObjects.Count}", f, textColor, new PointF(0, textBounds.Bottom));
+                else g.DrawText($"Miss {num + 1} of {MissCount}", f, textColor, new PointF(0, textBounds.Bottom));
 
                 float time = hitObject.StartTime;
                 if (Replay.Mods.HasFlag(Mods.DoubleTime)) time /= 1.5f;
                 else if (Replay.Mods.HasFlag(Mods.HalfTime)) time /= 0.75f;
                 TimeSpan ts = TimeSpan.FromMilliseconds(time);
-                g.DrawText($"Time: {ts:mm\\:ss\\.fff}", f, textColor, new PointF(0, area.Height - f.FontMetrics.LineHeight));
+                g.DrawText($"Time: {ts:mm\\:ss\\.fff}", f, textColor, new PointF(0, area.Height - textSize * 1.5f));
             });
             return img;
         }
