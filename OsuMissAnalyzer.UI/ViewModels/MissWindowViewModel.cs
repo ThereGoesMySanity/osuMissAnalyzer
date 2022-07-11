@@ -1,13 +1,11 @@
 using System;
-using System.Diagnostics;
-using System.Drawing;
-using System.Drawing.Imaging;
 using System.IO;
 using Avalonia;
 using Avalonia.Input;
 using OsuMissAnalyzer.Core;
 using ReactiveUI;
 using System.Reactive.Linq;
+using SixLabors.ImageSharp;
 
 namespace OsuMissAnalyzer.UI.ViewModels
 {
@@ -20,8 +18,8 @@ namespace OsuMissAnalyzer.UI.ViewModels
         private UIReplayLoader loader;
         public UIReplayLoader Loader { get => loader; set => this.RaiseAndSetIfChanged(ref loader, value); }
 
-        private Bitmap image;
-        public Bitmap Image { get => image; set => this.RaiseAndSetIfChanged(ref image, value); }
+        private Image image;
+        public Image Image { get => image; set => this.RaiseAndSetIfChanged(ref image, value); }
 
         private Rect bounds;
         public Rect Bounds { get => bounds; set => this.RaiseAndSetIfChanged(ref bounds, value); }
@@ -58,7 +56,7 @@ namespace OsuMissAnalyzer.UI.ViewModels
                     foreach (var img in Analyzer.DrawAllMisses(Area))
                     {
                         string filename = $"{Path.GetFileNameWithoutExtension(Loader.Replay.Filename)}.{i++}.png";
-                        img.Save(filename, ImageFormat.Png);
+                        await img.SaveAsPngAsync(filename);
                     }
                     break;
                 case Key.R:

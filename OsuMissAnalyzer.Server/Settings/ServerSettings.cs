@@ -22,7 +22,7 @@ namespace OsuMissAnalyzer.Server.Settings
         public string DiscordToken = "";
         public string WebHook = "";
         public string DiscordId = "752035690237394944";
-        public string DiscordPermissions = "100416";
+        public string DiscordPermissions = "117824";
         [JsonIgnore]
         public bool Help = false;
         [JsonIgnore]
@@ -36,7 +36,7 @@ namespace OsuMissAnalyzer.Server.Settings
         public string GitCommit = null;
 
         public ulong DumpChannel = 753788360425734235L;
-        public ulong TestChannel = 753465280465862757L;
+        public ulong TestGuild = 753465280465862757L;
         public async Task<bool> Init(string[] args)
         {
             var opts = new OptionSet() {

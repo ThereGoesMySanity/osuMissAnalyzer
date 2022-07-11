@@ -52,6 +52,8 @@ namespace OsuMissAnalyzer.Server
 
             if(_replay == null && PlayIndex.HasValue)
             {
+                if (PlayIndex.Value < 0) return "Index value must be greater than 0";
+
                 if (UserId != null && UserScores != null)
                     score = await api.GetUserScoresv2(UserId, UserScores, PlayIndex.Value, FailedScores);
                 else if (BeatmapId != null)
@@ -73,8 +75,11 @@ namespace OsuMissAnalyzer.Server
             if (_replay != null && !_replay.fullLoaded)
                 return "Replay does not contain any cursor data - can't analyze";
 
-            if (_replay != null && _beatmap != null && _beatmap.Mode == GameMode.osu)
+
+            if (_replay != null && _beatmap != null)
             {
+                if (_beatmap.Mode != GameMode.osu) return null;
+
                 _analyzer = new ReplayAnalyzer(_beatmap, _replay);
                 Loaded = true;
                 return null;

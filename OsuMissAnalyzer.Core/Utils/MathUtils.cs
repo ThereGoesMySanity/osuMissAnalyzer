@@ -1,7 +1,7 @@
-using System.Drawing;
 using BMAPI;
 using osuDodgyMomentsFinder;
 using ReplayAPI;
+using SixLabors.ImageSharp;
 
 namespace OsuMissAnalyzer.Core.Utils
 {
@@ -87,6 +87,15 @@ namespace OsuMissAnalyzer.Core.Utils
         {
             PointF ret = Scale(p, Div(sz, rect.Size));
             return ret;
+        }
+
+        public static SizeF ScaleToRect(SizeF s, RectangleF rect, Rectangle area)
+        {
+            return ScaleToRect(s, rect, area.Size);
+        }
+        public static SizeF ScaleToRect(SizeF s, RectangleF rect, SizeF sz)
+        {
+            return Scale(s, Div(sz, rect.Size));
         }
 
         public static RectangleF ScaleToRect(RectangleF p, RectangleF rect, Rectangle area)
