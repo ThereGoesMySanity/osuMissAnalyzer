@@ -15,6 +15,7 @@ using System.Collections.Generic;
 using OsuMissAnalyzer.UI.ViewModels;
 using OsuMissAnalyzer.UI.Views;
 using OsuMissAnalyzer.UI.Models;
+using System.Net.Http;
 
 namespace OsuMissAnalyzer.UI
 {
@@ -209,11 +210,11 @@ namespace OsuMissAnalyzer.UI
             {
                 Debug.Print("Found API key, searching for beatmap...");
 
-                using (WebClient w = new WebClient())
+                using (HttpClient http = new HttpClient())
                 {
-                    j = JArray.Parse(w.DownloadString("https://osu.ppy.sh/api/get_beatmaps" +
+                    j = JArray.Parse(await (await http.GetAsync("https://osu.ppy.sh/api/get_beatmaps" +
                                                             "?k=" + Options.Settings["apikey"] +
-                                                            "&h=" + Replay.MapHash));
+                                                            "&h=" + Replay.MapHash)).Content.ReadAsStringAsync());
                 }
             }
             else if(isSongsDir)
