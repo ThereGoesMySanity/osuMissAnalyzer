@@ -52,7 +52,7 @@ namespace OsuMissAnalyzer.UI
             base.OnFrameworkInitializationCompleted();
         }
 
-        private void ReplayLoaderOnNewReplay(object? sender, EventArgs e)
+        private void ReplayLoaderOnNewReplay(object sender, EventArgs e)
         {
             _ = Load(ReplayLoader);
         }

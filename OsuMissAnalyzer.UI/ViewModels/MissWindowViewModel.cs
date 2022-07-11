@@ -60,7 +60,7 @@ namespace OsuMissAnalyzer.UI.ViewModels
                     }
                     break;
                 case Key.R:
-                    App.Load(new UIReplayLoader { Options = Loader.Options });
+                    _ = App.Load(new UIReplayLoader { Options = Loader.Options });
                     break;
                 case Key.A:
                     Analyzer.ToggleDrawAllHitObjects();

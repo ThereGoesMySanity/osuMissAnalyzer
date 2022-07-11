@@ -210,7 +210,7 @@ Full readme and source at https://github.com/ThereGoesMySanity/osuMissAnalyzer/t
             {
                 Response r = (replayLoader.Source == Source.BOT && guildSettings.Compact)
                                 ? new CompactResponse(this, guildSettings, e) : new MessageResponse(this, guildSettings, e);
-                Task.Run(() => CreateResponse(discord, r, replayLoader));
+                _ = Task.Run(() => CreateResponse(discord, r, replayLoader));
             }
         }
 
@@ -273,7 +273,7 @@ Full readme and source at https://github.com/ThereGoesMySanity/osuMissAnalyzer/t
             {
                 int index = int.Parse(e.Id) - 1;
                 Logger.Log(Logging.ReactionCalls);
-                Task.Run(() => UpdateResponse(e, response, index));
+                _ = Task.Run(() => UpdateResponse(e, response, index));
                 await Task.CompletedTask;
             }
         }
@@ -290,7 +290,7 @@ Full readme and source at https://github.com/ThereGoesMySanity/osuMissAnalyzer/t
                 if (index >= 0 && index < Math.Min(analyzer.MissCount, numberEmojis.Length - 1))
                 {
                     Logger.Log(Logging.ReactionCalls);
-                    Task.Run(() => UpdateResponse(e, response, index));
+                    _ = Task.Run(() => UpdateResponse(e, response, index));
                     await Task.CompletedTask;
                 }
             }

@@ -81,7 +81,7 @@ namespace OsuMissAnalyzer.Tests
                 {
                     await new WebClient().DownloadFileTaskAsync($"https://osu.ppy.sh/osu/{beatmapId}", file);
                 }
-                catch (WebException e)
+                catch (WebException)
                 {
                 }
             }

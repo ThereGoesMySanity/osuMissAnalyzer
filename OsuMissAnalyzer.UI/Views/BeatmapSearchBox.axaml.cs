@@ -26,7 +26,7 @@ namespace OsuMissAnalyzer.UI.Views
             base.Close(success);
         }
 
-        public void Text_DoubleTapped(object? o, RoutedEventArgs e)
+        public void Text_DoubleTapped(object o, RoutedEventArgs e)
         {
             Close(Result != null);
         }

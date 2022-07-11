@@ -219,7 +219,7 @@ namespace OsuMissAnalyzer.UI
             else if(isSongsDir)
             {
                 Debug.Print("No API key found, searching manually. It could take a while...");
-                App.ShowMessageBox("No API key found, searching manually.\nIt could take a while...");
+                _ = App.ShowMessageBox("No API key found, searching manually.\nIt could take a while...");
             }
             return await Task.Run(() =>
             {
