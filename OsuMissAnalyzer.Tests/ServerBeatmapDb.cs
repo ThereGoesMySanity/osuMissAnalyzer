@@ -66,7 +66,7 @@ namespace OsuMissAnalyzer.Tests
             string file = Path.Combine(folder, "beatmaps", $"{beatmap_id}.osu");
             if (!File.Exists(file) || forceRedl)
             {
-                await api.DownloadBeatmapFromId(beatmap_id, Path.Combine(folder, "beatmaps"));
+                await api.DownloadBeatmapFromId(beatmap_id, Path.Combine(folder, "beatmaps"), forceRedl);
                 string hash = Beatmap.MD5FromFile(file);
                 hashes[hash] = beatmap_id;
             }

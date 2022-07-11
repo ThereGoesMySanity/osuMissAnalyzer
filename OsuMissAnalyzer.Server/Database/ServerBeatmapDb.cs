@@ -75,7 +75,7 @@ namespace OsuMissAnalyzer.Server.Database
             if (!File.Exists(file))
             {
                 await Logger.WriteLine(forceRedl? "hash out of date, redownloading..." : "beatmap not found, downloading...");
-                await api.DownloadBeatmapFromId(beatmap_id, Path.Combine(folder, "beatmaps"));
+                await api.DownloadBeatmapFromId(beatmap_id, Path.Combine(folder, "beatmaps"), forceRedl);
                 string hash = Beatmap.MD5FromFile(file);
                 hashes[hash] = beatmap_id;
                 Logger.LogAbsolute(Logging.BeatmapsDbSize, hashes.Count);

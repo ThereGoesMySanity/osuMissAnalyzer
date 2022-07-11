@@ -66,22 +66,28 @@ namespace OsuMissAnalyzer.Tests
             if (j.Count > 0)
             {
                 string beatmapId = (string)j[0]["beatmap_id"];
-                await DownloadBeatmapFromId(beatmapId, destinationFolder);
+                await DownloadBeatmapFromId(beatmapId, destinationFolder, true);
                 return beatmapId;
             }
             return null;
         }
-        public async Task DownloadBeatmapFromId(string beatmapId, string destinationFolder)
+        public async Task DownloadBeatmapFromId(string beatmapId, string destinationFolder, bool forceRedl = false)
         {
             string file = Path.Combine(destinationFolder, $"{beatmapId}.osu");
+            if (forceRedl && File.Exists(file)) File.Delete(file);
             while(!File.Exists(file))
             {
                 try
                 {
-                    await (await webClient.GetStreamAsync($"https://osu.ppy.sh/osu/{beatmapId}")).CopyToAsync(File.Create(file));
+                    using (var stream = await webClient.GetStreamAsync($"https://osu.ppy.sh/osu/{beatmapId}"))
+                    using (var fileStream = File.Create(file))
+                    {
+                        await stream.CopyToAsync(fileStream);
+                    }
                 }
-                catch (WebException)
+                catch (WebException e)
                 {
+                    throw e;
                 }
             }
         }

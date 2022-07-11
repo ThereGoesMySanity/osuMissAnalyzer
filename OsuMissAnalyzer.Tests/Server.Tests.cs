@@ -43,7 +43,6 @@ namespace OsuMissAnalyzer.Tests
             }
             Replay r = await replays.GetReplayFromOnlineId(scoreId, compare.Mods.ModsToString(), b);
             CollectionAssert.AreEqual(compare.ReplayFrames, r.ReplayFrames);
-            Assert.AreEqual(compare.MapHash, r.MapHash);
             Assert.AreEqual(compare.Mods, r.Mods);
             Assert.AreEqual(compare.OnlineId, r.OnlineId);
         }
