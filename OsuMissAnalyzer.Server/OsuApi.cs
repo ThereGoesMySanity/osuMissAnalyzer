@@ -147,6 +147,5 @@ namespace OsuMissAnalyzer.Server
             var res = await ApiRequestv1("get_replay", $"s={onlineId}");
             return res["content"] != null? Convert.FromBase64String((string)res["content"]) : null;
         }
-
     }
 }
