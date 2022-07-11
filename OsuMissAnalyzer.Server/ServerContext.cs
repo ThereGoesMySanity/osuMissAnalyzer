@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Drawing;
 using System.IO;
 using System.Net;
 using System.Runtime.Caching.Generic;
@@ -16,6 +15,8 @@ using OsuMissAnalyzer.Core;
 using OsuMissAnalyzer.Server.Database;
 using OsuMissAnalyzer.Server.Settings;
 using System.Linq;
+using SixLabors.ImageSharp;
+using SixLabors.ImageSharp.Formats;
 
 namespace OsuMissAnalyzer.Server
 {
@@ -309,10 +310,10 @@ Full readme and source at https://github.com/ThereGoesMySanity/osuMissAnalyzer/t
         }
         
 
-        private static MemoryStream GetStream(Bitmap bitmap)
+        private static MemoryStream GetStream(Image bitmap)
         {
             MemoryStream s = new MemoryStream();
-            bitmap.Save(s, System.Drawing.Imaging.ImageFormat.Png);
+            bitmap.SaveAsPng(s);
             s.Seek(0, SeekOrigin.Begin);
             return s;
         }

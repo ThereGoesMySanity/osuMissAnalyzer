@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Drawing;
 using osuDodgyMomentsFinder;
 using ReplayAPI;
 using BMAPI.v1;
@@ -9,6 +8,12 @@ using System.Linq;
 using OsuMissAnalyzer.Core.Utils;
 using static OsuMissAnalyzer.Core.Utils.MathUtils;
 using System.Collections.Generic;
+using SixLabors.ImageSharp;
+using SixLabors.ImageSharp.PixelFormats;
+using SixLabors.ImageSharp.Drawing.Processing;
+using SixLabors.ImageSharp.Processing;
+using SixLabors.ImageSharp.Drawing;
+using SixLabors.Fonts;
 
 namespace OsuMissAnalyzer.Core
 {
@@ -71,136 +76,137 @@ namespace OsuMissAnalyzer.Core
             if (scale < 0.1) scale = 0.1f;
         }
 
-        public Bitmap DrawSelectedHitObject(Rectangle area) { return DrawHitObject(CurrentObject, area); }
+        public Image DrawSelectedHitObject(Rectangle area) { return DrawHitObject(CurrentObject, area); }
         /// <summary>
         /// Draws the miss.
         /// </summary>
         /// <returns>A Bitmap containing the drawing</returns>
         /// <param name="num">Index of the miss as it shows up in r.misses.</param>
-        public Bitmap DrawHitObject(int num, Rectangle area)
+        public Image DrawHitObject(int num, Rectangle area)
         {
-            Bitmap img = new Bitmap(area.Width, area.Height);
-            Graphics g = Graphics.FromImage(img);
+            Image img = new Image<Rgba32>(area.Width, area.Height, Color.White);
 
-            bool hr = Replay.Mods.HasFlag(Mods.HardRock);
-            CircleObject hitObject;
-            if (drawAllHitObjects) hitObject = Beatmap.HitObjects[num];
-            else hitObject = ReplayAnalyzer.misses[num];
-            float radius = (float)hitObject.Radius;
-            Pen circle = new Pen(Color.Gray, radius * 2 / scale)
+            img.Mutate(g => 
             {
-                StartCap = System.Drawing.Drawing2D.LineCap.Round,
-                EndCap = System.Drawing.Drawing2D.LineCap.Round,
-                LineJoin = System.Drawing.Drawing2D.LineJoin.Round
-            };
-            Pen p = new Pen(Color.White);
-            g.FillRectangle(p.Brush, area);
-            RectangleF bounds = new RectangleF(PointF.Subtract(hitObject.Location.ToPointF(), Scale(area.Size, scale / 2)),
-                Scale(area.Size, scale));
-
-            int replayFramesStart, replayFramesEnd, hitObjectsStart, hitObjectsEnd;
-
-            for (hitObjectsStart = Beatmap.HitObjects.Count(x => x.StartTime <= hitObject.StartTime) - 1;
-                hitObjectsStart >= 0 && bounds.Contains(Beatmap.HitObjects[hitObjectsStart].Location.ToPointF())
-                && hitObject.StartTime - Beatmap.HitObjects[hitObjectsStart].StartTime < maxTime;
-                hitObjectsStart--) ;
-
-            for (hitObjectsEnd = Beatmap.HitObjects.Count(x => x.StartTime <= hitObject.StartTime) - 1;
-                hitObjectsEnd < Beatmap.HitObjects.Count && bounds.Contains(Beatmap.HitObjects[hitObjectsEnd].Location.ToPointF())
-                && Beatmap.HitObjects[hitObjectsEnd].StartTime - hitObject.StartTime < maxTime;
-                hitObjectsEnd++) ;
-
-            for (replayFramesStart = Replay.ReplayFrames.Count(x => x.Time <= Beatmap.HitObjects[hitObjectsStart + 1].StartTime);
-                replayFramesStart > 1 && replayFramesStart < Replay.ReplayFrames.Count && bounds.Contains(Replay.ReplayFrames[replayFramesStart].GetPointF())
-                && hitObject.StartTime - Replay.ReplayFrames[replayFramesStart].Time < maxTime;
-                replayFramesStart--) ;
-
-            for (replayFramesEnd = Replay.ReplayFrames.Count(x => x.Time <= Beatmap.HitObjects[hitObjectsEnd - 1].StartTime);
-                replayFramesEnd < Replay.ReplayFrames.Count - 1 && (replayFramesEnd < 2 || bounds.Contains(Replay.ReplayFrames[replayFramesEnd - 2].GetPointF()))
-                && Replay.ReplayFrames[replayFramesEnd].Time - hitObject.StartTime < maxTime;
-                replayFramesEnd++) ;
-
-            p.Color = Color.DarkGray;
-            g.DrawRectangle(p, Rectangle.Round(ScaleToRect(new RectangleF(pSub(new PointF(0, hr? 384 : 0), bounds, hr), new SizeF(512, 384)), bounds, area)));
-            p.Color = Color.Gray;
-            for (int q = hitObjectsEnd - 1; q > hitObjectsStart; q--)
-            {
-                int c = Math.Min(255, 100 + (int)(Math.Abs(Beatmap.HitObjects[q].StartTime - hitObject.StartTime) * 100 / maxTime));
-                if (Beatmap.HitObjects[q].Type.HasFlag(HitObjectType.Slider))
+                bool hr = Replay.Mods.HasFlag(Mods.HardRock);
+                CircleObject hitObject;
+                if (drawAllHitObjects) hitObject = Beatmap.HitObjects[num];
+                else hitObject = ReplayAnalyzer.misses[num];
+                float radius = (float)hitObject.Radius;
+                
+                Func<Color, Pen> circlePen = color => new Pen(color, radius * 2 / scale)
                 {
-                    SliderObject slider = (SliderObject)Beatmap.HitObjects[q];
-                    PointF[] pt = slider.Curves.SelectMany(curve => curve.CurveSnapshots)
-                        .Select(c => c.point + slider.StackOffset.ToVector2())
-                        .Select(s => ScaleToRect(pSub(s.ToPointF(), bounds, hr), bounds, area)).ToArray();
-                    circle.Color = Color.FromArgb(80, Color.DarkGoldenrod);
-                    if (pt.Length > 1) g.DrawLines(circle, pt);
-                }
+                    EndCapStyle = EndCapStyle.Round,
+                    JointStyle = JointStyle.Round,
+                };
 
-                p.Color = Color.FromArgb(c == 100 ? c + 50 : c, c, c);
-                if (HitCircleOutlines)
+                Func<Color, Pen> linePen = color => new Pen(color, 1);
+
+                RectangleF bounds = new RectangleF(PointF.Subtract(hitObject.Location.ToPointF(), Scale(area.Size, scale / 2)),
+                    Scale(area.Size, scale));
+
+                int replayFramesStart, replayFramesEnd, hitObjectsStart, hitObjectsEnd;
+
+                for (hitObjectsStart = Beatmap.HitObjects.Count(x => x.StartTime <= hitObject.StartTime) - 1;
+                    hitObjectsStart >= 0 && bounds.Contains(Beatmap.HitObjects[hitObjectsStart].Location.ToPointF())
+                    && hitObject.StartTime - Beatmap.HitObjects[hitObjectsStart].StartTime < maxTime;
+                    hitObjectsStart--) ;
+
+                for (hitObjectsEnd = Beatmap.HitObjects.Count(x => x.StartTime <= hitObject.StartTime) - 1;
+                    hitObjectsEnd < Beatmap.HitObjects.Count && bounds.Contains(Beatmap.HitObjects[hitObjectsEnd].Location.ToPointF())
+                    && Beatmap.HitObjects[hitObjectsEnd].StartTime - hitObject.StartTime < maxTime;
+                    hitObjectsEnd++) ;
+
+                for (replayFramesStart = Replay.ReplayFrames.Count(x => x.Time <= Beatmap.HitObjects[hitObjectsStart + 1].StartTime);
+                    replayFramesStart > 1 && replayFramesStart < Replay.ReplayFrames.Count && bounds.Contains(Replay.ReplayFrames[replayFramesStart].GetPointF())
+                    && hitObject.StartTime - Replay.ReplayFrames[replayFramesStart].Time < maxTime;
+                    replayFramesStart--) ;
+
+                for (replayFramesEnd = Replay.ReplayFrames.Count(x => x.Time <= Beatmap.HitObjects[hitObjectsEnd - 1].StartTime);
+                    replayFramesEnd < Replay.ReplayFrames.Count - 1 && (replayFramesEnd < 2 || bounds.Contains(Replay.ReplayFrames[replayFramesEnd - 2].GetPointF()))
+                    && Replay.ReplayFrames[replayFramesEnd].Time - hitObject.StartTime < maxTime;
+                    replayFramesEnd++) ;
+
+                g.Draw(linePen(Color.DarkGray), Rectangle.Round(ScaleToRect(new RectangleF(pSub(new PointF(0, hr? 384 : 0), bounds, hr), new SizeF(512, 384)), bounds, area)));
+                
+                for (int q = hitObjectsEnd - 1; q > hitObjectsStart; q--)
                 {
-                    g.DrawEllipse(p, ScaleToRect(new RectangleF(PointF.Subtract(
-                        pSub(Beatmap.HitObjects[q].Location.ToPointF(), bounds, hr),
-                        new SizeF(radius, radius).ToSize()), new SizeF(radius * 2, radius * 2)), bounds, area));
-                }
-                else
-                {
-                    g.FillEllipse(p.Brush, ScaleToRect(new RectangleF(PointF.Subtract(
-                        pSub(Beatmap.HitObjects[q].Location.ToPointF(), bounds, hr),
-                        new SizeF(radius, radius).ToSize()), new SizeF(radius * 2, radius * 2)), bounds, area));
-                }
-            }
-            float distance = 10.0001f;
-            for (int k = replayFramesStart; k < replayFramesEnd - 2; k++)
-            {
-                PointF p1 = pSub(Replay.ReplayFrames[k].GetPointF(), bounds, hr);
-                PointF p2 = pSub(Replay.ReplayFrames[k + 1].GetPointF(), bounds, hr);
-                p.Color = GetHitColor(Beatmap.OverallDifficulty, (int)(hitObject.StartTime - Replay.ReplayFrames[k].Time));
-                g.DrawLine(p, ScaleToRect(p1, bounds, area), ScaleToRect(p2, bounds, area));
-                if (distance > 10 && Math.Abs(hitObject.StartTime - Replay.ReplayFrames[k + 1].Time) > 50)
-                {
-                    Point2 v1 = new Point2(p1.X - p2.X, p1.Y - p2.Y);
-                    if (v1.Length > 0)
+                    byte c = (byte)Math.Min(255, 100 + (int)(Math.Abs(Beatmap.HitObjects[q].StartTime - hitObject.StartTime) * 100 / maxTime));
+                    if (Beatmap.HitObjects[q].Type.HasFlag(HitObjectType.Slider))
                     {
-                        v1.Normalize();
-                        v1 *= (float)(Math.Sqrt(2) * arrowLength / 2);
-                        PointF p3 = PointF.Add(p2, new SizeF(v1.X + v1.Y, v1.Y - v1.X));
-                        PointF p4 = PointF.Add(p2, new SizeF(v1.X - v1.Y, v1.X + v1.Y));
-                        p2 = ScaleToRect(p2, bounds, area);
-                        p3 = ScaleToRect(p3, bounds, area);
-                        p4 = ScaleToRect(p4, bounds, area);
-                        g.DrawLine(p, p2, p3);
-                        g.DrawLine(p, p2, p4);
+                        SliderObject slider = (SliderObject)Beatmap.HitObjects[q];
+                        PointF[] pt = slider.Curves.SelectMany(curve => curve.CurveSnapshots)
+                            .Select(c => c.point + slider.StackOffset.ToVector2())
+                            .Select(s => ScaleToRect(pSub(s.ToPointF(), bounds, hr), bounds, area)).ToArray();
+                        if (pt.Length > 1) g.DrawLines(circlePen(Color.DarkGoldenrod.WithAlpha(80)), pt);
                     }
-                    distance = 0;
+
+                    var color = Color.FromRgb((byte)(c == 100 ? c + 50 : c), c, c);
+                    var circleRect = ScaleToRect(new RectangleF(PointF.Subtract(
+                            pSub(Beatmap.HitObjects[q].Location.ToPointF(), bounds, hr),
+                            (Size)new SizeF(radius, radius)), new SizeF(radius * 2, radius * 2)), bounds, area);
+                    var circle = new EllipsePolygon(RectangleF.Center(circleRect), circleRect.Size);
+                    if (HitCircleOutlines)
+                    {
+                        g.Draw(linePen(color), circle);
+                    }
+                    else
+                    {
+                        g.Fill(color, circle);
+                    }
                 }
-                else
+                float distance = 10.0001f;
+                for (int k = replayFramesStart; k < replayFramesEnd - 2; k++)
                 {
-                    distance += new Point2(p1.X - p2.X, p1.Y - p2.Y).Length;
+                    PointF p1 = pSub(Replay.ReplayFrames[k].GetPointF(), bounds, hr);
+                    PointF p2 = pSub(Replay.ReplayFrames[k + 1].GetPointF(), bounds, hr);
+                    var pen = linePen(GetHitColor(Beatmap.OverallDifficulty, (int)(hitObject.StartTime - Replay.ReplayFrames[k].Time)));
+                    g.DrawLines(pen, ScaleToRect(p1, bounds, area), ScaleToRect(p2, bounds, area));
+                    if (distance > 10 && Math.Abs(hitObject.StartTime - Replay.ReplayFrames[k + 1].Time) > 50)
+                    {
+                        Point2 v1 = new Point2(p1.X - p2.X, p1.Y - p2.Y);
+                        if (v1.Length > 0)
+                        {
+                            v1.Normalize();
+                            v1 *= (float)(Math.Sqrt(2) * arrowLength / 2);
+                            PointF p3 = PointF.Add(p2, new SizeF(v1.X + v1.Y, v1.Y - v1.X));
+                            PointF p4 = PointF.Add(p2, new SizeF(v1.X - v1.Y, v1.X + v1.Y));
+                            p2 = ScaleToRect(p2, bounds, area);
+                            p3 = ScaleToRect(p3, bounds, area);
+                            p4 = ScaleToRect(p4, bounds, area);
+                            g.DrawLines(pen, p2, p3);
+                            g.DrawLines(pen, p2, p4);
+                        }
+                        distance = 0;
+                    }
+                    else
+                    {
+                        distance += new Point2(p1.X - p2.X, p1.Y - p2.Y).Length;
+                    }
+                    if (ReplayAnalyzer.getKey(k == 0 ? Keys.None : Replay.ReplayFrames[k - 1].Keys, Replay.ReplayFrames[k].Keys) > 0)
+                    {
+                        EllipsePolygon circle = new EllipsePolygon(ScaleToRect(p1, bounds, area), ScaleToRect(new SizeF(6, 6), bounds, area));
+                        g.Draw(pen, circle);
+                    }
                 }
-                if (ReplayAnalyzer.getKey(k == 0 ? Keys.None : Replay.ReplayFrames[k - 1].Keys, Replay.ReplayFrames[k].Keys) > 0)
-                {
-                    g.DrawEllipse(p, ScaleToRect(new RectangleF(PointF.Subtract(p1, new Size(3, 3)), new Size(6, 6)),
-                        bounds, area));
-                }
-            }
 
-            p.Color = Color.Black;
-            Font f = new Font(FontFamily.GenericSansSerif, 12);
-            g.DrawString(Beatmap.ToString(), f, p.Brush, 0, 0);
+                var textColor = Color.Black;
+                Font f = new Font(SystemFonts.Get("Segoe UI"), 12);
+                g.DrawText(Beatmap.ToString(), f, textColor, new PointF(0, 0));
 
-            if (drawAllHitObjects) g.DrawString($"Object {num + 1} of {Beatmap.HitObjects.Count}", f, p.Brush, 0, f.Height);
-            else g.DrawString($"Miss {num + 1} of {MissCount}", f, p.Brush, 0, f.Height);
+                if (drawAllHitObjects) g.DrawText($"Object {num + 1} of {Beatmap.HitObjects.Count}", f, textColor, new PointF(0, f.FontMetrics.LineHeight));
+                else g.DrawText($"Miss {num + 1} of {MissCount}", f, textColor, new PointF(0, f.FontMetrics.LineHeight));
 
-            float time = hitObject.StartTime;
-            if (Replay.Mods.HasFlag(Mods.DoubleTime)) time /= 1.5f;
-            else if (Replay.Mods.HasFlag(Mods.HalfTime)) time /= 0.75f;
-            TimeSpan ts = TimeSpan.FromMilliseconds(time);
-            g.DrawString($"Time: {ts:mm\\:ss\\.fff}", f, p.Brush, 0, area.Height - f.Height);
+                float time = hitObject.StartTime;
+                if (Replay.Mods.HasFlag(Mods.DoubleTime)) time /= 1.5f;
+                else if (Replay.Mods.HasFlag(Mods.HalfTime)) time /= 0.75f;
+                TimeSpan ts = TimeSpan.FromMilliseconds(time);
+                g.DrawText($"Time: {ts:mm\\:ss\\.fff}", f, textColor, new PointF(0, area.Height - f.FontMetrics.LineHeight));
+            });
             return img;
         }
 
-        public IEnumerable<Bitmap> DrawAllMisses(Rectangle area)
+        public IEnumerable<Image> DrawAllMisses(Rectangle area)
         {
             bool savedAllVal = drawAllHitObjects;
             drawAllHitObjects = false;
