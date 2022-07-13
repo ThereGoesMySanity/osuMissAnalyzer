@@ -29,7 +29,6 @@ The tiny red circle is placed at the center of the 300 hit window - perfect accu
 |-|-|
 |Up Arrow/Scroll Up|Zoom in|
 |Down Arrow/Scroll Down|Zoom out|
-|Mouse wheel|Zoom in/out|
 | Right Arrow/Left Mouse | Next miss |
 | Left Arrow/Right Mouse | Previous miss |
 | T | Draw outlines only |
