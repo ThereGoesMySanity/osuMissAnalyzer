@@ -15,23 +15,23 @@ After it's found the beatmap and replay, it'll analyze the misses and display th
 
 ### Examples
 
-|![](https://github.com/ThereGoesMySanity/osuMissAnalyzer/blob/missAnalyzer/OsuMissAnalyzer.Core/Images/replay-0_658127_2040036498.0.png)|![](https://github.com/ThereGoesMySanity/osuMissAnalyzer/blob/missAnalyzer/OsuMissAnalyzer.Core/Images/replay-0_658127_2283307549.0.png)|
+|![](https://github.com/ThereGoesMySanity/osuMissAnalyzer/blob/missAnalyzer/OsuMissAnalyzer.Core/Images/2040036498.0.png)|![](https://github.com/ThereGoesMySanity/osuMissAnalyzer/blob/missAnalyzer/OsuMissAnalyzer.Core/Images/2283307549.0.png)|
 |-|-|
 | *Cookiezi's first Blue Zenith choke* | *Cookiezi's second Blue Zenith choke* |
 
-Not shown: In the newest update, the color of the missed hitcircle is tinted red and there are arrows to indicate the direction of movement.
-
-The colored lines represent the hit windows (300, 100, 50) of the circle you missed, mapped onto where your cursor was during those windows. The circle is also colored to reflect what the accuracy would be (300 is blue, 100 is green, 50 is purple).
+The line is your cursor movement. The color changes show the hit window of the focused note. 
+The small hollow circles along the line are the points where there was a click. These are also colored to reflect the note's hit windows (300 is blue, 100 is green, 50 is purple). 
+The tiny red circle is placed at the center of the 300 hit window - perfect accuracy.
 
 ### Controls
 
 | Key | Action|
 |-|-|
-|Up|Zoom in|
-|Down|Zoom out|
+|Up Arrow/Scroll Up|Zoom in|
+|Down Arrow/Scroll Down|Zoom out|
 |Mouse wheel|Zoom in/out|
-| Right | Next miss |
-| Left | Previous miss |
+| Right Arrow/Left Mouse | Next miss |
+| Left Arrow/Right Mouse | Previous miss |
 | T | Draw outlines only |
 | P | Save images for each miss |
 | R | Select new replay |
@@ -39,7 +39,7 @@ The colored lines represent the hit windows (300, 100, 50) of the circle you mis
 
 Outlines only example:
 
-![](https://github.com/ThereGoesMySanity/osuMissAnalyzer/blob/missAnalyzer/OsuMissAnalyzer.Core/Images/replay-0_658127_2040036498.1.png)
+![](https://github.com/ThereGoesMySanity/osuMissAnalyzer/blob/missAnalyzer/OsuMissAnalyzer.Core/Images/d90294bf796a0162aa7f03eee87838bf-132904256761690800.3.png)
 
 ### Options
 
