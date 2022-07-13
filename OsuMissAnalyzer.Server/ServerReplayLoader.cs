@@ -95,5 +95,9 @@ namespace OsuMissAnalyzer.Server
             }
             return $"Couldn't find {(_replay == null? "replay" : "beatmap")}";
         }
+        public override string ToString()
+        {
+            return (Replay.Filename ?? ScoreId ?? Replay.OnlineId.ToString());
+        }
     }
 }

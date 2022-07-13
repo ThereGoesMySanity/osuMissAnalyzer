@@ -49,9 +49,9 @@ namespace OsuMissAnalyzer.Tests
         {
             Replay compare = new Replay($"Resources/{compareFile}");
             Beatmap b = await beatmaps.GetBeatmap(compare.MapHash);
-            if (File.Exists(Path.Combine("serverdata", $"{scoreId}.osr")))
+            if (File.Exists(Path.Combine(root, "serverdata", $"{scoreId}.osr")))
             {
-                File.Delete(Path.Combine("serverdata", $"{scoreId}.osr"));
+                File.Delete(Path.Combine(root, "serverdata", $"{scoreId}.osr"));
             }
             Replay r = await replays.GetReplayFromOnlineId(scoreId, compare.Mods.ModsToString(), b);
             CollectionAssert.AreEqual(compare.ReplayFrames, r.ReplayFrames);
@@ -62,19 +62,19 @@ namespace OsuMissAnalyzer.Tests
         [TestCase("3205642-old?.osu","3205642.osu","3205642","replay-osu_3205642_3960657933.osr")]
         public async Task TestRedownload(string oldFile, string copyTo, string id, string replay)
         {
-            File.Copy(Path.Combine("Resources", oldFile), Path.Combine("serverdata", "beatmaps", copyTo), true);
+            File.Copy(Path.Combine("Resources", oldFile), Path.Combine(root, "serverdata", "beatmaps", copyTo), true);
             Replay r = new Replay(Path.Combine("Resources", replay));
             Beatmap old = await beatmaps.GetBeatmapFromId(id);
             Beatmap newBeatmap = await beatmaps.GetBeatmapFromId(id, true);
             Assert.AreNotEqual(old.BeatmapHash, newBeatmap.BeatmapHash);
         }
 
-        [TestCase("3243485950")]
-        public async Task TestApiv2(string scoreId)
-        {
-            JToken s = await api.GetApiv2($"scores/osu/{scoreId}/download");
-            Console.WriteLine(s);
-        }
+        // [TestCase("3243485950")]
+        // public async Task TestApiv2(string scoreId)
+        // {
+        //     JToken s = await api.GetApiv2($"scores/osu/{scoreId}/download");
+        //     Console.WriteLine(s);
+        // }
 
         [TestCase("312b50442dd47de159257dfac2c8da50-133009249532585046.osr")]
         public async Task TestLoadBeatmap(string replayFile)
@@ -88,6 +88,17 @@ namespace OsuMissAnalyzer.Tests
         {
             ServerReplayLoader replayLoader = new ServerReplayLoader();
             replayLoader.ScoreId = scoreId;
+            await TestAnalyzer(replayLoader);
+        }
+        [TestCase("3534866519.osr")]
+        public async Task TestReplayLoaderByFile(string file)
+        {
+            ServerReplayLoader replayLoader = new ServerReplayLoader();
+            replayLoader.ReplayFile = Path.Combine("Resources", file);
+            await TestAnalyzer(replayLoader);
+        }
+        private async Task TestAnalyzer(ServerReplayLoader replayLoader)
+        {
             Assert.IsNull(await replayLoader.Load(api, replays, beatmaps));
             Assert.True(replayLoader.Loaded);
             var analyzer = new MissAnalyzer(replayLoader);
@@ -95,7 +106,7 @@ namespace OsuMissAnalyzer.Tests
             int i = 0;
             foreach(var image in images)
             {
-                string filename = Path.Combine(root, "out", $"{scoreId}.{i++}.png");
+                string filename = Path.Combine(root, "out", $"{replayLoader.ToString()}.{i++}.png");
                 await image.SaveAsPngAsync(filename);
             }
         }
