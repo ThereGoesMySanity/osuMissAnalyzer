@@ -50,6 +50,7 @@ namespace OsuMissAnalyzer.Tests
         //15246
         [TestCase("Resources/3534866519.osr")]
         [TestCase("Resources/replay-osu_151229_2646617863.osr")]
+        [TestCase("Resources/replay-osu_1695980_4012554317.osr")]
         public void TestStacking(string replayFile)
         {
             Replay r = new Replay(replayFile);

@@ -1,3 +1,4 @@
+using System.IO;
 using System.Threading.Tasks;
 using BMAPI.v1;
 using Newtonsoft.Json.Linq;
@@ -97,7 +98,7 @@ namespace OsuMissAnalyzer.Server
         }
         public override string ToString()
         {
-            return (Replay.Filename ?? ScoreId ?? Replay.OnlineId.ToString());
+            return (Path.GetFileNameWithoutExtension(Replay.Filename) ?? ScoreId ?? Replay.OnlineId.ToString());
         }
     }
 }
