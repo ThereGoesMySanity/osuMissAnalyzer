@@ -92,6 +92,7 @@ namespace OsuMissAnalyzer.Core
                 CircleObject hitObject;
                 if (drawAllHitObjects) hitObject = Beatmap.HitObjects[num];
                 else hitObject = ReplayAnalyzer.misses[num];
+                bool isMiss = !drawAllHitObjects || ReplayAnalyzer.misses.Contains(hitObject);
                 float radius = (float)hitObject.Radius;
                 
                 Func<Color, Pen> circlePen = color => new Pen(color, radius * 2 / scale)
@@ -157,6 +158,7 @@ namespace OsuMissAnalyzer.Core
                 }
                 float distance = 10.0001f;
                 float? closestHit = null;
+                float closestDistance = 0;
                 string verdict = null;
                 for (int k = replayFramesStart; k < replayFramesEnd - 2; k++)
                 {
@@ -208,43 +210,56 @@ namespace OsuMissAnalyzer.Core
                             && (!closestHit.HasValue || Math.Abs(closestHit.Value) > Math.Abs(hitAcc)))
                         {
                             closestHit = hitAcc;
+                            closestDistance = hitObject.DistanceToPoint(Replay.ReplayFrames[k].GetPoint2());
                         }
                     }
+                }
+                if (closestDistance <= 0)
+                {
+                    verdict = "Notelock";
+                    closestDistance = 0;
                 }
 
                 var textColor = Color.Black;
                 int textSize = 16;
+                int textPadding = 3;
                 Font f = new Font(SystemFonts.Get("Segoe UI"), textSize);
                 var opts = new TextOptions(f)
                 {
-                    WrappingLength = area.Width,
+                    WrappingLength = area.Width - 2 * textPadding,
+                    Origin = new System.Numerics.Vector2(textPadding, textPadding),
                 };
                 
-                var textBounds = TextMeasurer.MeasureBounds(Beatmap.ToString(), opts);
-                g.DrawText(opts, Beatmap.ToString(), textColor);
+                var topText = Beatmap.ToString();
+                if (drawAllHitObjects) topText += $"\nObject {num + 1} of {Beatmap.HitObjects.Count}";
+                else topText += $"\nMiss {num + 1} of {MissCount}";
+                g.DrawText(opts, topText, textColor);
 
 
-                if (drawAllHitObjects) g.DrawText($"Object {num + 1} of {Beatmap.HitObjects.Count}", f, textColor, new PointF(0, textBounds.Bottom));
-                else g.DrawText($"Miss {num + 1} of {MissCount}", f, textColor, new PointF(0, textBounds.Bottom));
 
                 float time = hitObject.StartTime;
                 if (Replay.Mods.HasFlag(Mods.DoubleTime)) time /= 1.5f;
                 else if (Replay.Mods.HasFlag(Mods.HalfTime)) time /= 0.75f;
                 TimeSpan ts = TimeSpan.FromMilliseconds(time);
-                g.DrawText($"Time: {ts:mm\\:ss\\.fff}", f, textColor, new PointF(0, area.Height - textSize * 1.5f));
+                opts = new TextOptions(f)
+                {
+                    VerticalAlignment = VerticalAlignment.Bottom,
+                    Origin = new System.Numerics.Vector2(textPadding, area.Height - textPadding),
+                };
+                g.DrawText(opts, $"Time: {ts:mm\\:ss\\.fff}", textColor);
 
-                if (closestHit.HasValue)
+                if (closestHit.HasValue && isMiss)
                 {
                     opts = new TextOptions(f)
                     {
                         HorizontalAlignment = HorizontalAlignment.Right,
                         VerticalAlignment = VerticalAlignment.Bottom,
                         TextAlignment = TextAlignment.End,
-                        Origin = new System.Numerics.Vector2(area.Width, area.Height),
+                        Origin = new System.Numerics.Vector2(area.Width - textPadding, area.Height - textPadding),
                     };
-                    g.DrawText(opts, 
-$@"Closest click: {Math.Abs(closestHit.Value)}ms {(closestHit.Value < 0? "early":"late")}
-Verdict: {verdict}", textColor);
+                    string clickText = $"Closest click: {Math.Abs(closestHit.Value)}ms {(closestHit.Value < 0? "early":"late")}";
+                    if (closestDistance > 0) clickText += $", {closestDistance:N} units off";
+                    g.DrawText(opts, $"Verdict: {verdict}\n{clickText}", textColor);
                 }
             });
             return img;
