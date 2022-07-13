@@ -5,13 +5,18 @@ using System.Threading.Tasks;
 using BMAPI.v1;
 using Newtonsoft.Json.Linq;
 using NUnit.Framework;
+using OsuMissAnalyzer.Core;
+using OsuMissAnalyzer.Server;
+using OsuMissAnalyzer.Server.Database;
 using ReplayAPI;
+using SixLabors.ImageSharp;
 
 namespace OsuMissAnalyzer.Tests
 {
     [TestFixture]
     public class ServerTests
     {
+        private string root = ProjectSourcePath.Value;
         private HttpClient client;
         private OsuApi api;
         private ServerReplayDb replays;
@@ -21,9 +26,16 @@ namespace OsuMissAnalyzer.Tests
         {
             string[] keys = File.ReadAllLines("Resources/keys.dat");
             client = new HttpClient();
+            Logger.Instance = new TestLogger();
             api = new OsuApi(client, "2558", keys[0], keys[1]);
-            replays = new ServerReplayDb(api, "serverdata");
-            beatmaps = new ServerBeatmapDb(api, "serverdata");
+            replays = new ServerReplayDb(api, Path.Combine(root, "serverdata"));
+            beatmaps = new ServerBeatmapDb(api, Path.Combine(root, "serverdata"), true);
+        }
+
+        [OneTimeTearDown]
+        public void Close()
+        {
+            beatmaps.Close();
         }
 
         [TestCase("d41d8cd98f00b204e9800998ecf8427e")]
@@ -69,6 +81,23 @@ namespace OsuMissAnalyzer.Tests
         {
             Replay r = new Replay(Path.Combine("Resources", replayFile));
             Beatmap b = await beatmaps.GetBeatmap(r.MapHash);
+        }
+        [TestCase("2283307549")]
+        [TestCase("2040036498")]
+        public async Task TestReplayLoaderByScore(string scoreId)
+        {
+            ServerReplayLoader replayLoader = new ServerReplayLoader();
+            replayLoader.ScoreId = scoreId;
+            Assert.IsNull(await replayLoader.Load(api, replays, beatmaps));
+            Assert.True(replayLoader.Loaded);
+            var analyzer = new MissAnalyzer(replayLoader);
+            var images = analyzer.DrawAllMisses(new SixLabors.ImageSharp.Rectangle(0, 0, 480, 480));
+            int i = 0;
+            foreach(var image in images)
+            {
+                string filename = Path.Combine(root, "out", $"{scoreId}.{i++}.png");
+                await image.SaveAsPngAsync(filename);
+            }
         }
     }
 }

@@ -54,5 +54,6 @@ OsuMissAnalyzer.Tests/Resources/osu!.db
 upload.sh
 libMonoPosixHelper.so
 /OsuMissAnalyzer.Tests/Resources
+/OsuMissAnalyzer.Tests/out
 /publish
 OsuMissAnalyzer.Server/Resources/GitCommit.txt

@@ -14,6 +14,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\OsuMissAnalyzer.UI\OsuMissAnalyzer.UI.csproj" />
+    <ProjectReference Include="..\OsuMissAnalyzer.Server\OsuMissAnalyzer.Server.csproj" />
   </ItemGroup>
 
   <ItemGroup>
