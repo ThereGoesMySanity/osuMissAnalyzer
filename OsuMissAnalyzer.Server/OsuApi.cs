@@ -121,9 +121,7 @@ namespace OsuMissAnalyzer.Server
             var res = await GetApiv2(req);
             if (res["scores"] is JArray arr && arr.Count > index)
             {
-                var score = arr[index];
-                if ((bool)score["replay"] && !(bool)score["perfect"])
-                    return score;
+                return arr[index];
             }
             else
             {
@@ -132,12 +130,19 @@ namespace OsuMissAnalyzer.Server
             }
             return null;
         }
+        public async Task<JToken> GetScorev2(string scoreId)
+        {
+            var req = $"scores/osu/{scoreId}";
+            var res = await GetApiv2(req);
+            return res;
+        }
         public async Task<JToken> GetApiv2(string endpoint)
         {
             await CheckToken();
             var request = new HttpRequestMessage(HttpMethod.Get, $"https://osu.ppy.sh/api/v2/{endpoint}");
             request.Headers.Add("Authorization", $"Bearer {token}");
             var res = await webClient.SendAsync(request);
+            res.EnsureSuccessStatusCode();
             return JToken.Parse(await res.Content.ReadAsStringAsync());
         }
         public async Task<byte[]> DownloadReplayFromId(string onlineId)

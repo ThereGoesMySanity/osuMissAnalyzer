@@ -47,8 +47,13 @@ namespace OsuMissAnalyzer.Server
 
             if (ReplayFile != null)
                 _replay = new Replay(ReplayFile);
-            else if (ScoreId != null && Mods != null)
-                _replay = await replays.GetReplayFromOnlineId(ScoreId, Mods, _beatmap);
+            else if (ScoreId != null)
+            {
+                if (Mods == null || Beatmap == null)
+                    score = await api.GetScorev2(ScoreId);
+                else
+                    _replay = await replays.GetReplayFromOnlineId(ScoreId, Mods, Beatmap);
+            }
 
             if(_replay == null && PlayIndex.HasValue)
             {
@@ -58,13 +63,17 @@ namespace OsuMissAnalyzer.Server
                     score = await api.GetUserScoresv2(UserId, UserScores, PlayIndex.Value, FailedScores);
                 else if (BeatmapId != null)
                     score = await api.GetBeatmapScoresv2(BeatmapId, PlayIndex.Value);
-
-                if (score != null && _beatmap == null)
-                    _beatmap = await beatmaps.GetBeatmapFromId((string)score["beatmap"]["id"]);
             }
 
-            if (score != null && _beatmap != null)
+            if (score != null)
+            {
+                if (!(bool)score["replay"]) return "Replay not saved online";
+                if ((bool)score["perfect"]) return "No misses";
+
+                if (_beatmap == null) _beatmap = await beatmaps.GetBeatmapFromId((string)score["beatmap"]["id"]);
                 _replay = await replays.GetReplayFromScore(score, _beatmap);
+
+            }
 
             if (_beatmap == null && _replay != null)
                 _beatmap = await beatmaps.GetBeatmap(_replay.MapHash);
