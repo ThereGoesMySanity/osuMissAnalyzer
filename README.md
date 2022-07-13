@@ -17,7 +17,7 @@ After it's found the beatmap and replay, it'll analyze the misses and display th
 
 |![](https://github.com/ThereGoesMySanity/osuMissAnalyzer/blob/missAnalyzer/OsuMissAnalyzer.Core/Images/2040036498.0.png)|![](https://github.com/ThereGoesMySanity/osuMissAnalyzer/blob/missAnalyzer/OsuMissAnalyzer.Core/Images/2283307549.0.png)|
 |-|-|
-| *Cookiezi's first Blue Zenith choke* | *Cookiezi's second Blue Zenith choke* |
+| *chocomint's first Blue Zenith choke* | *chocomint's second Blue Zenith choke* |
 
 The line is your cursor movement. The arrows are the direction of the cursor. The color changes show the hit window of the focused note. 
 The small hollow circles along the line are the points where there was a click. These are also colored to reflect the note's hit windows (300 is blue, 100 is green, 50 is purple).
