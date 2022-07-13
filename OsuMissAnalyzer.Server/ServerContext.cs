@@ -62,7 +62,7 @@ Full readme and source at https://github.com/ThereGoesMySanity/osuMissAnalyzer/t
         {
             Settings = ServerSettings.Load();
             if (!await Settings.Init(args)) return false;
-            Logger.Instance = new Logger(webClient, Path.Combine(Settings.ServerDir, "log.csv"), Settings.WebHook);
+            Logger.Instance = new UnixLogger(webClient, Path.Combine(Settings.ServerDir, "log.csv"), Settings.WebHook);
             if (Settings.Test) await Logger.WriteLine("Started in test mode");
             await Logger.WriteLine(Settings.GitCommit);
             Api = new OsuApi(webClient, Settings.OsuId, Settings.OsuSecret, Settings.OsuApiKey);
@@ -302,15 +302,15 @@ Full readme and source at https://github.com/ThereGoesMySanity/osuMissAnalyzer/t
         public async Task<string> SendMissMessage(DiscordClient discord, MissAnalyzer analyzer, int index)
         {
             analyzer.CurrentObject = index;
-            DiscordMessageBuilder message = new DiscordMessageBuilder().WithFile("miss.png", GetStream(analyzer.DrawSelectedHitObject(area)));
+            DiscordMessageBuilder message = new DiscordMessageBuilder().WithFile("miss.png", await GetStream(analyzer.DrawSelectedHitObject(area)));
             return (await (await discord.GetChannelAsync(Settings.DumpChannel)).SendMessageAsync(message)).Attachments[0].Url;
         }
         
 
-        private static MemoryStream GetStream(Image bitmap)
+        private static async Task<MemoryStream> GetStream(Image bitmap)
         {
             MemoryStream s = new MemoryStream();
-            bitmap.SaveAsPng(s);
+            await bitmap.SaveAsPngAsync(s);
             s.Seek(0, SeekOrigin.Begin);
             return s;
         }

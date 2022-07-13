@@ -10,6 +10,7 @@ using Mono.Unix;
 using Mono.Unix.Native;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using static OsuMissAnalyzer.Server.Logger;
 
 namespace OsuMissAnalyzer.Server
 {
@@ -45,24 +46,22 @@ namespace OsuMissAnalyzer.Server
     {
         CSV, JSON
     }
-    public class Logger
+    public class UnixLogger : ILogger
     {
         private const string ENDPOINT = "/run/missanalyzer-server";
         private const string ALERT_PREFIX = "<@140920359288307712> ";
         private readonly string webHook;
 
-        public static Logger Instance { get; set; }
         private StreamWriter file;
         private int[] counts;
 
-
         private Socket socket;
         private UnixEndPoint endpoint;
+        private HttpClient webClient;
+
         public event Action UpdateLogs;
 
-        public HttpClient webClient;
-
-        public Logger(HttpClient webClient, string logFile, string webHook)
+        public UnixLogger(HttpClient webClient, string logFile, string webHook)
         {
             file = new StreamWriter(logFile, true);
             counts = new int[Enum.GetValues(typeof(Logging)).Length];
@@ -93,7 +92,7 @@ namespace OsuMissAnalyzer.Server
             socket?.Close();
             File.Delete(ENDPOINT);
         }
-        public void AcceptCallback(IAsyncResult result)
+        private void AcceptCallback(IAsyncResult result)
         {
             // if (!socket.Connected) return;
             try
@@ -110,7 +109,7 @@ namespace OsuMissAnalyzer.Server
             }
             catch (Exception e) { if (!(e is Exception)) Console.WriteLine(e); }
         }
-        public void ReadCallback(IAsyncResult result)
+        private void ReadCallback(IAsyncResult result)
         {
             String content = String.Empty;
 
@@ -148,13 +147,13 @@ namespace OsuMissAnalyzer.Server
                 handler.BeginReceive(state.buffer, 0, StateObject.BufferSize, 0, new AsyncCallback(ReadCallback), state);
             }
         }
-        public void SendCallback(IAsyncResult result)
+        private void SendCallback(IAsyncResult result)
         {
             Socket handler = (Socket)result.AsyncState;
 
             handler.EndSend(result);
         }
-        public string GetStats(Format format)
+        private string GetStats(Format format)
         {
             switch (format)
             {
@@ -165,39 +164,25 @@ namespace OsuMissAnalyzer.Server
             }
             return null;
         }
-        public static async Task LogException(Exception exception, LogLevel level = LogLevel.ALERT)
+        public async Task LogException(Exception exception, LogLevel level = LogLevel.ALERT)
         {
             Logger.Log(Logging.ErrorUnhandled);
             await Logger.WriteLine(exception, level);
         }
-        public static void Log(Logging type, int count = 1)
+        public void Log(Logging type, int count = 1)
         {
-            if (Instance == null) return;
-            Instance.counts[(int)type] += count;
+            counts[(int)type] += count;
         }
-        public static void LogAbsolute(Logging type, int value)
+        public void LogAbsolute(Logging type, int value)
         {
-            if (Instance == null) return;
-            Instance.counts[(int)type] = value;
+            counts[(int)type] = value;
         }
 
-        public enum LogLevel { NORMAL, ALERT }
-        public static async Task WriteLine(object o, LogLevel level = LogLevel.NORMAL)
+        public async Task WriteLine(object o, LogLevel level = LogLevel.NORMAL)
         {
             await WriteLine(o.ToString(), level);
         }
-        public static async Task WriteLine(string line, LogLevel level = LogLevel.NORMAL)
-        {
-            try
-            {
-                await Instance.writeLine(line, level);
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine(e);
-            }
-        }
-        public async Task writeLine(string line, LogLevel level)
+        public async Task WriteLine(string line, LogLevel level = LogLevel.NORMAL)
         {
             Console.WriteLine(line);
             if (!string.IsNullOrEmpty(webHook) && level == LogLevel.ALERT)
@@ -207,7 +192,7 @@ namespace OsuMissAnalyzer.Server
             }
         }
 
-        public async Task LogToDiscord(string message)
+        private async Task LogToDiscord(string message)
         {
             int maxLength = 1000;
             if (message.Length > maxLength)
@@ -267,5 +252,4 @@ namespace OsuMissAnalyzer.Server
         // Client socket.
         public Socket workSocket = null;
     }
-
 }
