@@ -32,7 +32,22 @@ namespace OsuMissAnalyzer.UI.ViewModels
             Analyzer = new MissAnalyzer(loader);
             this.WhenAnyValue(x => x.Bounds, x => x.Analyzer).Subscribe(((Rect, MissAnalyzer) _) => UpdateImage());
         }
-        public async void OnKeyDown(object source, KeyEventArgs e)
+
+        internal void OnMouseReleased(object sender, PointerReleasedEventArgs e)
+        {
+            switch (e.InitialPressMouseButton)
+            {
+                case MouseButton.Left:
+                    Analyzer.NextObject();
+                    break;
+                case MouseButton.Right:
+                    Analyzer.PreviousObject();
+                    break;
+            }
+            UpdateImage();
+        }
+
+        internal async void OnKeyDown(object source, KeyEventArgs e)
         {
             switch (e.Key)
             {
@@ -68,14 +83,13 @@ namespace OsuMissAnalyzer.UI.ViewModels
             }
             UpdateImage();
         }
-
-        public void OnMouseWheel(object source, PointerWheelEventArgs e)
+        internal void OnMouseWheel(object source, PointerWheelEventArgs e)
         {
             Analyzer.ScaleChange(-Math.Sign(e.Delta.Y));
             UpdateImage();
         }
 
-        public void UpdateImage()
+        internal void UpdateImage()
         {
             if (Area.Width > 0 && Area.Height > 0)
             {

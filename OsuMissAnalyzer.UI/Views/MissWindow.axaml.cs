@@ -29,6 +29,7 @@ namespace OsuMissAnalyzer.UI.Views
                         canvas.GetObservable(BoundsProperty).Subscribe(value => vm.Bounds = value);
                         PointerWheelChanged += vm.OnMouseWheel;
                         KeyDown += vm.OnKeyDown;
+                        PointerReleased += vm.OnMouseReleased;
                     }
                 };
         }
