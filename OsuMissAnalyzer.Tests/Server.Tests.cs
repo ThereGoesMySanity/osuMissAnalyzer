@@ -91,6 +91,7 @@ namespace OsuMissAnalyzer.Tests
             await TestAnalyzer(replayLoader);
         }
         [TestCase("3534866519.osr")]
+        [TestCase("MyAngelAku_-_kakichoco_-_Zanei_Illusion_2022-06-09_Osu.osr")]
         public async Task TestReplayLoaderByFile(string file)
         {
             ServerReplayLoader replayLoader = new ServerReplayLoader();
