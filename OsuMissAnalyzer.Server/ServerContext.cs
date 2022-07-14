@@ -186,7 +186,13 @@ Full readme and source at https://github.com/ThereGoesMySanity/osuMissAnalyzer/t
                     await Logger.WriteLine("processing attachment");
                     Logger.Log(Logging.AttachmentCalls);
                     string dest = Path.Combine(Settings.ServerDir, "replays", attachment.FileName);
-                    await (await webClient.GetStreamAsync(attachment.Url)).CopyToAsync(File.OpenWrite(dest));
+
+                    using (var stream = await webClient.GetStreamAsync(attachment.Url))
+                    using (var file = File.OpenWrite(dest))
+                    {
+                        await stream.CopyToAsync(file);
+                    }
+
                     replayLoader.ReplayFile = dest;
                     replayLoader.Source = Source.ATTACHMENT;
                 }
