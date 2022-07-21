@@ -1,9 +1,13 @@
-### [Discord bot readme](OsuMissAnalyzer.Server/README.md)
+
 
 # osu! Miss Analyzer
+<a href="https://github.com/ThereGoesMySanity/osuMissAnalyzer/releases/latest"><img alt="GitHub all releases" src="https://img.shields.io/github/downloads/ThereGoesMySanity/osuMissAnalyzer/total"></a>
+
 A program to analyze misses in an osu! replay.
 
 Credit for the beatmap and replay parsing and analysis code goes to [firedigger](https://github.com/firedigger) from his [osu! replay analyzer](https://github.com/firedigger/osuReplayAnalyzer).
+
+### [Discord bot readme](OsuMissAnalyzer.Server/README.md)
 
 ## How To Use
 
