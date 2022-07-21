@@ -2,6 +2,7 @@
 
 # osu! Miss Analyzer
 <a href="https://github.com/ThereGoesMySanity/osuMissAnalyzer/releases/latest"><img alt="GitHub all releases" src="https://img.shields.io/github/downloads/ThereGoesMySanity/osuMissAnalyzer/total"></a>
+<a href="https://github.com/ThereGoesMySanity/osuMissAnalyzer/releases/latest"><img alt="GitHub release (latest by date)" src="https://img.shields.io/github/downloads/ThereGoesMySanity/osuMissAnalyzer/latest/total"></a>
 
 A program to analyze misses in an osu! replay.
 
