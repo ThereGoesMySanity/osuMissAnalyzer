@@ -84,7 +84,7 @@ namespace OsuMissAnalyzer.Core
         /// <param name="num">Index of the miss as it shows up in r.misses.</param>
         public Image DrawHitObject(int num, Rectangle area)
         {
-            Image img = new Image<Rgba32>(area.Width, area.Height, Color.White);
+            Image img = new Image<Rgba32>(area.Width, area.Height, Color.Black);
 
             img.Mutate(g => 
             {
@@ -220,7 +220,7 @@ namespace OsuMissAnalyzer.Core
                     closestDistance = 0;
                 }
 
-                var textColor = Color.Black;
+                var textColor = Color.White;
                 int textSize = 16;
                 int textPadding = 3;
                 Font f = new Font(SystemFonts.Get("Segoe UI"), textSize);
@@ -307,7 +307,7 @@ namespace OsuMissAnalyzer.Core
             if (Math.Abs(ms) < GetHitWindow(od, 300)) return Color.FromRgb(23, 175, 235); //SkyBlue
             if (Math.Abs(ms) < GetHitWindow(od, 100)) return Color.FromRgb(0, 255, 60); //SpringGreen
             if (Math.Abs(ms) < GetHitWindow(od, 50)) return Color.Purple;
-            return Color.Black;
+            return Color.White;
         }
     }
 }
