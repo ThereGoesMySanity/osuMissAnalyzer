@@ -5,6 +5,7 @@ using Newtonsoft.Json.Linq;
 using osuDodgyMomentsFinder;
 using OsuMissAnalyzer.Core;
 using OsuMissAnalyzer.Server.Database;
+using OsuMissAnalyzer.Server.Settings;
 using ReplayAPI;
 
 namespace OsuMissAnalyzer.Server
@@ -37,8 +38,13 @@ namespace OsuMissAnalyzer.Server
 
         private ReplayAnalyzer _analyzer;
 
-        public async Task<string> Load(OsuApi api, ServerReplayDb replays, ServerBeatmapDb beatmaps)
+        private GuildSettings guildSettings;
+
+        public ColorScheme ColorScheme => ColorScheme.Parse(guildSettings.ColorScheme);
+
+        public async Task<string> Load(GuildSettings guildSettings, OsuApi api, ServerReplayDb replays, ServerBeatmapDb beatmaps)
         {
+            this.guildSettings = guildSettings;
             JToken score = null;
             if (Username != null && UserId == null)
                 UserId = await api.GetUserIdv1(Username);

@@ -13,6 +13,7 @@ namespace OsuMissAnalyzer.Server.Settings
         public bool Tracking { get; set; } = false;
         public bool AutoResponses { get; set; } = true;
         public int MaxButtons { get; set; } = 10;
+        public string ColorScheme { get; set; } = "Default";
         public GuildSettings(ulong guildId)
         {
             Id = guildId;

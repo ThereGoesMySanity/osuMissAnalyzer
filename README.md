@@ -57,6 +57,7 @@ To add these to options.cfg, add a new line formatted `<Setting Name>=<Value>`
 |SongsDir|Specify osu!'s songs dir. Only necessary if it isn't OsuDir/Songs.|
 |APIKey|osu! API key|
 |WatchDogMode|Enable watch dog mode, in which newest replays in OsuDir are loaded as they appear.|
+|ColorScheme|Changes the program's color scheme. Accepted values are Default or Dark|
 
 ## Alternate Usage
 

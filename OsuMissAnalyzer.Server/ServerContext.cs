@@ -221,7 +221,7 @@ Full readme and source at https://github.com/ThereGoesMySanity/osuMissAnalyzer/t
         {
             try
             {
-                replayLoader.ErrorMessage ??= await replayLoader.Load(Api, ReplayDb, BeatmapDb);
+                replayLoader.ErrorMessage ??= await replayLoader.Load(res.GuildSettings, Api, ReplayDb, BeatmapDb);
                 if (replayLoader.Loaded)
                 {
                     MissAnalyzer missAnalyzer = new MissAnalyzer(replayLoader);
