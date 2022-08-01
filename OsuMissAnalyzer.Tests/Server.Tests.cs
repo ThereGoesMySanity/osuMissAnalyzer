@@ -8,6 +8,7 @@ using NUnit.Framework;
 using OsuMissAnalyzer.Core;
 using OsuMissAnalyzer.Server;
 using OsuMissAnalyzer.Server.Database;
+using OsuMissAnalyzer.Server.Settings;
 using ReplayAPI;
 using SixLabors.ImageSharp;
 
@@ -100,7 +101,7 @@ namespace OsuMissAnalyzer.Tests
         }
         private async Task TestAnalyzer(ServerReplayLoader replayLoader)
         {
-            Assert.IsNull(await replayLoader.Load(api, replays, beatmaps));
+            Assert.IsNull(await replayLoader.Load(GuildSettings.Default, api, replays, beatmaps));
             Assert.True(replayLoader.Loaded);
             var analyzer = new MissAnalyzer(replayLoader);
             var images = analyzer.DrawAllMisses(new SixLabors.ImageSharp.Rectangle(0, 0, 480, 480));

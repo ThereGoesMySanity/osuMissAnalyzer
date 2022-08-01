@@ -10,6 +10,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Threading.Tasks;
 using Avalonia.Threading;
+using Avalonia.Markup.Xaml.Styling;
 
 namespace OsuMissAnalyzer.UI
 {
@@ -26,6 +27,23 @@ namespace OsuMissAnalyzer.UI
         public override void Initialize()
         {
             AvaloniaXamlLoader.Load(this);
+            switch (ReplayLoader.ColorScheme.SchemeType)
+            {
+                case Core.ColorScheme.Type.Dark:
+                    var dark = new StyleInclude(new Uri("resm:Styles?assembly=ControlCatalog"))
+                    {
+                        Source = new Uri("resm:Avalonia.Themes.Default.Accents.BaseDark.xaml?assembly=Avalonia.Themes.Default")
+                    };
+                    Styles.Add(dark);
+                    break;
+                case Core.ColorScheme.Type.Light:
+                    var light = new StyleInclude(new Uri("resm:Styles?assembly=ControlCatalog"))
+                    {
+                        Source = new Uri("resm:Avalonia.Themes.Default.Accents.BaseLight.xaml?assembly=Avalonia.Themes.Default")
+                    };
+                    Styles.Add(light);
+                    break;
+            }
         }
 
         public override async void OnFrameworkInitializationCompleted()

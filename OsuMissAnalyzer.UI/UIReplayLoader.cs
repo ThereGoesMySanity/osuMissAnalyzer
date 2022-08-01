@@ -30,6 +30,8 @@ namespace OsuMissAnalyzer.UI
         public event EventHandler NewReplay;
         private FileSystemWatcher[] fileSystemWatchers;
 
+        public ColorScheme ColorScheme => ColorScheme.Parse(Options.Settings.GetValueOrDefault("colorscheme", ""));
+
         public async Task<string> Load()
         {
             Debug.Print("Loading Replay file...");
