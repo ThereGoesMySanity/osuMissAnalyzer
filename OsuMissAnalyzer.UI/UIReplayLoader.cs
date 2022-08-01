@@ -49,7 +49,6 @@ namespace OsuMissAnalyzer.UI
 
             Debug.Print("Loaded beatmap {0}", Beatmap.Filename);
             Debug.Print("Analyzing... ");
-            Debug.Print(Replay.ReplayFrames.Count.ToString());
 
             ReplayAnalyzer = new ReplayAnalyzer(Beatmap, Replay);
 
@@ -119,7 +118,6 @@ namespace OsuMissAnalyzer.UI
                             replay = replayListForm.Result.Replay;
                             Beatmap = replayListForm.Result.Beatmap;
                         }
-                        Debug.WriteLine("Test");
                         break;
                     case ReplayFind.BEATMAP:
                         var beatmapForm = new BeatmapSearchBox
