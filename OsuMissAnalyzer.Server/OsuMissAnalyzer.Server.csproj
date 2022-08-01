@@ -5,10 +5,13 @@
     <PackageReference Include="DSharpPlus.SlashCommands" Version="4.3.0-nightly-01151" />
     <PackageReference Include="Mono.Options" Version="6.12.0.148" />
     <PackageReference Include="Mono.Posix.NETStandard" Version="5.20.1-preview" />
-    <PackageReference Include="OsuMissAnalyzer.Core" Version="1.5.1" />
     <PackageReference Include="System.Runtime.Caching.Generic" Version="1.0.5">
       <NoWarn>NU1701</NoWarn>
     </PackageReference>
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\OsuMissAnalyzer.Core\OsuMissAnalyzer.Core.csproj" />
+    <ProjectReference Include="..\osuReplayAnalyzer\osuDodgyMomentsFinder\osuDodgyMomentsFinder.csproj" />
   </ItemGroup>
 
   <PropertyGroup>
