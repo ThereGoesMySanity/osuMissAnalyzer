@@ -24,6 +24,7 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\OsuMissAnalyzer.Core\OsuMissAnalyzer.Core.csproj" />
+    <ProjectReference Include="..\osuReplayAnalyzer\osuDodgyMomentsFinder\osuDodgyMomentsFinder.csproj" />
   </ItemGroup>
   <ItemGroup>
     <None Update="options.cfg">
