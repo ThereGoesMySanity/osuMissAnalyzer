@@ -48,6 +48,7 @@ The owner of the server can view/change settings with:
 |tracking|(currently TinyBot only) Whether the bot responds to "tracking" messages from other bots that are automatically posted when a user sets a new top play. (Default: false)|
 |autoresponses|Whether the bot responds to rs messages posted by other bots (default: true)|
 |maxbuttons|The max number of buttons the bot will put on a miss message. Misses higher than this number won't be viewable. (default 10, max 25)|
+|colorscheme|Changes the program's color scheme. Accepted values are Default or Dark|
 
 ~~If you don't want to clutter your channels with settings configuration, you can DM the bot instead and specify the server id of the server you want to edit.~~
 Removed now that bot uses slash commands.
