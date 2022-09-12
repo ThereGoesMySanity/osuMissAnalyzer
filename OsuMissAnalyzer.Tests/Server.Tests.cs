@@ -78,10 +78,14 @@ namespace OsuMissAnalyzer.Tests
         // }
 
         [TestCase("312b50442dd47de159257dfac2c8da50-133009249532585046.osr")]
+        [TestCase("replay-osu_1695980_4012554317.osr")]
+        [TestCase("3489388060.osr")]
+        [TestCase("3534866519.osr")]
         public async Task TestLoadBeatmap(string replayFile)
         {
             Replay r = new Replay(Path.Combine("Resources", replayFile));
             Beatmap b = await beatmaps.GetBeatmap(r.MapHash);
+            Console.WriteLine(b.BeatmapID);
         }
         [TestCase("2283307549")]
         [TestCase("2040036498")]
