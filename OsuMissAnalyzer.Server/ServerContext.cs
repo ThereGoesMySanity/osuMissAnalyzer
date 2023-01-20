@@ -83,7 +83,8 @@ Full readme and source at https://github.com/ThereGoesMySanity/osuMissAnalyzer/t
                 DiscordIntents.GuildMessages |
                 DiscordIntents.GuildMessageReactions |
                 DiscordIntents.DirectMessages |
-                DiscordIntents.DirectMessageReactions
+                DiscordIntents.DirectMessageReactions |
+                DiscordIntents.MessageContents
             });
             var slash = await Discord.UseSlashCommandsAsync(new SlashCommandsConfiguration
             {
@@ -308,7 +309,7 @@ Full readme and source at https://github.com/ThereGoesMySanity/osuMissAnalyzer/t
         public async Task<string> SendMissMessage(DiscordClient discord, MissAnalyzer analyzer, int index)
         {
             analyzer.CurrentObject = index;
-            DiscordMessageBuilder message = new DiscordMessageBuilder().WithFile("miss.png", await GetStream(analyzer.DrawSelectedHitObject(area)));
+            DiscordMessageBuilder message = new DiscordMessageBuilder().AddFile("miss.png", await GetStream(analyzer.DrawSelectedHitObject(area)));
             return (await (await discord.GetChannelAsync(Settings.DumpChannel)).SendMessageAsync(message)).Attachments[0].Url;
         }
         
