@@ -127,6 +127,8 @@ Full readme and source at https://github.com/ThereGoesMySanity/osuMissAnalyzer/t
 
             Discord.SocketErrored += async (d, e) =>
             {
+                if (e.Exception.HResult == unchecked((int)0x80004005)) return;
+
                 await Logger.LogException(e.Exception);
             };
 
