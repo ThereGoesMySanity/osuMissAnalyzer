@@ -16,6 +16,7 @@ using OsuMissAnalyzer.Server.Settings;
 using DSharpPlus.SlashCommands;
 using SixLabors.ImageSharp;
 using System.Net.Http;
+using System.Net.WebSockets;
 
 namespace OsuMissAnalyzer.Server
 {
@@ -127,7 +128,8 @@ Full readme and source at https://github.com/ThereGoesMySanity/osuMissAnalyzer/t
 
             Discord.SocketErrored += async (d, e) =>
             {
-                if (e.Exception.HResult == unchecked((int)0x80004005)) return;
+                if (e.Exception.GetType() == typeof(WebSocketException)
+                    && e.Exception.HResult == unchecked((int)0x80004005)) return;
 
                 await Logger.LogException(e.Exception);
             };
