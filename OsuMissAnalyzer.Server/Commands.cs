@@ -19,7 +19,7 @@ namespace OsuMissAnalyzer.Server
         {
             await ctx.CreateResponseAsync(InteractionResponseType.ChannelMessageWithSource, 
                     new DiscordInteractionResponseBuilder().WithContent(ServerContext.HelpMessage));
-            Logger.Log(Logging.HelpMessageCreated);
+            logger.Log(DataPoint.HelpMessageCreated);
         }
 
         [SlashCommandGroup("miss", "Analyze a score with MissAnalyzer")]
@@ -42,7 +42,7 @@ namespace OsuMissAnalyzer.Server
                     [Option("Index", "Index of play to analyze (default: 1)")] long index = 1)
             {
                 await Logger.WriteLine("processing user call");
-                Logger.Log(Logging.UserCalls);
+                logger.Log(DataPoint.UserCalls);
                 ServerReplayLoader replayLoader = new ServerReplayLoader
                 {
                     Source = Source.USER,
@@ -61,7 +61,7 @@ namespace OsuMissAnalyzer.Server
                     [Option("Index", "Index of play to analyze (default: 1)")] long index = 1)
             {
                 await Logger.WriteLine("processing user call");
-                Logger.Log(Logging.UserCalls);
+                logger.Log(DataPoint.UserCalls);
 
                 ServerReplayLoader replayLoader = new ServerReplayLoader
                 {

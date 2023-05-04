@@ -7,52 +7,21 @@ using System.Net.Sockets;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.Extensions.Hosting;
 using Mono.Unix;
 using Mono.Unix.Native;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using OsuMissAnalyzer.Server.Settings;
-using static OsuMissAnalyzer.Server.Logger;
 
-namespace OsuMissAnalyzer.Server
+namespace OsuMissAnalyzer.Server.Logging
 {
-    public enum Logging
-    {
-        AttachmentCalls,
-        BotCalls,
-        UserCalls,
-        ReactionCalls,
-        BeatmapsCacheHit,
-        BeatmapsCacheMiss,
-        ReplaysCacheHit,
-        ReplaysCacheMiss,
-        TokenExpiry,
-        ApiGetUserv1,
-        ApiGetBeatmapsv1,
-        ApiGetReplayv1,
-        ApiGetScorev2,
-        ApiGetUserScoresv2,
-        ApiGetBeatmapScoresv2,
-        ApiDownloadBeatmap,
-        EventsHandled,
-        ServersJoined,
-        CachedMessages,
-        BeatmapsDbSize,
-        MessageCreated,
-        HelpMessageCreated,
-        MessageEdited,
-        ErrorHandled,
-        ErrorUnhandled,
-    }
     public enum Format
     {
         CSV, JSON
     }
-    public class UnixLogger : ILogger
+    public class UnixNetdataLogger : IDataLogger
     {
         private const string ENDPOINT = "/run/missanalyzer-server";
-        private const string ALERT_PREFIX = "<@140920359288307712> ";
         private readonly string webHook;
 
         private StreamWriter file;
@@ -64,13 +33,11 @@ namespace OsuMissAnalyzer.Server
 
         public event Action UpdateLogs;
 
-        public UnixLogger(HttpClient webClient, ServerOptions options, DiscordOptions discordOptions)
+        public UnixNetdataLogger(HttpClient httpClient, ServerOptions options, DiscordOptions discordOptions)
         {
             file = new StreamWriter(Path.Combine(options.ServerDir, "log.csv"), true);
-            counts = new int[Enum.GetValues(typeof(Logging)).Length];
-            this.webHook = discordOptions.WebHook;
-
-            this.webClient = webClient;
+            counts = new int[Enum.GetValues(typeof(DataPoint)).Length];
+            this.webClient = httpClient;
         }
         public async Task StartAsync(CancellationToken cancellationToken)
         {
@@ -168,83 +135,27 @@ namespace OsuMissAnalyzer.Server
             switch (format)
             {
                 case Format.JSON:
-                    return new JObject(Enum.GetNames(typeof(Logging)).Zip(counts, (a, b) => new JProperty(a, b))).ToString(Formatting.None);
+                    return new JObject(Enum.GetNames(typeof(DataPoint)).Zip(counts, (a, b) => new JProperty(a, b))).ToString(Formatting.None);
                 case Format.CSV:
                     return $"{DateTime.UtcNow:O},{string.Join(",", counts)}";
             }
             return null;
         }
-        public async Task LogException(Exception exception, LogLevel level = LogLevel.ALERT)
-        {
-            Logger.Log(Logging.ErrorUnhandled);
-            await Logger.WriteLine(exception, level);
-        }
-        public void Log(Logging type, int count = 1)
+        public void Log(DataPoint type) => Log(type, 1);
+        public void Log(DataPoint type, int count)
         {
             counts[(int)type] += count;
         }
-        public void LogAbsolute(Logging type, int value)
+        public void LogAbsolute(DataPoint type, int value)
         {
             counts[(int)type] = value;
         }
 
-        public async Task WriteLine(object o, LogLevel level = LogLevel.NORMAL)
+        private static DataPoint? TryParse(String s)
         {
-            await WriteLine(o.ToString(), level);
-        }
-        public async Task WriteLine(string line, LogLevel level = LogLevel.NORMAL)
-        {
-            Console.WriteLine(line);
-            if (!string.IsNullOrEmpty(webHook) && level == LogLevel.ALERT)
-            {
-                await LogToDiscord(ALERT_PREFIX);
-                await LogToDiscord(line);
-            }
-        }
-
-        private async Task LogToDiscord(string message)
-        {
-            int maxLength = 1000;
-            if (message.Length > maxLength)
-            {
-                List<string> parts = new List<string>();
-                var breaks = message.Split(new[] { '\n' }, StringSplitOptions.RemoveEmptyEntries);
-                int i = 0;
-                while (i < breaks.Length)
-                {
-                    StringBuilder sb = new StringBuilder();
-                    if (breaks[i].Length > maxLength)
-                    {
-                        breaks[i] = breaks[i].Substring(0, maxLength - 3) + "...";
-                    }
-                    while (i < breaks.Length && sb.Length + breaks[i].Length <= maxLength)
-                    {
-                        if (sb.Length != 0) sb.Append('\n');
-                        sb.Append(breaks[i]);
-                        i++;
-                    }
-                    if (sb.Length != 0)
-                    {
-                        var content = new FormUrlEncodedContent(new[] { new KeyValuePair<string, string>("content", sb.ToString()) });
-                        await webClient.PostAsync(webHook, content);
-                    }
-                    else
-                    {
-                        i++;
-                    }
-                }
-            }
-            else
-            {
-                var content = new FormUrlEncodedContent(new[] { new KeyValuePair<string, string>("content", message) });
-                await webClient.PostAsync(webHook, content);
-            }
-        }
-        private static Logging? TryParse(String s)
-        {
-            Logging logging;
-            Logging? var = null;
-            if (Enum.TryParse<Logging>(s, true, out logging))
+            DataPoint logging;
+            DataPoint? var = null;
+            if (Enum.TryParse<DataPoint>(s, true, out logging))
             {
                 var = logging;
             }

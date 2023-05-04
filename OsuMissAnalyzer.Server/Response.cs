@@ -12,15 +12,13 @@ namespace OsuMissAnalyzer.Server
 {
     public abstract class Response
     {
-        public Response(ServerContext context, GuildSettings guildSettings)
+        public Response(GuildOptions guildSettings)
         {
-            Context = context;
             GuildSettings = guildSettings;
         }
 
         public SavedMiss Miss { get; set; }
-        public ServerContext Context { get; }
-        public GuildSettings GuildSettings { get; }
+        public GuildOptions GuildSettings { get; }
 
         public int MissCount => Miss.MissAnalyzer.MissCount;
 
@@ -42,7 +40,7 @@ namespace OsuMissAnalyzer.Server
         public async Task<string> GetContent()
         {
             if (MissCount == 1) Miss.CurrentMiss = 0;
-            if (Miss.CurrentMiss.HasValue) return await Miss.GetOrCreateMissMessage(Context);
+            if (Miss.CurrentMiss.HasValue) return await Miss.GetOrCreateMissMessage();
             else return $"Found **{MissCount}** misses";
         }
 
@@ -60,7 +58,7 @@ namespace OsuMissAnalyzer.Server
         private readonly InteractionContext ctx;
 
         //ctx must have deferred response already sent
-        public InteractionResponse(ServerContext context, GuildSettings settings, InteractionContext ctx) : base(context, settings)
+        public InteractionResponse(GuildOptions settings, InteractionContext ctx) : base(settings)
         {
             this.ctx = ctx;
         }
@@ -92,11 +90,9 @@ namespace OsuMissAnalyzer.Server
     }
     public class MessageResponse : Response
     {
-        public static MessageResponse CreateMessageResponse(Source source, ServerContext context, GuildSettings settings, DiscordMessage message)
-            => source == Source.BOT && settings.Compact ? new CompactResponse(context, settings, message) : new MessageResponse(context, settings, message);
         protected DiscordMessage source;
         protected DiscordMessage response;
-        public MessageResponse(ServerContext context, GuildSettings settings, DiscordMessage message) : base(context, settings)
+        public MessageResponse(GuildOptions settings, DiscordMessage message) : base(settings)
         {
             source = message;
             response = null;
@@ -123,7 +119,7 @@ namespace OsuMissAnalyzer.Server
     }
     public class CompactResponse : MessageResponse
     {
-        public CompactResponse(ServerContext context, GuildSettings settings, DiscordMessage message) : base(context, settings, message) {}
+        public CompactResponse(GuildOptions settings, DiscordMessage message) : base(settings, message) {}
         public override async Task<ulong?> CreateResponse()
         {
             await SendReactions(source, MissCount);

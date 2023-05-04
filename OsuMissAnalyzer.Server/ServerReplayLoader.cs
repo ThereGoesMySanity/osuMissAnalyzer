@@ -38,16 +38,24 @@ namespace OsuMissAnalyzer.Server
 
         private ReplayAnalyzer _analyzer;
 
-        private GuildSettings guildSettings;
+        private readonly OsuApi api;
+        private readonly ServerReplayDb replays;
+        private readonly ServerBeatmapDb beatmaps;
 
         public ColorScheme ColorScheme { get; set; } = ColorScheme.Default;
 
-        public async Task<string> Load(GuildSettings guildSettings, OsuApi api, ServerReplayDb replays, ServerBeatmapDb beatmaps)
+        public ServerReplayLoader(GuildOptions guildSettings, OsuApi api, ServerReplayDb replays, ServerBeatmapDb beatmaps)
+            : this(api, replays, beatmaps)
         {
             this.ColorScheme = ColorScheme.Parse(guildSettings.ColorScheme);
-            return await Load(api, replays, beatmaps);
         }
-        public async Task<string> Load(OsuApi api, ServerReplayDb replays, ServerBeatmapDb beatmaps)
+        public ServerReplayLoader(OsuApi api, ServerReplayDb replays, ServerBeatmapDb beatmaps)
+        {
+            this.api = api;
+            this.replays = replays;
+            this.beatmaps = beatmaps;
+        }
+        public async Task<string> Load()
         {
             JToken score = null;
             if (Username != null && UserId == null)

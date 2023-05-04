@@ -21,62 +21,54 @@ using Microsoft.Extensions.Hosting;
 using System.Threading;
 using System.Reflection;
 using System.Text;
+using OsuMissAnalyzer.Server.Logging;
+using Microsoft.Extensions.Logging;
 
 namespace OsuMissAnalyzer.Server
 {
     public enum Source { USER, BOT, ATTACHMENT }
     public class ServerContext : IHostedService
     {
+        private readonly ServerOptions serverOptions;
+        private readonly DiscordShardedClient discord;
+        private readonly OsuApi api;
+        private readonly HttpClient webClient;
+        private readonly GuildManager guildManager;
+        private readonly ILogger<ServerContext> logger;
+        private readonly IDataLogger dLog;
+
         public MemoryCache<ulong, Response> CachedMisses { get; private set; }
 
-        const int size = 480;
-        public const string HelpMessage = @"osu! Miss Analyzer bot
-```
-Usage:
-  /user {recent|top} <username> [<index>]
-    Finds #index recent/top play for username (index defaults to 1)
-  /beatmap <beatmap id/beatmap link> [<index>]
-    Finds #index score on beatmap (index defaults to 1)
-
-Automatically responds to >rs from owo bot if the replay is saved online
-Automatically responds to uploaded replay files
-Click ""Add to Server"" on the bot's profile to get this bot in your server!
-DM ThereGoesMySanity#2622 if you need help
-```
-Full readme and source at https://github.com/ThereGoesMySanity/osuMissAnalyzer/tree/missAnalyzer/OsuMissAnalyzer.Server";
         private static string[] pfpPrefixes = {"https://a.ppy.sh/", "http://s.ppy.sh/a/"};
         private static Regex settingsRegex = new Regex("^settings (\\d+ )?(get|set ([A-Za-z]+) (.+))$");
         private static Regex partialBeatmapRegex = new Regex("^\\d+#osu/(\\d+)");
         private static Regex modRegex = new Regex("](?: \\+([A-Z]+))?\\n");
-        private static Rectangle area = new Rectangle(0, 0, size, size);
         private static string[] numbers = { "zero", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine" };
         public static DiscordEmoji[] numberEmojis;
 
         public ServerContext(ServerOptions serverOptions, DiscordShardedClient discord, OsuApi api, HttpClient webClient,
-                ServerBeatmapDb beatmapDb, ServerReplayDb replayDb,
                 GuildManager guildManager,
-                ILogger logger)
+                ILogger<ServerContext> logger, IDataLogger dLog)
         {
             this.serverOptions = serverOptions;
             this.discord = discord;
             this.api = api;
             this.webClient = webClient;
-            this.beatmapDb = beatmapDb;
-            this.replayDb = replayDb;
             this.guildManager = guildManager;
             this.logger = logger;
+            this.dLog = dLog;
         }
 
         public async Task StartAsync(CancellationToken cancellationToken)
         {
-            if (serverOptions.Test) await Logger.WriteLine("Started in test mode");
+            if (serverOptions.Test) logger.LogInformation("Started in test mode");
             string gitCommit;
             using (var stream = Assembly.GetEntryAssembly().GetManifestResourceStream("OsuMissAnalyzer.Server.Resources.GitCommit.txt"))
             using (var streamReader = new StreamReader(stream, Encoding.UTF8))
             {
                 gitCommit = streamReader.ReadToEnd();
             }
-            await Logger.WriteLine(gitCommit);
+            logger.LogInformation(gitCommit);
 
             var apiToken = api.RefreshToken();
 
@@ -101,8 +93,8 @@ Full readme and source at https://github.com/ThereGoesMySanity/osuMissAnalyzer/t
 
             discord.ClientErrored += async (d, e) =>
             {
-                await Logger.WriteLine(e.EventName);
-                await Logger.LogException(e.Exception);
+                logger.LogError(e.Exception, e.EventName);
+                await Task.CompletedTask;
             };
 
             discord.SocketErrored += async (d, e) =>
@@ -110,10 +102,10 @@ Full readme and source at https://github.com/ThereGoesMySanity/osuMissAnalyzer/t
                 if (e.Exception.GetType() == typeof(WebSocketException)
                     && e.Exception.HResult == unchecked((int)0x80004005)) return;
 
-                await Logger.LogException(e.Exception);
+                logger.LogError(e.Exception, "Socket Error");
             };
 
-            Logger.Instance.UpdateLogs += () => Logger.LogAbsolute(Logging.ServersJoined, discord.ShardClients.Select(s => s.Value.Guilds?.Count ?? 0).Sum());
+            dLog.UpdateLogs += () => dLog.LogAbsolute(DataPoint.ServersJoined, discord.ShardClients.Select(s => s.Value.Guilds?.Count ?? 0).Sum());
 
             await apiToken;
             await discord.StartAsync();
@@ -124,7 +116,7 @@ Full readme and source at https://github.com/ThereGoesMySanity/osuMissAnalyzer/t
             await discord.StopAsync();
         }
 
-        public bool IsHelpRequest(MessageCreateEventArgs e, GuildSettings guildSettings)
+        public bool IsHelpRequest(MessageCreateEventArgs e, GuildOptions guildSettings)
         {
             return !e.Author.IsCurrent && (e.Message.Content.StartsWith(guildSettings.GetCommand("help"))
                     || ((e.Message.Channel.IsPrivate || (e.MentionedUsers?.Any(u => u?.IsCurrent ?? false) ?? false)) 
@@ -134,7 +126,7 @@ Full readme and source at https://github.com/ThereGoesMySanity/osuMissAnalyzer/t
 
         public async Task HandleMessage(DiscordClient discord, MessageCreateEventArgs e)
         {
-            Logger.Log(Logging.EventsHandled);
+            dLog.Log(DataPoint.EventsHandled);
             if (serverOptions.Test && e.Guild?.Id != serverOptions.TestGuild) return;
             var guildSettings = guildManager.GetGuild(e.Channel);
 
@@ -149,8 +141,8 @@ Full readme and source at https://github.com/ThereGoesMySanity/osuMissAnalyzer/t
             {
                 if (attachment.FileName.EndsWith(".osr"))
                 {
-                    await Logger.WriteLine("processing attachment");
-                    Logger.Log(Logging.AttachmentCalls);
+                    logger.LogInformation("processing attachment");
+                    dLog.Log(DataPoint.AttachmentCalls);
                     string dest = Path.Combine(serverOptions.ServerDir, "replays", attachment.FileName);
 
                     using (var stream = await webClient.GetStreamAsync(attachment.Url))
@@ -167,8 +159,8 @@ Full readme and source at https://github.com/ThereGoesMySanity/osuMissAnalyzer/t
             //bot
             if (guildSettings.AutoResponses && botIds.ContainsKey(e.Author.Id) && rsFunc[e.Author.Id](replayLoader, guildSettings, e))
             {
-                await Logger.WriteLine($"processing {botIds[e.Author.Id]} message");
-                Logger.Log(Logging.BotCalls);
+                logger.LogInformation($"processing {botIds[e.Author.Id]} message");
+                dLog.Log(DataPoint.BotCalls);
                 replayLoader.UserScores = "recent";
                 replayLoader.FailedScores = true;
                 replayLoader.PlayIndex = 0;
@@ -182,58 +174,19 @@ Full readme and source at https://github.com/ThereGoesMySanity/osuMissAnalyzer/t
             }
         }
 
-        public async Task<ulong?> CreateResponse(DiscordClient discord, Response res, ServerReplayLoader replayLoader)
-        {
-            ulong? response = null;
-            try
-            {
-                replayLoader.ErrorMessage ??= await replayLoader.Load(res.GuildSettings, this);
-                if (replayLoader.Loaded)
-                {
-                    MissAnalyzer missAnalyzer = new MissAnalyzer(replayLoader);
-                    res.Miss = new SavedMiss(discord, missAnalyzer);
-                    if (missAnalyzer.MissCount == 0)
-                    {
-                        replayLoader.ErrorMessage = "No misses found.";
-                    }
-                    else
-                    {
-                        response = await res.CreateResponse();
-                        UpdateCache(res, response);
-                    }
-                }
-            }
-            catch (ArgumentException ex)
-            {
-                replayLoader.ErrorMessage = ex.Message;
-            }
-            catch (Exception exc)
-            {
-                await Logger.LogException(exc, Logger.LogLevel.NORMAL);
-            }
-
-            if (replayLoader.ErrorMessage != null && (replayLoader.Source == Source.USER || replayLoader.Source == Source.ATTACHMENT))
-            {
-                Logger.Log(Logging.MessageCreated);
-                Logger.Log(Logging.ErrorHandled);
-                await Logger.WriteLine($"Error handled: {replayLoader.ErrorMessage}");
-                await res.CreateErrorResponse(replayLoader.ErrorMessage);
-            }
-            return response;
-        }
 
         private void UpdateCache(Response res, ulong? key) {
             if (key.HasValue)
             {
-                Logger.Log(Logging.MessageCreated);
+                dLog.Log(DataPoint.MessageCreated);
                 CachedMisses[key.Value] = res;
-                Logger.LogAbsolute(Logging.CachedMessages, CachedMisses.Count);
+                dLog.LogAbsolute(DataPoint.CachedMessages, CachedMisses.Count);
             }
         }
 
         public async Task HandleInteraction(DiscordClient discord, ComponentInteractionCreateEventArgs e)
         {
-            Logger.Log(Logging.EventsHandled);
+            dLog.Log(DataPoint.EventsHandled);
             if (serverOptions.Test && e.Message.Channel.GuildId != serverOptions.TestGuild) return;
 
             Response response = null;
@@ -243,7 +196,7 @@ Full readme and source at https://github.com/ThereGoesMySanity/osuMissAnalyzer/t
             if (response != null && !e.User.IsCurrent && !e.User.IsBot)
             {
                 int index = int.Parse(e.Id) - 1;
-                Logger.Log(Logging.ReactionCalls);
+                dLog.Log(DataPoint.ReactionCalls);
                 _ = Task.Run(() => UpdateResponse(e, response, index));
                 await Task.CompletedTask;
             }
@@ -251,7 +204,7 @@ Full readme and source at https://github.com/ThereGoesMySanity/osuMissAnalyzer/t
 
         public async Task HandleReaction(DiscordClient discord, MessageReactionAddEventArgs e)
         {
-            Logger.Log(Logging.EventsHandled);
+            dLog.Log(DataPoint.EventsHandled);
             if (serverOptions.Test && e.Message.Channel.GuildId != serverOptions.TestGuild) return;
             if (CachedMisses.Contains(e.Message.Id) && !e.User.IsCurrent && !e.User.IsBot)
             {
@@ -260,7 +213,7 @@ Full readme and source at https://github.com/ThereGoesMySanity/osuMissAnalyzer/t
                 int index = Array.FindIndex(numberEmojis, t => t == e.Emoji) - 1;
                 if (index >= 0 && index < Math.Min(analyzer.MissCount, numberEmojis.Length - 1))
                 {
-                    Logger.Log(Logging.ReactionCalls);
+                    dLog.Log(DataPoint.ReactionCalls);
                     _ = Task.Run(() => UpdateResponse(e, response, index));
                     await Task.CompletedTask;
                 }
@@ -269,25 +222,10 @@ Full readme and source at https://github.com/ThereGoesMySanity/osuMissAnalyzer/t
 
         public async Task UpdateResponse(object e, Response response, int index)
         {
-            Logger.Log(Logging.MessageEdited);
+            dLog.Log(DataPoint.MessageEdited);
             UpdateCache(response, await response.UpdateResponse(e, index));
         }
 
-        public async Task<string> SendMissMessage(DiscordClient discord, MissAnalyzer analyzer, int index)
-        {
-            analyzer.CurrentObject = index;
-            DiscordMessageBuilder message = new DiscordMessageBuilder().AddFile("miss.png", await GetStream(analyzer.DrawSelectedHitObject(area)));
-            return (await (await discord.GetChannelAsync(serverOptions.DumpChannel)).SendMessageAsync(message)).Attachments[0].Url;
-        }
-        
-
-        private static async Task<MemoryStream> GetStream(Image bitmap)
-        {
-            MemoryStream s = new MemoryStream();
-            await bitmap.SaveAsPngAsync(s);
-            s.Seek(0, SeekOrigin.Begin);
-            return s;
-        }
 
 
         const ulong OWO = 289066747443675143;
@@ -295,16 +233,8 @@ Full readme and source at https://github.com/ThereGoesMySanity/osuMissAnalyzer/t
         const ulong BOATBOT = 185013154198061056;
         const ulong TINYBOT = 470496878941962251;
         const ulong BATHBOT = 297073686916366336;
-        private readonly ServerOptions serverOptions;
-        private readonly DiscordShardedClient discord;
-        private readonly OsuApi api;
-        private readonly HttpClient webClient;
-        private readonly ServerBeatmapDb beatmapDb;
-        private readonly ServerReplayDb replayDb;
-        private readonly GuildManager guildManager;
-        private readonly ILogger logger;
 
-        delegate bool BotCall(ServerReplayLoader server, GuildSettings guildSettings, MessageCreateEventArgs args);
+        delegate bool BotCall(ServerReplayLoader server, GuildOptions guildSettings, MessageCreateEventArgs args);
 
         Dictionary<ulong, string> botIds = new Dictionary<ulong, string>
         {
@@ -316,7 +246,7 @@ Full readme and source at https://github.com/ThereGoesMySanity/osuMissAnalyzer/t
         };
         Dictionary<ulong, BotCall> rsFunc = new Dictionary<ulong, BotCall>
         {
-            [OWO] = (ServerReplayLoader replayLoader, GuildSettings guildSettings, MessageCreateEventArgs e) =>
+            [OWO] = (ServerReplayLoader replayLoader, GuildOptions guildSettings, MessageCreateEventArgs e) =>
             {
                 if (e.Message.Content != null && e.Message.Content.StartsWith("**Recent osu! Standard Play for") && e.Message.Embeds.Count > 0)
                 {
@@ -325,7 +255,7 @@ Full readme and source at https://github.com/ThereGoesMySanity/osuMissAnalyzer/t
                 }
                 return false;
             },
-            [TINYBOT] = (ServerReplayLoader replayLoader, GuildSettings guildSettings, MessageCreateEventArgs e) =>
+            [TINYBOT] = (ServerReplayLoader replayLoader, GuildOptions guildSettings, MessageCreateEventArgs e) =>
             {
                 if (e.Message.Embeds.Count > 0 && e.Message.Embeds[0].Author != null)
                 {
@@ -339,7 +269,7 @@ Full readme and source at https://github.com/ThereGoesMySanity/osuMissAnalyzer/t
                 }
                 return false;
             },
-            [BATHBOT] = (ServerReplayLoader replayLoader, GuildSettings guildSettings, MessageCreateEventArgs e) =>
+            [BATHBOT] = (ServerReplayLoader replayLoader, GuildOptions guildSettings, MessageCreateEventArgs e) =>
             {
                 if (e.Message.Embeds.Count > 0 && e.Message.Content.StartsWith("Try #"))
                 {
@@ -353,7 +283,7 @@ Full readme and source at https://github.com/ThereGoesMySanity/osuMissAnalyzer/t
                 }
                 return false;
             },
-            [BISMARCK] = (ServerReplayLoader replayLoader, GuildSettings guildSettings, MessageCreateEventArgs e) =>
+            [BISMARCK] = (ServerReplayLoader replayLoader, GuildOptions guildSettings, MessageCreateEventArgs e) =>
             {
                 if (e.Message.Content.Length == 0 && e.Message.Embeds.Count > 0)
                 {
@@ -379,7 +309,7 @@ Full readme and source at https://github.com/ThereGoesMySanity/osuMissAnalyzer/t
                 }
                 return false;
             },
-            [BOATBOT] = (ServerReplayLoader replayLoader, GuildSettings guildSettings, MessageCreateEventArgs e) =>
+            [BOATBOT] = (ServerReplayLoader replayLoader, GuildOptions guildSettings, MessageCreateEventArgs e) =>
             {
                 if (e.Message.Content.StartsWith("Try #") && e.Message.Embeds.Count > 0)
                 {

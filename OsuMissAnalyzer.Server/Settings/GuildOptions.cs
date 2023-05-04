@@ -1,12 +1,14 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using Microsoft.Extensions.Options;
 
 namespace OsuMissAnalyzer.Server.Settings
 {
-    public class GuildSettings
+    public class GuildOptions
     {
-        public static GuildSettings Default = new GuildSettings(0);
+        public static GuildOptions Default = new GuildOptions(0);
         public ulong Id { get; private set; }
         public bool Compact { get; set; } = false;
         public string Prefix { get; set; } = ">miss";
@@ -14,7 +16,8 @@ namespace OsuMissAnalyzer.Server.Settings
         public bool AutoResponses { get; set; } = true;
         public int MaxButtons { get; set; } = 10;
         public string ColorScheme { get; set; } = "Default";
-        public GuildSettings(ulong guildId)
+
+        public GuildOptions(ulong guildId)
         {
             Id = guildId;
         }

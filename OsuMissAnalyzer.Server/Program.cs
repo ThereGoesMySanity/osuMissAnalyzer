@@ -11,6 +11,8 @@ using System.Net.Http;
 using OsuMissAnalyzer.Server.Database;
 using DSharpPlus.SlashCommands;
 using System.Collections.Generic;
+using Microsoft.AspNetCore.Hosting;
+using OsuMissAnalyzer.Server.Models;
 
 namespace OsuMissAnalyzer.Server
 {
@@ -37,16 +39,23 @@ namespace OsuMissAnalyzer.Server
                             DiscordIntents.DirectMessageReactions |
                             DiscordIntents.MessageContents
                     });
-                    services.AddSingleton<ILogger, UnixLogger>();
+                    services.AddSingleton<IDataLogger, UnixNetdataLogger>();
                     services.AddSingleton<GuildManager>();
                     services.AddHttpClient();
 
                     services.AddSingleton<ServerBeatmapDb>();
                     services.AddSingleton<ServerReplayDb>();
 
+                    services.AddScoped<RequestContext>();
+                    services.AddScoped<ResponseFactory>();
+
                     services.AddSingleton<DiscordShardedClient>();
                     services.AddSingleton<SlashCommandsConfiguration>(serviceProvider => new SlashCommandsConfiguration { Services = serviceProvider });
                     services.AddHostedService<ServerContext>();
+                })
+                .ConfigureWebHostDefaults(webBuilder =>
+                {
+                    webBuilder.UseStartup<ApiStartup>();
                 })
                 .Build();
             var slashSettings = host.Services.GetRequiredService<SlashCommandsConfiguration>();

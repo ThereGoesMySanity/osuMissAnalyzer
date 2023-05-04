@@ -43,7 +43,7 @@ namespace OsuMissAnalyzer.Server
             JToken j = JToken.Parse(await res.Content.ReadAsStringAsync());
             tokenTime = (int)j["expires_in"];
             token = (string)j["access_token"];
-            if (Logger.Instance != null) Logger.Instance.UpdateLogs += () => Logger.LogAbsolute(Logging.TokenExpiry, (int)Math.Max(TokenTimeRemaining.TotalMinutes, 0));
+            if (Logger.Instance != null) Logger.Instance.UpdateLogs += () => logger.LogAbsolute(DataPoint.TokenExpiry, (int)Math.Max(TokenTimeRemaining.TotalMinutes, 0));
         }
         private async Task CheckToken()
         {
@@ -57,14 +57,14 @@ namespace OsuMissAnalyzer.Server
         }
         public async Task<string> GetUserIdv1(string username)
         {
-            Logger.Log(Logging.ApiGetUserv1);
+            logger.Log(DataPoint.ApiGetUserv1);
             var result = await ApiRequestv1("get_user", $"u={username}&type=string");
             if ((result as JArray).Count == 0) throw new ArgumentException($"No user named {username}");
             return (string)result[0]["user_id"];
         }
         public async Task<string> DownloadBeatmapFromHashv1(string mapHash, string destinationFolder)
         {
-            Logger.Log(Logging.ApiGetBeatmapsv1);
+            logger.Log(DataPoint.ApiGetBeatmapsv1);
             JArray j = (JArray)(await ApiRequestv1("get_beatmaps", $"h={mapHash}"));
             if (j.Count > 0)
             {
@@ -76,7 +76,7 @@ namespace OsuMissAnalyzer.Server
         }
         public async Task DownloadBeatmapFromId(string beatmapId, string destinationFolder, bool forceRedl = false)
         {
-            Logger.Log(Logging.ApiDownloadBeatmap);
+            logger.Log(DataPoint.ApiDownloadBeatmap);
             string file = Path.Combine(destinationFolder, $"{beatmapId}.osu");
             if (forceRedl && File.Exists(file)) File.Delete(file);
             while(!File.Exists(file))
@@ -98,7 +98,7 @@ namespace OsuMissAnalyzer.Server
         }
         public async Task<JToken> GetUserScoresv2(string userId, string type, int index, bool failedScores)
         {
-            Logger.Log(Logging.ApiGetUserScoresv2);
+            logger.Log(DataPoint.ApiGetUserScoresv2);
             var req = $"users/{userId}/scores/{type}?mode=osu&include_fails={(failedScores?1:0)}&limit=1&offset={index}";
             var res = await GetApiv2(req);
             if (res is JArray arr && arr.Count > 0)
@@ -116,7 +116,7 @@ namespace OsuMissAnalyzer.Server
         }
         public async Task<JToken> GetBeatmapScoresv2(string beatmapId, int index)
         {
-            Logger.Log(Logging.ApiGetBeatmapScoresv2);
+            logger.Log(DataPoint.ApiGetBeatmapScoresv2);
             var req = $"beatmaps/{beatmapId}/scores";
             var res = await GetApiv2(req);
             if (res["scores"] is JArray arr && arr.Count > index)
@@ -147,7 +147,7 @@ namespace OsuMissAnalyzer.Server
         }
         public async Task<byte[]> DownloadReplayFromId(string onlineId)
         {
-            Logger.Log(Logging.ApiGetReplayv1);
+            logger.Log(DataPoint.ApiGetReplayv1);
             while (replayDls.Count > 0 && (DateTime.Now - replayDls.Peek()).TotalSeconds > 60) replayDls.Dequeue();
             if (replayDls.Count >= 10)
             {

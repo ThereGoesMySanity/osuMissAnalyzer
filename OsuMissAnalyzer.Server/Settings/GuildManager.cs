@@ -11,7 +11,7 @@ namespace OsuMissAnalyzer.Server.Settings
 {
     public class GuildManager : IHostedService
     {
-        public Dictionary<ulong, GuildSettings> guilds { get; set; } = new Dictionary<ulong, GuildSettings>();
+        public Dictionary<ulong, GuildOptions> guilds { get; set; } = new Dictionary<ulong, GuildOptions>();
         public Task StartAsync(CancellationToken cancellationToken)
         {
             Load();
@@ -23,16 +23,16 @@ namespace OsuMissAnalyzer.Server.Settings
             Save();
             return Task.CompletedTask;
         }
-        public GuildSettings GetGuild(DiscordChannel channel)
+        public GuildOptions GetGuild(DiscordChannel channel)
         {
-            if (!channel.GuildId.HasValue) return GuildSettings.Default;
+            if (!channel.GuildId.HasValue) return GuildOptions.Default;
             else return GetGuild(channel.GuildId.Value);
         }
-        public GuildSettings GetGuild(ulong id)
+        public GuildOptions GetGuild(ulong id)
         {
             if (!guilds.ContainsKey(id))
             {
-                guilds[id] = new GuildSettings(id);
+                guilds[id] = new GuildOptions(id);
             }
             return guilds[id];
         }
@@ -41,7 +41,7 @@ namespace OsuMissAnalyzer.Server.Settings
         {
             var file = Path.Combine(AppContext.BaseDirectory, "guildsettings.json");
             if (File.Exists(file)) 
-                guilds = JsonConvert.DeserializeObject<Dictionary<ulong, GuildSettings>>(File.ReadAllText(file));
+                guilds = JsonConvert.DeserializeObject<Dictionary<ulong, GuildOptions>>(File.ReadAllText(file));
         }
 
         public void Save()

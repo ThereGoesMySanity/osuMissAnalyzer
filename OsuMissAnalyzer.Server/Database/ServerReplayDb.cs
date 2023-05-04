@@ -13,9 +13,9 @@ namespace OsuMissAnalyzer.Server.Database
     public class ServerReplayDb
     {
         private readonly OsuApi api;
-        private readonly ILogger logger;
+        private readonly IDataLogger logger;
         string serverFolder;
-        public ServerReplayDb(OsuApi api, ServerOptions options, ILogger logger)
+        public ServerReplayDb(OsuApi api, ServerOptions options, IDataLogger logger)
         {
             this.api = api;
             this.logger = logger;
@@ -29,7 +29,7 @@ namespace OsuMissAnalyzer.Server.Database
             Replay replay = null;
             if (!File.Exists(file))
             {
-                Logger.Log(Logging.ReplaysCacheMiss);
+                logger.Log(DataPoint.ReplaysCacheMiss);
                 await Logger.WriteLine("replay not found, downloading...");
                 var data = await api.DownloadReplayFromId(onlineId);
                 if (data != null)
@@ -58,7 +58,7 @@ namespace OsuMissAnalyzer.Server.Database
             else
             {
                 replay = new Replay(file);
-                Logger.Log(Logging.ReplaysCacheHit);
+                logger.Log(DataPoint.ReplaysCacheHit);
             }
             return replay;
         }
@@ -69,7 +69,7 @@ namespace OsuMissAnalyzer.Server.Database
             if (!File.Exists(file))
             {
 
-                Logger.Log(Logging.ReplaysCacheMiss);
+                logger.Log(DataPoint.ReplaysCacheMiss);
                 await Logger.WriteLine("replay not found, downloading...");
                 var replayDownload = api.DownloadReplayFromId((string)score["best_id"]);
 
@@ -110,7 +110,7 @@ namespace OsuMissAnalyzer.Server.Database
             else
             {
                 replay = new Replay(file);
-                Logger.Log(Logging.ReplaysCacheHit);
+                logger.Log(DataPoint.ReplaysCacheHit);
             }
             return replay;
         }
