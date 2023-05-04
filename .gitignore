@@ -57,3 +57,4 @@ libMonoPosixHelper.so
 /OsuMissAnalyzer.Tests/out
 /publish
 OsuMissAnalyzer.Server/Resources/GitCommit.txt
+settings.json

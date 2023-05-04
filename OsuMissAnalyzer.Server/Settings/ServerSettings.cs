@@ -11,23 +11,13 @@ using System.Text;
 
 namespace OsuMissAnalyzer.Server.Settings
 {
-    public class ServerSettings
+    public class ServerSettings : IDisposable
     {
         [JsonProperty]
-        public Dictionary<ulong, GuildSettings> guilds { get; set; } = new Dictionary<ulong, GuildSettings>();
-        public string ServerDir = "";
-        public string OsuId = "2558";
-        public string OsuSecret = "";
-        public string OsuApiKey = "";
-        public string DiscordToken = "";
-        public string WebHook = "";
-        public string DiscordId = "752035690237394944";
-        public string DiscordPermissions = "117824";
         [JsonIgnore]
         public bool Help = false;
         [JsonIgnore]
         public bool Link = false;
-        public bool Test = false;
         [JsonIgnore]
         public bool Reload = false;
         [JsonIgnore]
@@ -35,8 +25,6 @@ namespace OsuMissAnalyzer.Server.Settings
         [JsonIgnore]
         public string GitCommit = null;
 
-        public ulong DumpChannel = 753788360425734235L;
-        public ulong TestGuild = 753465280465862757L;
         public async Task<bool> Init(string[] args)
         {
             var opts = new OptionSet() {
@@ -75,48 +63,15 @@ Bot link: https://discordapp.com/oauth2/authorize?client_id={DiscordId}&scope=bo
                 return false;
             }
             
-            try
-            {
-                using (var stream = Assembly.GetEntryAssembly().GetManifestResourceStream("OsuMissAnalyzer.Server.Resources.GitCommit.txt"))
-                using (var streamReader = new StreamReader(stream, Encoding.UTF8))
-                {
-                    GitCommit = streamReader.ReadToEnd();
-                }
-            }
-            catch (Exception) { return false; }
 
             return true;
         }
 
-        public GuildSettings GetGuild(DiscordChannel channel)
-        {
-            if (!channel.GuildId.HasValue) return GuildSettings.Default;
-            else return GetGuild(channel.GuildId.Value);
-        }
-        public GuildSettings GetGuild(ulong id)
-        {
-            if (!guilds.ContainsKey(id))
-            {
-                guilds[id] = new GuildSettings(id);
-            }
-            return guilds[id];
-        }
 
-        public static ServerSettings Load()
+        public void Dispose()
         {
-            var file = Path.Combine(AppContext.BaseDirectory, "settings.json");
-            if (File.Exists(file)) 
-                return JsonConvert.DeserializeObject<ServerSettings>(File.ReadAllText(file));
-            return new ServerSettings();
-        }
-
-        public void Save()
-        {
-            using (StreamWriter writer = File.CreateText(Path.Combine(AppContext.BaseDirectory, "settings.json")))
-            {
-                JsonSerializer serializer = new JsonSerializer();
-                serializer.Serialize(writer, this);
-            }
+            Save();
+            GC.SuppressFinalize(this);
         }
     }
 }

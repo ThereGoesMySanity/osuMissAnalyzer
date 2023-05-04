@@ -1,14 +1,14 @@
 using System;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Hosting;
 using static OsuMissAnalyzer.Server.Logger;
 using static OsuMissAnalyzer.Server.UnixLogger;
 
 namespace OsuMissAnalyzer.Server
 {
-    public interface ILogger
+    public interface ILogger : IHostedService
     {
         public event Action UpdateLogs;
-        void Close();
         Task LogException(Exception exception, LogLevel level);
         void Log(Logging type, int count);
         void LogAbsolute(Logging type, int value);

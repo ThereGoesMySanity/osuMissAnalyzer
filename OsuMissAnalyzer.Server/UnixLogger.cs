@@ -5,11 +5,14 @@ using System.Linq;
 using System.Net.Http;
 using System.Net.Sockets;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Hosting;
 using Mono.Unix;
 using Mono.Unix.Native;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using OsuMissAnalyzer.Server.Settings;
 using static OsuMissAnalyzer.Server.Logger;
 
 namespace OsuMissAnalyzer.Server
@@ -61,11 +64,18 @@ namespace OsuMissAnalyzer.Server
 
         public event Action UpdateLogs;
 
-        public UnixLogger(HttpClient webClient, string logFile, string webHook)
+        public UnixLogger(HttpClient webClient, ServerOptions options, DiscordOptions discordOptions)
         {
-            file = new StreamWriter(logFile, true);
+            file = new StreamWriter(Path.Combine(options.ServerDir, "log.csv"), true);
             counts = new int[Enum.GetValues(typeof(Logging)).Length];
+            this.webHook = discordOptions.WebHook;
+
+            this.webClient = webClient;
+        }
+        public async Task StartAsync(CancellationToken cancellationToken)
+        {
             if (File.Exists(ENDPOINT)) File.Delete(ENDPOINT);
+            
             socket = new Socket(AddressFamily.Unix, SocketType.Stream, ProtocolType.IP);
             endpoint = new UnixEndPoint(ENDPOINT);
             try
@@ -76,22 +86,22 @@ namespace OsuMissAnalyzer.Server
                 var fileInfo = new Mono.Unix.UnixFileInfo(ENDPOINT);
                 Syscall.chown(ENDPOINT, Syscall.getuid(), Syscall.getgrnam("netdata").gr_gid);
                 Syscall.chmod(ENDPOINT, FilePermissions.S_IWGRP | FilePermissions.S_IWUSR | FilePermissions.S_IRGRP | FilePermissions.S_IRUSR);
-                this.webHook = webHook;
             } catch (Exception) 
             {
                 socket.Close();
                 socket = null;
             }
-
-            this.webClient = webClient;
+            await Task.CompletedTask;
         }
 
-        public void Close()
+        public async Task StopAsync(CancellationToken cancellationToken)
         {
             file.Close();
             socket?.Close();
             File.Delete(ENDPOINT);
+            await Task.CompletedTask;
         }
+
         private void AcceptCallback(IAsyncResult result)
         {
             // if (!socket.Connected) return;

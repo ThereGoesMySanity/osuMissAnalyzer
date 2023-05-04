@@ -4,18 +4,24 @@ using System.IO;
 using System.Threading.Tasks;
 using BMAPI.v1;
 using Newtonsoft.Json;
+using OsuMissAnalyzer.Server.Settings;
+
 namespace OsuMissAnalyzer.Server.Database
 {
-    public class ServerBeatmapDb
+    public class ServerBeatmapDb : IDisposable
     {
         private readonly OsuApi api;
+        private readonly ILogger logger;
         string folder;
         Dictionary<string, string> hashes;
-        public ServerBeatmapDb(OsuApi api, string serverDir, bool reload = false)
+        public ServerBeatmapDb(OsuApi api, ServerOptions options, ILogger logger)
         {
+            var reload = false;
             this.api = api;
-            folder = serverDir;
-            string db = Path.Combine(serverDir, "beatmaps.db");
+            this.logger = logger;
+            folder = options.ServerDir;
+            Directory.CreateDirectory(Path.Combine(options.ServerDir, "beatmaps"));
+            string db = Path.Combine(options.ServerDir, "beatmaps.db");
             if (File.Exists(db) && !reload)
             {
                 hashes = JsonConvert.DeserializeObject<Dictionary<string, string>>(File.ReadAllText(db));
@@ -26,14 +32,15 @@ namespace OsuMissAnalyzer.Server.Database
             }
             if (reload)
             {
-                foreach (var file in Directory.EnumerateFiles(Path.Combine(serverDir, "beatmaps")))
+                foreach (var file in Directory.EnumerateFiles(Path.Combine(options.ServerDir, "beatmaps")))
                 {
                     hashes[Beatmap.MD5FromFile(file)] = Path.GetFileNameWithoutExtension(file);
                 }
             }
             Logger.LogAbsolute(Logging.BeatmapsDbSize, hashes.Count);
         }
-        public void Close()
+
+        public void Dispose()
         {
             using (StreamWriter writer = File.CreateText(Path.Combine(folder, "beatmaps.db")))
             {
@@ -41,6 +48,7 @@ namespace OsuMissAnalyzer.Server.Database
                 serializer.Serialize(writer, hashes);
             }
         }
+
         public async Task<Beatmap> GetBeatmap(string mapHash)
         {
             if (!string.IsNullOrEmpty(mapHash))

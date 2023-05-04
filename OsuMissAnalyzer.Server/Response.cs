@@ -92,11 +92,13 @@ namespace OsuMissAnalyzer.Server
     }
     public class MessageResponse : Response
     {
+        public static MessageResponse CreateMessageResponse(Source source, ServerContext context, GuildSettings settings, DiscordMessage message)
+            => source == Source.BOT && settings.Compact ? new CompactResponse(context, settings, message) : new MessageResponse(context, settings, message);
         protected DiscordMessage source;
         protected DiscordMessage response;
-        public MessageResponse(ServerContext context, GuildSettings settings, MessageCreateEventArgs e) : base(context, settings)
+        public MessageResponse(ServerContext context, GuildSettings settings, DiscordMessage message) : base(context, settings)
         {
-            source = e.Message;
+            source = message;
             response = null;
         }
 
@@ -121,7 +123,7 @@ namespace OsuMissAnalyzer.Server
     }
     public class CompactResponse : MessageResponse
     {
-        public CompactResponse(ServerContext context, GuildSettings settings, MessageCreateEventArgs e) : base(context, settings, e) {}
+        public CompactResponse(ServerContext context, GuildSettings settings, DiscordMessage message) : base(context, settings, message) {}
         public override async Task<ulong?> CreateResponse()
         {
             await SendReactions(source, MissCount);

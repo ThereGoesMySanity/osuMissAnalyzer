@@ -1,63 +1,76 @@
-﻿using DSharpPlus;
-using System;
+﻿using System;
 using System.Threading.Tasks;
 using Mono.Unix;
 using System.Threading;
-using System.Net;
+using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Configuration;
+using OsuMissAnalyzer.Server.Settings;
+using Microsoft.Extensions.DependencyInjection;
+using DSharpPlus;
+using System.Net.Http;
 using OsuMissAnalyzer.Server.Database;
-using System.IO;
-using OsuMissAnalyzer.Core;
-using DSharpPlus.Entities;
-using System.Drawing;
-using System.Text.RegularExpressions;
-using ReplayAPI;
-using System.Runtime.Caching.Generic;
-using Mono.Options;
-using Newtonsoft.Json.Linq;
+using DSharpPlus.SlashCommands;
 using System.Collections.Generic;
-using DSharpPlus.EventArgs;
-using System.Diagnostics;
 
 namespace OsuMissAnalyzer.Server
 {
     public class Program
     {
         static UnixPipes interruptPipe;
-        [STAThread]
-        public static void Main(string[] args)
+        public static async Task Main(string[] args)
         {
-            interruptPipe = UnixPipes.CreatePipes();
-            UnixSignal[] signals = new UnixSignal[] {
-                new UnixSignal(Mono.Unix.Native.Signum.SIGTERM),
-                new UnixSignal(Mono.Unix.Native.Signum.SIGINT),
-            };
-            Thread signalThread = new Thread(delegate ()
+            using IHost host = Host.CreateDefaultBuilder(args)
+                .ConfigureServices((context, services) =>
+                {
+                    IConfiguration configurationRoot = context.Configuration;
+                    services.Configure<ServerOptions>(configurationRoot.GetRequiredSection(nameof(ServerOptions)));
+                    services.Configure<DiscordOptions>(configurationRoot.GetRequiredSection(nameof(DiscordOptions)));
+                    services.Configure<OsuApiOptions>(configurationRoot.GetRequiredSection(nameof(OsuApiOptions)));
+                    services.AddSingleton<DiscordConfiguration>((serviceProvider) => new DiscordConfiguration
+                    {
+                        Token = serviceProvider.GetRequiredService<DiscordOptions>().DiscordToken,
+                        TokenType = TokenType.Bot,
+                        Intents = DiscordIntents.Guilds |
+                            DiscordIntents.GuildMessages |
+                            DiscordIntents.GuildMessageReactions |
+                            DiscordIntents.DirectMessages |
+                            DiscordIntents.DirectMessageReactions |
+                            DiscordIntents.MessageContents
+                    });
+                    services.AddSingleton<ILogger, UnixLogger>();
+                    services.AddSingleton<GuildManager>();
+                    services.AddHttpClient();
+
+                    services.AddSingleton<ServerBeatmapDb>();
+                    services.AddSingleton<ServerReplayDb>();
+
+                    services.AddSingleton<DiscordShardedClient>();
+                    services.AddSingleton<SlashCommandsConfiguration>(serviceProvider => new SlashCommandsConfiguration { Services = serviceProvider });
+                    services.AddHostedService<ServerContext>();
+                })
+                .Build();
+            var slashSettings = host.Services.GetRequiredService<SlashCommandsConfiguration>();
+            var slash = await host.Services.GetRequiredService<DiscordShardedClient>().UseSlashCommandsAsync(slashSettings);
+            var settings = host.Services.GetRequiredService<ServerOptions>();
+            if (settings.Test)
             {
-                int index = UnixSignal.WaitAny(signals);
-                interruptPipe.Writing.Write(BitConverter.GetBytes(index), 0, 4);
-            });
-            signalThread.IsBackground = true;
-            signalThread.Start();
-            MainAsync(args).ConfigureAwait(false).GetAwaiter().GetResult();
-        }
-        static async Task MainAsync(string[] args)
-        {
-            var context = new ServerContext();
-            if (!(await context.Init(args))) return;
+                slash.RegisterCommands<Commands>(settings.TestGuild);
+            }
+            else
+            {
+                slash.RegisterCommands<Commands>();
+            }
+            foreach (var s in slash) {
+                s.Value.SlashCommandErrored += async (d, e) =>
+                {
+                    await Logger.WriteLine(e.Context.CommandName);
+                    await Logger.LogException(e.Exception);
+                };
+            }
 
             await Logger.WriteLine("Init complete");
 
-            try
-            {
-                await context.Start();
-                byte[] buffer = new byte[4];
-                await interruptPipe.Reading.ReadAsync(buffer, 0, 4);
-            }
-            catch (Exception e) { await Logger.WriteLine(e, Logger.LogLevel.ALERT); }
-            await Logger.WriteLine("Closing...");
-            await context.Close();
-            await Logger.WriteLine("Closed safely");
-            Logger.Instance.Close();
+            await host.RunAsync();
         }
     }
 }

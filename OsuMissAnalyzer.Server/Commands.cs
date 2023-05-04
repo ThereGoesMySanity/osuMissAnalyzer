@@ -6,6 +6,8 @@ using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
 using System.Text.RegularExpressions;
+using OsuMissAnalyzer.Server.Settings;
+
 namespace OsuMissAnalyzer.Server
 {
     public class Commands : ApplicationCommandModule
@@ -24,6 +26,7 @@ namespace OsuMissAnalyzer.Server
         public class MissCommands : ApplicationCommandModule
         {
             public ServerContext context { private get; set; }
+            public GuildManager guildManager {private get; set; }
             public enum UserOptions
             {
                 [ChoiceName("Top Plays")]
@@ -80,7 +83,7 @@ namespace OsuMissAnalyzer.Server
             public async Task HandleMissCommand(InteractionContext ctx, ServerReplayLoader replayLoader)
             {
                 await ctx.CreateResponseAsync(InteractionResponseType.DeferredChannelMessageWithSource);
-                var guildSettings = context.Settings.GetGuild(ctx.Channel);
+                var guildSettings = guildManager.GetGuild(ctx.Channel);
                 _ = Task.Run(() => context.CreateResponse(ctx.Client, new InteractionResponse(context, guildSettings, ctx), replayLoader));
             }
         }
@@ -89,6 +92,7 @@ namespace OsuMissAnalyzer.Server
         public class SettingsCommands : ApplicationCommandModule
         {
             public ServerContext context { private get; set; }
+            public GuildManager guildManager {private get; set; }
             public static bool CheckPermissions(DiscordMember user)
             {
                 return user.IsOwner || user.Permissions.HasFlag(Permissions.Administrator);
@@ -99,7 +103,7 @@ namespace OsuMissAnalyzer.Server
             {
                 if (CheckPermissions(ctx.Member))
                 {
-                    var guildSettings = context.Settings.GetGuild(ctx.Guild.Id);
+                    var guildSettings = guildManager.GetGuild(ctx.Guild.Id);
                     string response = string.Join("\n", guildSettings.GetSettings()
                             .Select(s => $"{s.Key}: {s.Value}"));
                     await ctx.CreateResponseAsync(InteractionResponseType.ChannelMessageWithSource, 
@@ -115,7 +119,7 @@ namespace OsuMissAnalyzer.Server
                 if (CheckPermissions(ctx.Member))
                 {
                     string response = null;
-                    var guildSettings = context.Settings.GetGuild(ctx.Guild.Id);
+                    var guildSettings = guildManager.GetGuild(ctx.Guild.Id);
                     try
                     {
                         response = guildSettings.SetSetting(setting, value) ? "Set successfully" : $"Setting {setting} does not exist";

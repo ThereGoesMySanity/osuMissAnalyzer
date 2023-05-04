@@ -40,11 +40,15 @@ namespace OsuMissAnalyzer.Server
 
         private GuildSettings guildSettings;
 
-        public ColorScheme ColorScheme => ColorScheme.Parse(guildSettings.ColorScheme);
+        public ColorScheme ColorScheme { get; set; } = ColorScheme.Default;
 
         public async Task<string> Load(GuildSettings guildSettings, OsuApi api, ServerReplayDb replays, ServerBeatmapDb beatmaps)
         {
-            this.guildSettings = guildSettings;
+            this.ColorScheme = ColorScheme.Parse(guildSettings.ColorScheme);
+            return await Load(api, replays, beatmaps);
+        }
+        public async Task<string> Load(OsuApi api, ServerReplayDb replays, ServerBeatmapDb beatmaps)
+        {
             JToken score = null;
             if (Username != null && UserId == null)
                 UserId = await api.GetUserIdv1(Username);
