@@ -84,11 +84,11 @@ namespace OsuMissAnalyzer.Server
 
             logger.LogInformation("Init complete");
 
-            var serverOpts = host.Services.GetRequiredService<ServerOptions>();
             var discordOpts = host.Services.GetRequiredService<DiscordOptions>();
             if(args.Contains("-l") || args.Contains("--link"))
             {
                 Console.WriteLine(discordOpts.BotLink);
+                return;
             }
 
             await host.RunAsync();

@@ -15,9 +15,9 @@ namespace OsuMissAnalyzer.Server
         private readonly ServerOptions serverOptions;
         public string[] MissUrls;
         public int? CurrentMiss;
-        public SavedMiss(DiscordClient discord, MissAnalyzer analyzer, ServerOptions serverOptions)
+        public SavedMiss(RequestContext context, MissAnalyzer analyzer, ServerOptions serverOptions)
         {
-            this.discord = discord;
+            this.discord = context.DiscordClient;
             MissAnalyzer = analyzer;
             this.serverOptions = serverOptions;
             MissUrls = new string[analyzer.MissCount];

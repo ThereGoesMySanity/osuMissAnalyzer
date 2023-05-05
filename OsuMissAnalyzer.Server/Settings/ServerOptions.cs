@@ -4,11 +4,12 @@ namespace OsuMissAnalyzer.Server.Settings
 {
     public class ServerOptions
     {
-        public string ServerDir { get; set; } = "";
-        public bool Test { get; set; } = false;
-        public ulong DumpChannel { get; set; } = 753788360425734235L;
-        public ulong TestGuild { get; set; } = 753465280465862757L;
-        public int Size { get; set; } = 480;
+        public string ServerDir { get; set; }
+        public bool Test { get; set; }
+        public ulong DumpChannel { get; set; }
+        public ulong TestGuild { get; set; }
+        public int Size { get; set; }
+
         public Rectangle Area => new Rectangle(0, 0, Size, Size);
         public string HelpMessage { get; set; } = @"osu! Miss Analyzer bot
 ```

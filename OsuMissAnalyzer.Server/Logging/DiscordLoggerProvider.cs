@@ -6,7 +6,7 @@ using Microsoft.Extensions.Options;
 
 namespace OsuMissAnalyzer.Server.Logging
 {
-    [ProviderAlias("Discord")]
+    [ProviderAlias("DiscordLog")]
     public class DiscordLoggerProvider : ILoggerProvider
     {
         private DiscordLogger logger;

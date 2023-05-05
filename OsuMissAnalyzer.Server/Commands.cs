@@ -57,7 +57,7 @@ namespace OsuMissAnalyzer.Server
                 var requestContext = scope.ServiceProvider.GetRequiredService<RequestContext>();
                 requestContext.LoadFrom(ctx);
 
-                ServerReplayLoader replayLoader = ActivatorUtilities.CreateInstance<ServerReplayLoader>(scope.ServiceProvider);
+                ServerReplayLoader replayLoader = scope.ServiceProvider.GetRequiredService<ServerReplayLoader>();;
                 replayLoader.Source = Source.USER;
                 replayLoader.Username = username;
                 replayLoader.UserScores = type.ToString();
