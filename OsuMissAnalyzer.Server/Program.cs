@@ -16,6 +16,8 @@ using OsuMissAnalyzer.Server.Models;
 using OsuMissAnalyzer.Server.Logging;
 using Microsoft.Extensions.Logging;
 using System.Linq;
+using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Logging.Configuration;
 
 namespace OsuMissAnalyzer.Server
 {
@@ -25,6 +27,11 @@ namespace OsuMissAnalyzer.Server
         public static async Task Main(string[] args)
         {
             using IHost host = Host.CreateDefaultBuilder(args)
+                .ConfigureLogging(logging =>
+                {
+                    logging.Services.TryAddEnumerable(ServiceDescriptor.Singleton<ILoggerProvider, DiscordLoggerProvider>());
+                    LoggerProviderOptions.RegisterProviderOptions<DiscordLoggerConfiguration, DiscordLoggerProvider>(logging.Services);
+                })
                 .ConfigureServices((context, services) =>
                 {
                     IConfiguration configurationRoot = context.Configuration;

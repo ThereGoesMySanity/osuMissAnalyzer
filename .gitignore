@@ -58,3 +58,4 @@ libMonoPosixHelper.so
 /publish
 OsuMissAnalyzer.Server/Resources/GitCommit.txt
 settings.json
+appsettings.json

@@ -35,12 +35,12 @@ namespace OsuMissAnalyzer.Server.Logging
 
         public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception exception, Func<TState, Exception, string> formatter)
         {
-            if(!IsEnabled(logLevel)) return;
+            var config = getConfig();
+            if(!IsEnabled(logLevel) || String.IsNullOrEmpty(config.WebHook)) return;
 
             logTask.Wait();
             logTask.Dispose();
 
-            var config = getConfig();
             logTask = LogToDiscord(config, formatter(state, exception));
         }
 
