@@ -1,6 +1,8 @@
 using System.Threading.Tasks;
 using DSharpPlus;
 using DSharpPlus.Entities;
+using DSharpPlus.EventArgs;
+using DSharpPlus.SlashCommands;
 using OsuMissAnalyzer.Server.Models;
 using OsuMissAnalyzer.Server.Settings;
 
@@ -38,6 +40,18 @@ namespace OsuMissAnalyzer.Server
             GuildId = res.GuildId;
             ChannelId = res.ChannelId;
             MessageId = res.MessageId;
+        }
+        public void LoadFrom(MessageCreateEventArgs e)
+        {
+            GuildId = e.Guild.Id;
+            ChannelId = e.Channel.Id;
+            MessageId = e.Message.Id;
+        }
+        public void LoadFrom(InteractionContext ctx)
+        {
+            GuildId = ctx.Guild.Id;
+            ChannelId = ctx.Channel.Id;
+            MessageId = ctx.InteractionId;
         }
     }
 }

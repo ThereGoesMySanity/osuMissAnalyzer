@@ -4,7 +4,9 @@ using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using BMAPI.v1;
+using Microsoft.Extensions.Logging;
 using Newtonsoft.Json.Linq;
+using OsuMissAnalyzer.Server.Logging;
 using OsuMissAnalyzer.Server.Settings;
 using ReplayAPI;
 
@@ -13,11 +15,13 @@ namespace OsuMissAnalyzer.Server.Database
     public class ServerReplayDb
     {
         private readonly OsuApi api;
-        private readonly IDataLogger logger;
+        private readonly IDataLogger dLog;
+        private readonly ILogger logger;
         string serverFolder;
-        public ServerReplayDb(OsuApi api, ServerOptions options, IDataLogger logger)
+        public ServerReplayDb(OsuApi api, ServerOptions options, IDataLogger dLog, ILogger logger)
         {
             this.api = api;
+            this.dLog = dLog;
             this.logger = logger;
             this.serverFolder = options.ServerDir;
             Directory.CreateDirectory(Path.Combine(options.ServerDir, "replays"));
@@ -29,8 +33,8 @@ namespace OsuMissAnalyzer.Server.Database
             Replay replay = null;
             if (!File.Exists(file))
             {
-                logger.Log(DataPoint.ReplaysCacheMiss);
-                await Logger.WriteLine("replay not found, downloading...");
+                dLog.Log(DataPoint.ReplaysCacheMiss);
+                logger.LogInformation("replay not found, downloading...");
                 var data = await api.DownloadReplayFromId(onlineId);
                 if (data != null)
                 {
@@ -58,7 +62,7 @@ namespace OsuMissAnalyzer.Server.Database
             else
             {
                 replay = new Replay(file);
-                logger.Log(DataPoint.ReplaysCacheHit);
+                dLog.Log(DataPoint.ReplaysCacheHit);
             }
             return replay;
         }
@@ -69,8 +73,8 @@ namespace OsuMissAnalyzer.Server.Database
             if (!File.Exists(file))
             {
 
-                logger.Log(DataPoint.ReplaysCacheMiss);
-                await Logger.WriteLine("replay not found, downloading...");
+                dLog.Log(DataPoint.ReplaysCacheMiss);
+                logger.LogInformation("replay not found, downloading...");
                 var replayDownload = api.DownloadReplayFromId((string)score["best_id"]);
 
                 replay = new Replay();
@@ -110,7 +114,7 @@ namespace OsuMissAnalyzer.Server.Database
             else
             {
                 replay = new Replay(file);
-                logger.Log(DataPoint.ReplaysCacheHit);
+                dLog.Log(DataPoint.ReplaysCacheHit);
             }
             return replay;
         }

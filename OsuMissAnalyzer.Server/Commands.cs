@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Logging;
 using DSharpPlus;
 using DSharpPlus.Entities;
 using DSharpPlus.SlashCommands;
@@ -7,26 +8,33 @@ using System.Reflection;
 using System.Threading.Tasks;
 using System.Text.RegularExpressions;
 using OsuMissAnalyzer.Server.Settings;
+using OsuMissAnalyzer.Server.Logging;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace OsuMissAnalyzer.Server
 {
     public class Commands : ApplicationCommandModule
     {
         public ServerContext context { private get; set; }
+        public ServerOptions serverOpts { private get; set; }
+        public IDataLogger dLog { private get; set; }
 
         [SlashCommand("help", "Prints help message")]
         public async Task Help(InteractionContext ctx)
         {
             await ctx.CreateResponseAsync(InteractionResponseType.ChannelMessageWithSource, 
-                    new DiscordInteractionResponseBuilder().WithContent(ServerContext.HelpMessage));
-            logger.Log(DataPoint.HelpMessageCreated);
+                    new DiscordInteractionResponseBuilder().WithContent(serverOpts.HelpMessage));
+            dLog.Log(DataPoint.HelpMessageCreated);
         }
 
         [SlashCommandGroup("miss", "Analyze a score with MissAnalyzer")]
         public class MissCommands : ApplicationCommandModule
         {
             public ServerContext context { private get; set; }
-            public GuildManager guildManager {private get; set; }
+            public ILogger logger { private get; set; }
+            public IDataLogger dLog { private get; set; }
+            public GuildManager guildManager { private get; set; }
+            public IServiceScopeFactory scopeFactory { private get; set; }
             public enum UserOptions
             {
                 [ChoiceName("Top Plays")]
@@ -41,16 +49,21 @@ namespace OsuMissAnalyzer.Server
                     [Option("PlayType", "Select from user's top or recent plays")] UserOptions type,
                     [Option("Index", "Index of play to analyze (default: 1)")] long index = 1)
             {
-                await Logger.WriteLine("processing user call");
-                logger.Log(DataPoint.UserCalls);
-                ServerReplayLoader replayLoader = new ServerReplayLoader
-                {
-                    Source = Source.USER,
-                    Username = username,
-                    UserScores = type.ToString(),
-                    PlayIndex = (int)index - 1,
-                };
-                await HandleMissCommand(ctx, replayLoader);
+                await using var scope = scopeFactory.CreateAsyncScope();
+
+                logger.LogInformation("processing user call");
+                dLog.Log(DataPoint.UserCalls);
+
+                var requestContext = scope.ServiceProvider.GetRequiredService<RequestContext>();
+                requestContext.LoadFrom(ctx);
+
+                ServerReplayLoader replayLoader = ActivatorUtilities.CreateInstance<ServerReplayLoader>(scope.ServiceProvider);
+                replayLoader.Source = Source.USER;
+                replayLoader.Username = username;
+                replayLoader.UserScores = type.ToString();
+                replayLoader.PlayIndex = (int)index - 1;
+
+                await HandleMissCommand(ctx, scope.ServiceProvider);
             }
 
             private static Regex beatmapRegex = new Regex("^(?:https?://(?:osu|old).ppy.sh/(?:beatmapsets/\\d+#osu|b)/)?(\\d+)");
@@ -60,14 +73,18 @@ namespace OsuMissAnalyzer.Server
                     [Option("Beatmap", "osu! beatmap link or id")] string beatmap,
                     [Option("Index", "Index of play to analyze (default: 1)")] long index = 1)
             {
-                await Logger.WriteLine("processing user call");
-                logger.Log(DataPoint.UserCalls);
+                await using var scope = scopeFactory.CreateAsyncScope();
 
-                ServerReplayLoader replayLoader = new ServerReplayLoader
-                {
-                    Source = Source.USER,
-                    PlayIndex = (int)index - 1,
-                };
+                logger.LogInformation("processing user call");
+                dLog.Log(DataPoint.UserCalls);
+
+                var requestContext = scope.ServiceProvider.GetRequiredService<RequestContext>();
+                requestContext.LoadFrom(ctx);
+
+                ServerReplayLoader replayLoader = scope.ServiceProvider.GetRequiredService<ServerReplayLoader>();
+                replayLoader.Source = Source.USER;
+                replayLoader.PlayIndex = (int)index - 1;
+
                 var bmMatch = beatmapRegex.Match(beatmap);
                 if (bmMatch.Success)
                 {
@@ -77,14 +94,14 @@ namespace OsuMissAnalyzer.Server
                 {
                     replayLoader.ErrorMessage = "Invalid beatmap link";
                 }
-                await HandleMissCommand(ctx, replayLoader);
+                await HandleMissCommand(ctx, scope.ServiceProvider);
             }
 
-            public async Task HandleMissCommand(InteractionContext ctx, ServerReplayLoader replayLoader)
+            public async Task HandleMissCommand(InteractionContext ctx, IServiceProvider provider)
             {
                 await ctx.CreateResponseAsync(InteractionResponseType.DeferredChannelMessageWithSource);
-                var guildSettings = guildManager.GetGuild(ctx.Channel);
-                _ = Task.Run(() => context.CreateResponse(ctx.Client, new InteractionResponse(context, guildSettings, ctx), replayLoader));
+                var responseFactory = provider.GetRequiredService<ResponseFactory>();
+                await responseFactory.CreateInteractionResponse(ctx);
             }
         }
 

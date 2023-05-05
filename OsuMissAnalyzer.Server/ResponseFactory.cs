@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using OsuMissAnalyzer.Core;
 using Microsoft.Extensions.Logging;
 using OsuMissAnalyzer.Server.Logging;
+using System.Collections.Generic;
 
 namespace OsuMissAnalyzer.Server
 {
@@ -15,32 +16,34 @@ namespace OsuMissAnalyzer.Server
         private readonly IServiceProvider provider;
         private readonly ILogger logger;
         private readonly IDataLogger dLog;
+        private readonly ServerContext serverContext;
         private readonly RequestContext requestContext;
         private readonly ServerReplayLoader replayLoader;
         private readonly GuildOptions options;
 
         public ResponseFactory(IServiceProvider provider, ILogger logger, IDataLogger dLog,
-                RequestContext requestContext, ServerReplayLoader replayLoader, GuildOptions options)
+                ServerContext serverContext, RequestContext requestContext, ServerReplayLoader replayLoader, GuildOptions options)
         {
             this.provider = provider;
             this.logger = logger;
             this.dLog = dLog;
+            this.serverContext = serverContext;
             this.requestContext = requestContext;
             this.replayLoader = replayLoader;
             this.options = options;
         }
 
-        public async Task<MessageResponse> CreateMessageResponse(DiscordMessage message)
+        public async Task<KeyValuePair<ulong, MessageResponse>?> CreateMessageResponse(DiscordMessage message)
             => await CreateResponse(replayLoader.Source == Source.BOT && options.Compact ? 
                 ActivatorUtilities.CreateInstance<CompactResponse>(provider, message):
                 ActivatorUtilities.CreateInstance<MessageResponse>(provider, message));
 
-        public async Task<InteractionResponse> CreateInteractionResponse(InteractionContext ctx)
+        public async Task<KeyValuePair<ulong, InteractionResponse>?> CreateInteractionResponse(InteractionContext ctx)
             => await CreateResponse(ActivatorUtilities.CreateInstance<InteractionResponse>(provider, ctx));
 
-        public async Task<T> CreateResponse<T>(T res) where T : Response
+        private async Task<KeyValuePair<ulong, T>?> CreateResponse<T>(T res) where T : Response
         {
-            ulong? response = null;
+            KeyValuePair<ulong, T>? response = null;
             try
             {
                 replayLoader.ErrorMessage ??= await replayLoader.Load();
@@ -54,8 +57,8 @@ namespace OsuMissAnalyzer.Server
                     }
                     else
                     {
-                        response = await res.CreateResponse();
-                        UpdateCache(res, response);
+                        var id = await res.CreateResponse();
+                        if(id.HasValue) response = new(id.Value, res);
                     }
                 }
             }
@@ -75,6 +78,8 @@ namespace OsuMissAnalyzer.Server
                 logger.LogInformation($"Error handled: {replayLoader.ErrorMessage}");
                 await res.CreateErrorResponse(replayLoader.ErrorMessage);
             }
+
+            if (response.HasValue) serverContext.UpdateCache(response.Value.Key, response.Value.Value);
             return response;
         }
     }

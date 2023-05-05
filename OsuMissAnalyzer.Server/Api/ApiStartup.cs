@@ -22,7 +22,7 @@ namespace OsuMissAnalyzer.Server.Models
             ServerContext = context;
             this.serviceProvider = serviceProvider;
             this.serviceScopeFactory = serviceScopeFactory;
-            CachedRequests = new MemoryCache<ulong, ServerReplayLoader>(128);
+            CachedRequests = new MemoryCache<string, ServerReplayLoader>(128);
         }
         public IServiceProvider ConfigureServices(IServiceCollection services)
         {
@@ -55,14 +55,14 @@ namespace OsuMissAnalyzer.Server.Models
             var context = scope.ServiceProvider.GetRequiredService<RequestContext>();
             context.LoadFrom(res);
 
-            var replayLoader = ActivatorUtilities.CreateInstance<ServerReplayLoader>(scope.ServiceProvider);
+            var replayLoader = scope.ServiceProvider.GetRequiredService<ServerReplayLoader>();
             replayLoader.Source = Source.BOT;
             replayLoader.ScoreId = res.ScoreId;
 
-            MessageResponse response = await scope.ServiceProvider.GetRequiredService<ResponseFactory>()
+            var response = await scope.ServiceProvider.GetRequiredService<ResponseFactory>()
                     .CreateMessageResponse(await context.GetMessageAsync());
 
-            return 
+            return response?.Key;
         }
 
     }

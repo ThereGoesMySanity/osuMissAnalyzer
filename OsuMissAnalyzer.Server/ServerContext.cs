@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Runtime.Caching.Generic;
@@ -10,11 +9,7 @@ using Microsoft.Extensions.DependencyInjection;
 using DSharpPlus;
 using DSharpPlus.Entities;
 using DSharpPlus.EventArgs;
-using OsuMissAnalyzer.Core;
-using OsuMissAnalyzer.Server.Database;
 using OsuMissAnalyzer.Server.Settings;
-using DSharpPlus.SlashCommands;
-using SixLabors.ImageSharp;
 using System.Net.Http;
 using System.Net.WebSockets;
 using Microsoft.Extensions.Hosting;
@@ -33,13 +28,13 @@ namespace OsuMissAnalyzer.Server
         private readonly DiscordShardedClient discord;
         private readonly OsuApi api;
         private readonly HttpClient webClient;
-        private readonly GuildManager guildManager;
+        private readonly IServiceScopeFactory scopeFactory;
         private readonly ILogger<ServerContext> logger;
         private readonly IDataLogger dLog;
 
         public MemoryCache<ulong, Response> CachedMisses { get; private set; }
 
-        private static string[] pfpPrefixes = {"https://a.ppy.sh/", "http://s.ppy.sh/a/"};
+        private static string[] pfpPrefixes = { "https://a.ppy.sh/", "http://s.ppy.sh/a/" };
         private static Regex settingsRegex = new Regex("^settings (\\d+ )?(get|set ([A-Za-z]+) (.+))$");
         private static Regex partialBeatmapRegex = new Regex("^\\d+#osu/(\\d+)");
         private static Regex modRegex = new Regex("](?: \\+([A-Z]+))?\\n");
@@ -47,14 +42,13 @@ namespace OsuMissAnalyzer.Server
         public static DiscordEmoji[] numberEmojis;
 
         public ServerContext(ServerOptions serverOptions, DiscordShardedClient discord, OsuApi api, HttpClient webClient,
-                GuildManager guildManager,
-                ILogger<ServerContext> logger, IDataLogger dLog)
+                IServiceScopeFactory scopeFactory, ILogger<ServerContext> logger, IDataLogger dLog)
         {
             this.serverOptions = serverOptions;
             this.discord = discord;
             this.api = api;
             this.webClient = webClient;
-            this.guildManager = guildManager;
+            this.scopeFactory = scopeFactory;
             this.logger = logger;
             this.dLog = dLog;
         }
@@ -79,7 +73,7 @@ namespace OsuMissAnalyzer.Server
 
             for (int i = 0; i < 10; i++)
             {
-                numberEmojis[i] = DiscordEmoji.FromUnicode(i+"\ufe0f\u20e3");
+                numberEmojis[i] = DiscordEmoji.FromUnicode(i + "\ufe0f\u20e3");
             }
 
             discord.MessageCreated += async (d, e) =>
@@ -103,6 +97,7 @@ namespace OsuMissAnalyzer.Server
                     && e.Exception.HResult == unchecked((int)0x80004005)) return;
 
                 logger.LogError(e.Exception, "Socket Error");
+                await Task.CompletedTask;
             };
 
             dLog.UpdateLogs += () => dLog.LogAbsolute(DataPoint.ServersJoined, discord.ShardClients.Select(s => s.Value.Guilds?.Count ?? 0).Sum());
@@ -119,7 +114,7 @@ namespace OsuMissAnalyzer.Server
         public bool IsHelpRequest(MessageCreateEventArgs e, GuildOptions guildSettings)
         {
             return !e.Author.IsCurrent && (e.Message.Content.StartsWith(guildSettings.GetCommand("help"))
-                    || ((e.Message.Channel.IsPrivate || (e.MentionedUsers?.Any(u => u?.IsCurrent ?? false) ?? false)) 
+                    || ((e.Message.Channel.IsPrivate || (e.MentionedUsers?.Any(u => u?.IsCurrent ?? false) ?? false))
                             && e.Message.Content.IndexOf("help", StringComparison.InvariantCultureIgnoreCase) >= 0)
                     || e.Message.Content == guildSettings.Prefix);
         }
@@ -128,60 +123,60 @@ namespace OsuMissAnalyzer.Server
         {
             dLog.Log(DataPoint.EventsHandled);
             if (serverOptions.Test && e.Guild?.Id != serverOptions.TestGuild) return;
-            var guildSettings = guildManager.GetGuild(e.Channel);
-
-            // if (IsHelpRequest(e, guildSettings)) 
-            // {
-            //     await e.Message.RespondAsync("MissAnalyzer now uses slash commands! Type /help for help.");
-            // }
-
-            ServerReplayLoader replayLoader = new ServerReplayLoader();
-            //attachment
-            foreach (var attachment in e.Message.Attachments)
+            _ = Task.Run(async () =>
             {
-                if (attachment.FileName.EndsWith(".osr"))
+                await using var scope = scopeFactory.CreateAsyncScope();
+
+                var requestContext = scope.ServiceProvider.GetRequiredService<RequestContext>();
+                requestContext.LoadFrom(e);
+                ServerReplayLoader replayLoader = scope.ServiceProvider.GetRequiredService<ServerReplayLoader>();
+
+                //attachment
+                foreach (var attachment in e.Message.Attachments)
                 {
-                    logger.LogInformation("processing attachment");
-                    dLog.Log(DataPoint.AttachmentCalls);
-                    string dest = Path.Combine(serverOptions.ServerDir, "replays", attachment.FileName);
-
-                    using (var stream = await webClient.GetStreamAsync(attachment.Url))
-                    using (var file = File.OpenWrite(dest))
+                    if (attachment.FileName.EndsWith(".osr"))
                     {
-                        await stream.CopyToAsync(file);
+                        logger.LogInformation("processing attachment");
+                        dLog.Log(DataPoint.AttachmentCalls);
+                        string dest = Path.Combine(serverOptions.ServerDir, "replays", attachment.FileName);
+
+                        using (var stream = await webClient.GetStreamAsync(attachment.Url))
+                        using (var file = File.OpenWrite(dest))
+                        {
+                            await stream.CopyToAsync(file);
+                        }
+
+                        replayLoader.ReplayFile = dest;
+                        replayLoader.Source = Source.ATTACHMENT;
                     }
-
-                    replayLoader.ReplayFile = dest;
-                    replayLoader.Source = Source.ATTACHMENT;
                 }
-            }
 
-            //bot
-            if (guildSettings.AutoResponses && botIds.ContainsKey(e.Author.Id) && rsFunc[e.Author.Id](replayLoader, guildSettings, e))
-            {
-                logger.LogInformation($"processing {botIds[e.Author.Id]} message");
-                dLog.Log(DataPoint.BotCalls);
-                replayLoader.UserScores = "recent";
-                replayLoader.FailedScores = true;
-                replayLoader.PlayIndex = 0;
-                replayLoader.Source = Source.BOT;
-            }
+                //bot
+                if (requestContext.GuildOptions.AutoResponses && botIds.ContainsKey(e.Author.Id) && rsFunc[e.Author.Id](replayLoader, e))
+                {
+                    logger.LogInformation($"processing {botIds[e.Author.Id]} message");
+                    dLog.Log(DataPoint.BotCalls);
+                    replayLoader.UserScores = "recent";
+                    replayLoader.FailedScores = true;
+                    replayLoader.PlayIndex = 0;
+                    replayLoader.Source = Source.BOT;
+                }
 
-            if (replayLoader.Source.HasValue)
-            {
-                Response r = MessageResponse.CreateMessageResponse(replayLoader.Source.Value, this, guildSettings, e.Message);
-                _ = Task.Run(() => CreateResponse(discord, r, replayLoader));
-            }
+                if (replayLoader.Source.HasValue)
+                {
+                    var responseFactory = scope.ServiceProvider.GetRequiredService<ResponseFactory>();
+                    await responseFactory.CreateMessageResponse(e.Message);
+                }
+            });
+            await Task.CompletedTask;
         }
 
 
-        private void UpdateCache(Response res, ulong? key) {
-            if (key.HasValue)
-            {
-                dLog.Log(DataPoint.MessageCreated);
-                CachedMisses[key.Value] = res;
-                dLog.LogAbsolute(DataPoint.CachedMessages, CachedMisses.Count);
-            }
+        public void UpdateCache(ulong key, Response value)
+        {
+            dLog.Log(DataPoint.MessageCreated);
+            CachedMisses[key] = value;
+            dLog.LogAbsolute(DataPoint.CachedMessages, CachedMisses.Count);
         }
 
         public async Task HandleInteraction(DiscordClient discord, ComponentInteractionCreateEventArgs e)
@@ -223,7 +218,8 @@ namespace OsuMissAnalyzer.Server
         public async Task UpdateResponse(object e, Response response, int index)
         {
             dLog.Log(DataPoint.MessageEdited);
-            UpdateCache(response, await response.UpdateResponse(e, index));
+            var id = await response.UpdateResponse(e, index);
+            if (id.HasValue) UpdateCache(id.Value, response);
         }
 
 
@@ -234,7 +230,7 @@ namespace OsuMissAnalyzer.Server
         const ulong TINYBOT = 470496878941962251;
         const ulong BATHBOT = 297073686916366336;
 
-        delegate bool BotCall(ServerReplayLoader server, GuildOptions guildSettings, MessageCreateEventArgs args);
+        delegate bool BotCall(ServerReplayLoader server, MessageCreateEventArgs e);
 
         Dictionary<ulong, string> botIds = new Dictionary<ulong, string>
         {
@@ -246,7 +242,7 @@ namespace OsuMissAnalyzer.Server
         };
         Dictionary<ulong, BotCall> rsFunc = new Dictionary<ulong, BotCall>
         {
-            [OWO] = (ServerReplayLoader replayLoader, GuildOptions guildSettings, MessageCreateEventArgs e) =>
+            [OWO] = (ServerReplayLoader replayLoader, MessageCreateEventArgs e) =>
             {
                 if (e.Message.Content != null && e.Message.Content.StartsWith("**Recent osu! Standard Play for") && e.Message.Embeds.Count > 0)
                 {
@@ -255,21 +251,21 @@ namespace OsuMissAnalyzer.Server
                 }
                 return false;
             },
-            [TINYBOT] = (ServerReplayLoader replayLoader, GuildOptions guildSettings, MessageCreateEventArgs e) =>
-            {
-                if (e.Message.Embeds.Count > 0 && e.Message.Embeds[0].Author != null)
-                {
-                    string header = e.Message.Embeds[0].Author.Name;
-                    if (header.StartsWith("Most recent osu! Standard play for")
-                        || (guildSettings.Tracking && header.StartsWith("New #") && header.EndsWith("in osu!Standard:")))
-                    {
-                        replayLoader.UserId = GetIdFromEmbed(e.Message.Embeds[0]);
-                        return true;
-                    }
-                }
-                return false;
-            },
-            [BATHBOT] = (ServerReplayLoader replayLoader, GuildOptions guildSettings, MessageCreateEventArgs e) =>
+            // [TINYBOT] = (ServerReplayLoader replayLoader, MessageCreateEventArgs e) =>
+            // {
+            //     if (e.Message.Embeds.Count > 0 && e.Message.Embeds[0].Author != null)
+            //     {
+            //         string header = e.Message.Embeds[0].Author.Name;
+            //         if (header.StartsWith("Most recent osu! Standard play for")
+            //             || (guildSettings.Tracking && header.StartsWith("New #") && header.EndsWith("in osu!Standard:")))
+            //         {
+            //             replayLoader.UserId = GetIdFromEmbed(e.Message.Embeds[0]);
+            //             return true;
+            //         }
+            //     }
+            //     return false;
+            // },
+            [BATHBOT] = (ServerReplayLoader replayLoader, MessageCreateEventArgs e) =>
             {
                 if (e.Message.Embeds.Count > 0 && e.Message.Content.StartsWith("Try #"))
                 {
@@ -283,7 +279,7 @@ namespace OsuMissAnalyzer.Server
                 }
                 return false;
             },
-            [BISMARCK] = (ServerReplayLoader replayLoader, GuildOptions guildSettings, MessageCreateEventArgs e) =>
+            [BISMARCK] = (ServerReplayLoader replayLoader, MessageCreateEventArgs e) =>
             {
                 if (e.Message.Content.Length == 0 && e.Message.Embeds.Count > 0)
                 {
@@ -309,7 +305,7 @@ namespace OsuMissAnalyzer.Server
                 }
                 return false;
             },
-            [BOATBOT] = (ServerReplayLoader replayLoader, GuildOptions guildSettings, MessageCreateEventArgs e) =>
+            [BOATBOT] = (ServerReplayLoader replayLoader, MessageCreateEventArgs e) =>
             {
                 if (e.Message.Content.StartsWith("Try #") && e.Message.Embeds.Count > 0)
                 {

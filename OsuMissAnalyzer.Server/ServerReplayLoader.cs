@@ -44,10 +44,10 @@ namespace OsuMissAnalyzer.Server
 
         public ColorScheme ColorScheme { get; set; } = ColorScheme.Default;
 
-        public ServerReplayLoader(GuildOptions guildSettings, OsuApi api, ServerReplayDb replays, ServerBeatmapDb beatmaps)
+        public ServerReplayLoader(RequestContext context, OsuApi api, ServerReplayDb replays, ServerBeatmapDb beatmaps)
             : this(api, replays, beatmaps)
         {
-            this.ColorScheme = ColorScheme.Parse(guildSettings.ColorScheme);
+            this.ColorScheme = ColorScheme.Parse(context.GuildOptions.ColorScheme);
         }
         public ServerReplayLoader(OsuApi api, ServerReplayDb replays, ServerBeatmapDb beatmaps)
         {

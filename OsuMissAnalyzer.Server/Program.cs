@@ -13,6 +13,9 @@ using DSharpPlus.SlashCommands;
 using System.Collections.Generic;
 using Microsoft.AspNetCore.Hosting;
 using OsuMissAnalyzer.Server.Models;
+using OsuMissAnalyzer.Server.Logging;
+using Microsoft.Extensions.Logging;
+using System.Linq;
 
 namespace OsuMissAnalyzer.Server
 {
@@ -69,15 +72,24 @@ namespace OsuMissAnalyzer.Server
             {
                 slash.RegisterCommands<Commands>();
             }
+            var logger = host.Services.GetRequiredService<ILogger>();
             foreach (var s in slash) {
                 s.Value.SlashCommandErrored += async (d, e) =>
                 {
-                    await Logger.WriteLine(e.Context.CommandName);
-                    await Logger.LogException(e.Exception);
+                    logger.LogInformation(e.Context.CommandName);
+                    logger.LogError(e.Exception, "Slash Command Error");
+                    await Task.CompletedTask;
                 };
             }
 
-            await Logger.WriteLine("Init complete");
+            logger.LogInformation("Init complete");
+
+            var serverOpts = host.Services.GetRequiredService<ServerOptions>();
+            var discordOpts = host.Services.GetRequiredService<DiscordOptions>();
+            if(args.Contains("-l") || args.Contains("--link"))
+            {
+                Console.WriteLine(discordOpts.BotLink);
+            }
 
             await host.RunAsync();
         }

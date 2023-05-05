@@ -5,27 +5,30 @@ using System.IO;
 using System.Net;
 using System.Net.Http;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 using Newtonsoft.Json.Linq;
+using OsuMissAnalyzer.Server.Logging;
+using OsuMissAnalyzer.Server.Settings;
 
 namespace OsuMissAnalyzer.Server
 {
     public class OsuApi
     {
-        private string apiKeyv1;
         private readonly HttpClient webClient;
-        private string clientId;
-        private string clientSecret;
+        private readonly OsuApiOptions options;
+        private readonly IDataLogger dLog;
+        private readonly ILogger logger;
         private Stopwatch tokenExpiry;
         private Queue<DateTime> replayDls;
         private int tokenTime;
         private string token;
         private TimeSpan TokenTimeRemaining => TimeSpan.FromSeconds(tokenTime).Subtract(tokenExpiry.Elapsed);
-        public OsuApi(HttpClient webClient, string clientId, string clientSecret, string apiKeyv1)
+        public OsuApi(HttpClient webClient, OsuApiOptions options, IDataLogger dLog, ILogger logger)
         {
             this.webClient = webClient;
-            this.clientId = clientId;
-            this.apiKeyv1 = apiKeyv1;
-            this.clientSecret = clientSecret;
+            this.options = options;
+            this.dLog = dLog;
+            this.logger = logger;
             tokenExpiry = new Stopwatch();
             replayDls = new Queue<DateTime>();
         }
@@ -33,8 +36,8 @@ namespace OsuMissAnalyzer.Server
         {
             HttpContent postContent = new FormUrlEncodedContent(new[]
             {
-                new KeyValuePair<string, string>("client_id", clientId),
-                new KeyValuePair<string, string>("client_secret", clientSecret),
+                new KeyValuePair<string, string>("client_id", options.ClientId),
+                new KeyValuePair<string, string>("client_secret", options.ClientSecret),
                 new KeyValuePair<string, string>("grant_type", "client_credentials"),
                 new KeyValuePair<string, string>("scope", "public"),
             });
@@ -43,7 +46,7 @@ namespace OsuMissAnalyzer.Server
             JToken j = JToken.Parse(await res.Content.ReadAsStringAsync());
             tokenTime = (int)j["expires_in"];
             token = (string)j["access_token"];
-            if (Logger.Instance != null) Logger.Instance.UpdateLogs += () => logger.LogAbsolute(DataPoint.TokenExpiry, (int)Math.Max(TokenTimeRemaining.TotalMinutes, 0));
+            dLog.UpdateLogs += () => dLog.LogAbsolute(DataPoint.TokenExpiry, (int)Math.Max(TokenTimeRemaining.TotalMinutes, 0));
         }
         private async Task CheckToken()
         {
@@ -52,19 +55,19 @@ namespace OsuMissAnalyzer.Server
         }
         public async Task<JToken> ApiRequestv1(string endpoint, string query)
         {
-            string res = await webClient.GetStringAsync($"https://osu.ppy.sh/api/{endpoint}?k={apiKeyv1}&{query}");
+            string res = await webClient.GetStringAsync($"https://osu.ppy.sh/api/{endpoint}?k={options.ApiKey}&{query}");
             return JToken.Parse(res);
         }
         public async Task<string> GetUserIdv1(string username)
         {
-            logger.Log(DataPoint.ApiGetUserv1);
+            dLog.Log(DataPoint.ApiGetUserv1);
             var result = await ApiRequestv1("get_user", $"u={username}&type=string");
             if ((result as JArray).Count == 0) throw new ArgumentException($"No user named {username}");
             return (string)result[0]["user_id"];
         }
         public async Task<string> DownloadBeatmapFromHashv1(string mapHash, string destinationFolder)
         {
-            logger.Log(DataPoint.ApiGetBeatmapsv1);
+            dLog.Log(DataPoint.ApiGetBeatmapsv1);
             JArray j = (JArray)(await ApiRequestv1("get_beatmaps", $"h={mapHash}"));
             if (j.Count > 0)
             {
@@ -76,7 +79,7 @@ namespace OsuMissAnalyzer.Server
         }
         public async Task DownloadBeatmapFromId(string beatmapId, string destinationFolder, bool forceRedl = false)
         {
-            logger.Log(DataPoint.ApiDownloadBeatmap);
+            dLog.Log(DataPoint.ApiDownloadBeatmap);
             string file = Path.Combine(destinationFolder, $"{beatmapId}.osu");
             if (forceRedl && File.Exists(file)) File.Delete(file);
             while(!File.Exists(file))
@@ -91,14 +94,13 @@ namespace OsuMissAnalyzer.Server
                 }
                 catch (WebException e)
                 {
-                    await Logger.WriteLine("Exception caught in DownloadBeatmap");
-                    await Logger.LogException(e, Logger.LogLevel.NORMAL);
+                    logger.LogInformation(e, "Exception caught in DownloadBeatmap");
                 }
             }
         }
         public async Task<JToken> GetUserScoresv2(string userId, string type, int index, bool failedScores)
         {
-            logger.Log(DataPoint.ApiGetUserScoresv2);
+            dLog.Log(DataPoint.ApiGetUserScoresv2);
             var req = $"users/{userId}/scores/{type}?mode=osu&include_fails={(failedScores?1:0)}&limit=1&offset={index}";
             var res = await GetApiv2(req);
             if (res is JArray arr && arr.Count > 0)
@@ -109,14 +111,14 @@ namespace OsuMissAnalyzer.Server
             }
             else
             {
-                await Logger.WriteLine($"{req} failed");
-                await Logger.WriteLine(res.ToString());
+                logger.LogInformation($"{req} failed");
+                logger.LogInformation(res.ToString());
             }
             return null;
         }
         public async Task<JToken> GetBeatmapScoresv2(string beatmapId, int index)
         {
-            logger.Log(DataPoint.ApiGetBeatmapScoresv2);
+            dLog.Log(DataPoint.ApiGetBeatmapScoresv2);
             var req = $"beatmaps/{beatmapId}/scores";
             var res = await GetApiv2(req);
             if (res["scores"] is JArray arr && arr.Count > index)
@@ -125,8 +127,8 @@ namespace OsuMissAnalyzer.Server
             }
             else
             {
-                await Logger.WriteLine($"{req} failed");
-                await Logger.WriteLine(res.ToString());
+                logger.LogInformation($"{req} failed");
+                logger.LogInformation(res.ToString());
             }
             return null;
         }
@@ -147,7 +149,7 @@ namespace OsuMissAnalyzer.Server
         }
         public async Task<byte[]> DownloadReplayFromId(string onlineId)
         {
-            logger.Log(DataPoint.ApiGetReplayv1);
+            dLog.Log(DataPoint.ApiGetReplayv1);
             while (replayDls.Count > 0 && (DateTime.Now - replayDls.Peek()).TotalSeconds > 60) replayDls.Dequeue();
             if (replayDls.Count >= 10)
             {

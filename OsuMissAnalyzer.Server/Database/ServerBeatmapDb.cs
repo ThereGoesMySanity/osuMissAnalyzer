@@ -4,7 +4,9 @@ using System.IO;
 using System.Threading.Tasks;
 using BMAPI.v1;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
+using OsuMissAnalyzer.Server.Logging;
 using OsuMissAnalyzer.Server.Settings;
 
 namespace OsuMissAnalyzer.Server.Database
@@ -12,13 +14,15 @@ namespace OsuMissAnalyzer.Server.Database
     public class ServerBeatmapDb : IDisposable
     {
         private readonly OsuApi api;
-        private readonly IDataLogger logger;
+        private readonly IDataLogger dLog;
+        private readonly ILogger logger;
         string folder;
         Dictionary<string, string> hashes;
-        public ServerBeatmapDb(OsuApi api, ServerOptions options, IConfiguration configuration, IDataLogger logger)
+        public ServerBeatmapDb(OsuApi api, ServerOptions options, IConfiguration configuration, IDataLogger dLog, ILogger logger)
         {
             var reload = bool.Parse(configuration["ReloadDb"] ?? "false");
             this.api = api;
+            this.dLog = dLog;
             this.logger = logger;
             folder = options.ServerDir;
             Directory.CreateDirectory(Path.Combine(options.ServerDir, "beatmaps"));
@@ -38,7 +42,7 @@ namespace OsuMissAnalyzer.Server.Database
                     hashes[Beatmap.MD5FromFile(file)] = Path.GetFileNameWithoutExtension(file);
                 }
             }
-            logger.LogAbsolute(DataPoint.BeatmapsDbSize, hashes.Count);
+            dLog.LogAbsolute(DataPoint.BeatmapsDbSize, hashes.Count);
         }
 
         public void Dispose()
@@ -56,13 +60,13 @@ namespace OsuMissAnalyzer.Server.Database
             {
                 if (!hashes.ContainsKey(mapHash))
                 {
-                    await Logger.WriteLine("beatmap not found, downloading...");
+                    logger.LogInformation("beatmap not found, downloading...");
                     var result = await api.DownloadBeatmapFromHashv1(mapHash, Path.Combine(folder, "beatmaps"));
                     if (result != null)
                     {
                         hashes[mapHash] = result;
-                        logger.LogAbsolute(DataPoint.BeatmapsDbSize, hashes.Count);
-                        logger.Log(DataPoint.BeatmapsCacheMiss);
+                        dLog.LogAbsolute(DataPoint.BeatmapsDbSize, hashes.Count);
+                        dLog.Log(DataPoint.BeatmapsCacheMiss);
                     }
                     else
                     {
@@ -71,7 +75,7 @@ namespace OsuMissAnalyzer.Server.Database
                 }
                 else
                 {
-                    logger.Log(DataPoint.BeatmapsCacheHit);
+                    dLog.Log(DataPoint.BeatmapsCacheHit);
                 }
                 return new Beatmap(Path.Combine(folder, "beatmaps", $"{hashes[mapHash]}.osu"));
             }
@@ -83,16 +87,16 @@ namespace OsuMissAnalyzer.Server.Database
             if (forceRedl) File.Delete(file);
             if (!File.Exists(file))
             {
-                await Logger.WriteLine(forceRedl? "hash out of date, redownloading..." : "beatmap not found, downloading...");
+                logger.LogInformation(forceRedl? "hash out of date, redownloading..." : "beatmap not found, downloading...");
                 await api.DownloadBeatmapFromId(beatmap_id, Path.Combine(folder, "beatmaps"), forceRedl);
                 string hash = Beatmap.MD5FromFile(file);
                 hashes[hash] = beatmap_id;
-                logger.LogAbsolute(DataPoint.BeatmapsDbSize, hashes.Count);
-                logger.Log(DataPoint.BeatmapsCacheMiss);
+                dLog.LogAbsolute(DataPoint.BeatmapsDbSize, hashes.Count);
+                dLog.Log(DataPoint.BeatmapsCacheMiss);
             }
             else
             {
-                logger.Log(DataPoint.BeatmapsCacheHit);
+                dLog.Log(DataPoint.BeatmapsCacheHit);
             }
             return new Beatmap(file);
         }
