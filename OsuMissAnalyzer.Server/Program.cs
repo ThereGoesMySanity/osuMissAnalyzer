@@ -1,16 +1,12 @@
 ﻿using System;
 using System.Threading.Tasks;
-using Mono.Unix;
-using System.Threading;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Configuration;
 using OsuMissAnalyzer.Server.Settings;
 using Microsoft.Extensions.DependencyInjection;
 using DSharpPlus;
-using System.Net.Http;
 using OsuMissAnalyzer.Server.Database;
 using DSharpPlus.SlashCommands;
-using System.Collections.Generic;
 using Microsoft.AspNetCore.Hosting;
 using OsuMissAnalyzer.Server.Models;
 using OsuMissAnalyzer.Server.Logging;
@@ -23,7 +19,6 @@ namespace OsuMissAnalyzer.Server
 {
     public class Program
     {
-        static UnixPipes interruptPipe;
         public static async Task Main(string[] args)
         {
             using IHost host = Host.CreateDefaultBuilder(args)

@@ -1,16 +1,13 @@
 using System;
 using System.Runtime.Caching.Generic;
+using System.Threading;
 using System.Threading.Tasks;
-using DSharpPlus;
 using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.DependencyInjection;
-using OsuMissAnalyzer.Core;
-using OsuMissAnalyzer.Server.Settings;
 
 namespace OsuMissAnalyzer.Server.Models
 {
-    public class ApiStartup : IStartup
+    public class ApiStartup
     {
         private readonly IServiceProvider serviceProvider;
         private readonly IServiceScopeFactory serviceScopeFactory;
@@ -24,9 +21,8 @@ namespace OsuMissAnalyzer.Server.Models
             this.serviceScopeFactory = serviceScopeFactory;
             CachedRequests = new MemoryCache<string, ServerReplayLoader>(128);
         }
-        public IServiceProvider ConfigureServices(IServiceCollection services)
+        public void ConfigureServices(IServiceCollection services)
         {
-            return services.BuildServiceProvider();
         }
 
         public void Configure(IApplicationBuilder app)
@@ -65,5 +61,14 @@ namespace OsuMissAnalyzer.Server.Models
             return response?.Key;
         }
 
+        public Task StartAsync(CancellationToken cancellationToken)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task StopAsync(CancellationToken cancellationToken)
+        {
+            throw new NotImplementedException();
+        }
     }
 }

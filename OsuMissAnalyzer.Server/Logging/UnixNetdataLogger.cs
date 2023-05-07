@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
@@ -22,7 +21,6 @@ namespace OsuMissAnalyzer.Server.Logging
     public class UnixNetdataLogger : IDataLogger
     {
         private const string ENDPOINT = "/run/missanalyzer-server";
-        private readonly string webHook;
 
         private StreamWriter file;
         private int[] counts;

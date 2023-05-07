@@ -5,7 +5,6 @@ using Newtonsoft.Json.Linq;
 using osuDodgyMomentsFinder;
 using OsuMissAnalyzer.Core;
 using OsuMissAnalyzer.Server.Database;
-using OsuMissAnalyzer.Server.Settings;
 using ReplayAPI;
 
 namespace OsuMissAnalyzer.Server
