@@ -56,6 +56,8 @@ namespace OsuMissAnalyzer.Server
         }
         public async Task<string> Load()
         {
+            if (Loaded) return null;
+
             JToken score = null;
             if (Username != null && UserId == null)
                 UserId = await api.GetUserIdv1(Username);

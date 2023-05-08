@@ -1,28 +1,24 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Threading;
-using System.Threading.Tasks;
 using DSharpPlus.Entities;
-using Microsoft.Extensions.Hosting;
 using Newtonsoft.Json;
 
 namespace OsuMissAnalyzer.Server.Settings
 {
-    public class GuildManager : IHostedService
+    public class GuildManager : IDisposable
     {
         public Dictionary<ulong, GuildOptions> guilds { get; set; } = new Dictionary<ulong, GuildOptions>();
-        public Task StartAsync(CancellationToken cancellationToken)
+        public GuildManager()
         {
             Load();
-            return Task.CompletedTask;
         }
 
-        public Task StopAsync(CancellationToken cancellationToken)
+        public void Dispose()
         {
             Save();
-            return Task.CompletedTask;
         }
+
         public GuildOptions GetGuild(DiscordChannel channel)
         {
             if (!channel.GuildId.HasValue) return GuildOptions.Default;

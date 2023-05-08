@@ -6,6 +6,7 @@ using System.Net.Sockets;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Options;
 using Mono.Unix;
 using Mono.Unix.Native;
 using Newtonsoft.Json;
@@ -27,15 +28,15 @@ namespace OsuMissAnalyzer.Server.Logging
 
         private Socket socket;
         private UnixEndPoint endpoint;
-        private HttpClient webClient;
+        private HttpClient httpClient;
 
         public event Action UpdateLogs;
 
-        public UnixNetdataLogger(HttpClient httpClient, ServerOptions options, DiscordOptions discordOptions)
+        public UnixNetdataLogger(HttpClient httpClient, IOptions<ServerOptions> options)
         {
-            file = new StreamWriter(Path.Combine(options.ServerDir, "log.csv"), true);
+            file = new StreamWriter(Path.Combine(options.Value.ServerDir, "log.csv"), true);
             counts = new int[Enum.GetValues(typeof(DataPoint)).Length];
-            this.webClient = httpClient;
+            this.httpClient = httpClient;
         }
         public async Task StartAsync(CancellationToken cancellationToken)
         {

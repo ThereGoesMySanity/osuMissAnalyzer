@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Runtime.Caching.Generic;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
@@ -18,6 +17,8 @@ using System.Reflection;
 using System.Text;
 using OsuMissAnalyzer.Server.Logging;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
+using Microsoft.Extensions.Caching.Memory;
 
 namespace OsuMissAnalyzer.Server
 {
@@ -28,26 +29,25 @@ namespace OsuMissAnalyzer.Server
         private readonly DiscordShardedClient discord;
         private readonly OsuApi api;
         private readonly HttpClient webClient;
+        private readonly ResponseCache cachedMisses;
         private readonly IServiceScopeFactory scopeFactory;
         private readonly ILogger<ServerContext> logger;
         private readonly IDataLogger dLog;
 
-        public MemoryCache<ulong, Response> CachedMisses { get; private set; }
-
         private static string[] pfpPrefixes = { "https://a.ppy.sh/", "http://s.ppy.sh/a/" };
-        private static Regex settingsRegex = new Regex("^settings (\\d+ )?(get|set ([A-Za-z]+) (.+))$");
         private static Regex partialBeatmapRegex = new Regex("^\\d+#osu/(\\d+)");
         private static Regex modRegex = new Regex("](?: \\+([A-Z]+))?\\n");
-        private static string[] numbers = { "zero", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine" };
         public static DiscordEmoji[] numberEmojis;
 
-        public ServerContext(ServerOptions serverOptions, DiscordShardedClient discord, OsuApi api, HttpClient webClient,
-                IServiceScopeFactory scopeFactory, ILogger<ServerContext> logger, IDataLogger dLog)
+        public ServerContext(DiscordShardedClient discord, OsuApi api, HttpClient webClient,
+                ResponseCache cachedMisses, IOptions<ServerOptions> serverOptions, IServiceScopeFactory scopeFactory,
+                ILogger<ServerContext> logger, IDataLogger dLog)
         {
-            this.serverOptions = serverOptions;
+            this.serverOptions = serverOptions.Value;
             this.discord = discord;
             this.api = api;
             this.webClient = webClient;
+            this.cachedMisses = cachedMisses;
             this.scopeFactory = scopeFactory;
             this.logger = logger;
             this.dLog = dLog;
@@ -65,9 +65,6 @@ namespace OsuMissAnalyzer.Server
             logger.LogInformation(gitCommit);
 
             var apiToken = api.RefreshToken();
-
-            CachedMisses = new MemoryCache<ulong, Response>(128);
-            CachedMisses.SetPolicy(typeof(LfuEvictionPolicy<,>));
 
             numberEmojis = new DiscordEmoji[10];
 
@@ -171,28 +168,19 @@ namespace OsuMissAnalyzer.Server
             await Task.CompletedTask;
         }
 
-
-        public void UpdateCache(ulong key, Response value)
-        {
-            dLog.Log(DataPoint.MessageCreated);
-            CachedMisses[key] = value;
-            dLog.LogAbsolute(DataPoint.CachedMessages, CachedMisses.Count);
-        }
-
         public async Task HandleInteraction(DiscordClient discord, ComponentInteractionCreateEventArgs e)
         {
             dLog.Log(DataPoint.EventsHandled);
             if (serverOptions.Test && e.Message.Channel.GuildId != serverOptions.TestGuild) return;
 
             Response response = null;
-            if (CachedMisses.Contains(e.Message.Id)) response = CachedMisses[e.Message.Id];
-            if (e.Message.Interaction != null && CachedMisses.Contains(e.Message.Interaction.Id)) response = CachedMisses[e.Message.Interaction.Id];
-
-            if (response != null && !e.User.IsCurrent && !e.User.IsBot)
+            if ((cachedMisses.TryGetResponse(e.Message.Id, out response)
+                || (e.Message.Interaction != null && cachedMisses.TryGetResponse(e.Message.Interaction.Id, out response)))
+                && !e.User.IsCurrent && !e.User.IsBot)
             {
                 int index = int.Parse(e.Id) - 1;
                 dLog.Log(DataPoint.ReactionCalls);
-                _ = Task.Run(() => UpdateResponse(e, response, index));
+                _ = Task.Run(() => cachedMisses.UpdateResponse(e, response, index));
                 await Task.CompletedTask;
             }
         }
@@ -201,28 +189,18 @@ namespace OsuMissAnalyzer.Server
         {
             dLog.Log(DataPoint.EventsHandled);
             if (serverOptions.Test && e.Message.Channel.GuildId != serverOptions.TestGuild) return;
-            if (CachedMisses.Contains(e.Message.Id) && !e.User.IsCurrent && !e.User.IsBot)
+            if (cachedMisses.TryGetResponse(e.Message.Id, out Response response) && !e.User.IsCurrent && !e.User.IsBot)
             {
-                var response = CachedMisses[e.Message.Id];
                 var analyzer = response.Miss.MissAnalyzer;
                 int index = Array.FindIndex(numberEmojis, t => t == e.Emoji) - 1;
                 if (index >= 0 && index < Math.Min(analyzer.MissCount, numberEmojis.Length - 1))
                 {
                     dLog.Log(DataPoint.ReactionCalls);
-                    _ = Task.Run(() => UpdateResponse(e, response, index));
+                    _ = Task.Run(() => cachedMisses.UpdateResponse(e, response, index));
                     await Task.CompletedTask;
                 }
             }
         }
-
-        public async Task UpdateResponse(object e, Response response, int index)
-        {
-            dLog.Log(DataPoint.MessageEdited);
-            var id = await response.UpdateResponse(e, index);
-            if (id.HasValue) UpdateCache(id.Value, response);
-        }
-
-
 
         const ulong OWO = 289066747443675143;
         const ulong BISMARCK = 207856807677263874;

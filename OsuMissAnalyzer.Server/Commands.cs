@@ -10,20 +10,21 @@ using System.Text.RegularExpressions;
 using OsuMissAnalyzer.Server.Settings;
 using OsuMissAnalyzer.Server.Logging;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 
 namespace OsuMissAnalyzer.Server
 {
     public class Commands : ApplicationCommandModule
     {
         public ServerContext context { private get; set; }
-        public ServerOptions serverOpts { private get; set; }
+        public IOptions<ServerOptions> serverOpts { private get; set; }
         public IDataLogger dLog { private get; set; }
 
         [SlashCommand("help", "Prints help message")]
         public async Task Help(InteractionContext ctx)
         {
             await ctx.CreateResponseAsync(InteractionResponseType.ChannelMessageWithSource, 
-                    new DiscordInteractionResponseBuilder().WithContent(serverOpts.HelpMessage));
+                    new DiscordInteractionResponseBuilder().WithContent(serverOpts.Value.HelpMessage));
             dLog.Log(DataPoint.HelpMessageCreated);
         }
 
@@ -31,7 +32,7 @@ namespace OsuMissAnalyzer.Server
         public class MissCommands : ApplicationCommandModule
         {
             public ServerContext context { private get; set; }
-            public ILogger logger { private get; set; }
+            public ILogger<MissCommands> logger { private get; set; }
             public IDataLogger dLog { private get; set; }
             public GuildManager guildManager { private get; set; }
             public IServiceScopeFactory scopeFactory { private get; set; }

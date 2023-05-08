@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using DSharpPlus;
 using DSharpPlus.Entities;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Options;
 using OsuMissAnalyzer.Server.Settings;
 
 namespace OsuMissAnalyzer.Server
@@ -15,10 +16,10 @@ namespace OsuMissAnalyzer.Server
         private readonly DiscordShardedClient discord;
         private readonly ServerOptions settings;
 
-        public CheckStatus(DiscordShardedClient discord, ServerOptions settings)
+        public CheckStatus(DiscordShardedClient discord, IOptions<ServerOptions> settings)
         {
             this.discord = discord;
-            this.settings = settings;
+            this.settings = settings.Value;
         }
         public Task StartAsync(CancellationToken cancellationToken)
         {

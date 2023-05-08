@@ -26,13 +26,18 @@ namespace OsuMissAnalyzer.Server
         public abstract Task CreateErrorResponse(string errorMessage);
         public abstract Task<ulong?> CreateResponse();
         public abstract Task<ulong?> UpdateResponse(object e, int index);
+        public abstract Task OnExpired();
 
-        protected DiscordMessageBuilder BuildMessage(string content)
+        protected async Task<T> BuildMessage<T>(bool disabled = false) where T : BaseDiscordMessageBuilder<T>
         {
-            var builder = new DiscordMessageBuilder().WithContent(content);
+            var builder = Activator.CreateInstance<T>().WithContent(await GetContent());
             if (MissCount > 1)
             {
-                foreach(var row in GetMissComponents()) builder.AddComponents(row);
+                foreach(var row in GetMissComponents())
+                {
+                    if (disabled) foreach (var b in row) (b as DiscordButtonComponent).Disable();
+                    builder.AddComponents(row);
+                }
             }
             return builder;
         }
@@ -58,7 +63,7 @@ namespace OsuMissAnalyzer.Server
         private readonly InteractionContext ctx;
 
         //ctx must have deferred response already sent
-        public InteractionResponse(GuildOptions settings, InteractionContext ctx) : base(settings)
+        public InteractionResponse(RequestContext request, InteractionContext ctx) : base(request.GuildOptions)
         {
             this.ctx = ctx;
         }
@@ -70,13 +75,14 @@ namespace OsuMissAnalyzer.Server
 
         public override async Task<ulong?> CreateResponse()
         {
-            var builder = new DiscordWebhookBuilder().WithContent(await GetContent());
-            if (MissCount > 1)
-            {
-                foreach(var row in GetMissComponents()) builder.AddComponents(row);
-            }
+            var builder = await BuildMessage<DiscordWebhookBuilder>();
             await ctx.EditResponseAsync(builder);
             return ctx.InteractionId;
+        }
+
+        public override async Task OnExpired()
+        {
+            await ctx.EditResponseAsync(await BuildMessage<DiscordWebhookBuilder>());
         }
 
         public override async Task<ulong?> UpdateResponse(object e, int index)
@@ -84,7 +90,7 @@ namespace OsuMissAnalyzer.Server
             Miss.CurrentMiss = index;
             ComponentInteractionCreateEventArgs args = (ComponentInteractionCreateEventArgs)e;
             await args.Interaction.CreateResponseAsync(InteractionResponseType.UpdateMessage,
-                    new DiscordInteractionResponseBuilder(BuildMessage(await GetContent())));
+                    await BuildMessage<DiscordInteractionResponseBuilder>());
             return null;
         }
     }
@@ -92,7 +98,7 @@ namespace OsuMissAnalyzer.Server
     {
         protected DiscordMessage source;
         protected DiscordMessage response;
-        public MessageResponse(GuildOptions settings, DiscordMessage message) : base(settings)
+        public MessageResponse(RequestContext request, DiscordMessage message) : base(request.GuildOptions)
         {
             source = message;
             response = null;
@@ -105,21 +111,27 @@ namespace OsuMissAnalyzer.Server
 
         public override async Task<ulong?> CreateResponse()
         {
-            response = await source.RespondAsync(BuildMessage(await GetContent()));
+            response = await source.RespondAsync(await BuildMessage<DiscordMessageBuilder>());
             return response?.Id;
         }
+
+        public override async Task OnExpired()
+        {
+            await response.ModifyAsync(await BuildMessage<DiscordMessageBuilder>(disabled: true));
+        }
+
         public override async Task<ulong?> UpdateResponse(object e, int index)
         {
             Miss.CurrentMiss = index;
             ComponentInteractionCreateEventArgs args = (ComponentInteractionCreateEventArgs)e;
             await args.Interaction.CreateResponseAsync(InteractionResponseType.UpdateMessage,
-                    new DiscordInteractionResponseBuilder(BuildMessage(await GetContent())));
+                    await BuildMessage<DiscordInteractionResponseBuilder>());
             return null;
         }
     }
     public class CompactResponse : MessageResponse
     {
-        public CompactResponse(GuildOptions settings, DiscordMessage message) : base(settings, message) {}
+        public CompactResponse(RequestContext request, DiscordMessage message) : base(request, message) {}
         public override async Task<ulong?> CreateResponse()
         {
             await SendReactions(source, MissCount);
@@ -148,6 +160,15 @@ namespace OsuMissAnalyzer.Server
             {
                 await message.CreateReactionAsync(ServerContext.numberEmojis[i]);
             }
+        }
+
+        public override async Task OnExpired()
+        {
+            for (int i = 1; i < Math.Min(MissCount + 1, ServerContext.numberEmojis.Length); i++)
+            {
+                await source.DeleteOwnReactionAsync(ServerContext.numberEmojis[i]);
+            }
+            if (response != null) await base.OnExpired();
         }
     }
 }

@@ -6,6 +6,7 @@ using System.Net;
 using System.Net.Http;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Newtonsoft.Json.Linq;
 using OsuMissAnalyzer.Server.Logging;
 using OsuMissAnalyzer.Server.Settings;
@@ -17,16 +18,16 @@ namespace OsuMissAnalyzer.Server
         private readonly HttpClient webClient;
         private readonly OsuApiOptions options;
         private readonly IDataLogger dLog;
-        private readonly ILogger logger;
+        private readonly ILogger<OsuApi> logger;
         private Stopwatch tokenExpiry;
         private Queue<DateTime> replayDls;
         private int tokenTime;
         private string token;
         private TimeSpan TokenTimeRemaining => TimeSpan.FromSeconds(tokenTime).Subtract(tokenExpiry.Elapsed);
-        public OsuApi(HttpClient webClient, OsuApiOptions options, IDataLogger dLog, ILogger logger)
+        public OsuApi(HttpClient webClient, IOptions<OsuApiOptions> options, IDataLogger dLog, ILogger<OsuApi> logger)
         {
             this.webClient = webClient;
-            this.options = options;
+            this.options = options.Value;
             this.dLog = dLog;
             this.logger = logger;
             tokenExpiry = new Stopwatch();

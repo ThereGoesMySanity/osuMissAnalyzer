@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using BMAPI.v1;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Newtonsoft.Json.Linq;
 using OsuMissAnalyzer.Server.Logging;
 using OsuMissAnalyzer.Server.Settings;
@@ -15,15 +16,15 @@ namespace OsuMissAnalyzer.Server.Database
     {
         private readonly OsuApi api;
         private readonly IDataLogger dLog;
-        private readonly ILogger logger;
+        private readonly ILogger<ServerReplayDb> logger;
         string serverFolder;
-        public ServerReplayDb(OsuApi api, ServerOptions options, IDataLogger dLog, ILogger logger)
+        public ServerReplayDb(OsuApi api, IOptions<ServerOptions> options, IDataLogger dLog, ILogger<ServerReplayDb> logger)
         {
             this.api = api;
             this.dLog = dLog;
             this.logger = logger;
-            this.serverFolder = options.ServerDir;
-            Directory.CreateDirectory(Path.Combine(options.ServerDir, "replays"));
+            this.serverFolder = options.Value.ServerDir;
+            Directory.CreateDirectory(Path.Combine(options.Value.ServerDir, "replays"));
         }
 
         public async Task<Replay> GetReplayFromOnlineId(string onlineId, string mods, Beatmap beatmap)

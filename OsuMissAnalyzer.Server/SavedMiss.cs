@@ -2,6 +2,7 @@ using System.IO;
 using System.Threading.Tasks;
 using DSharpPlus;
 using DSharpPlus.Entities;
+using Microsoft.Extensions.Options;
 using OsuMissAnalyzer.Core;
 using OsuMissAnalyzer.Server.Settings;
 using SixLabors.ImageSharp;
@@ -15,11 +16,11 @@ namespace OsuMissAnalyzer.Server
         private readonly ServerOptions serverOptions;
         public string[] MissUrls;
         public int? CurrentMiss;
-        public SavedMiss(RequestContext context, MissAnalyzer analyzer, ServerOptions serverOptions)
+        public SavedMiss(RequestContext context, MissAnalyzer analyzer, IOptions<ServerOptions> serverOptions)
         {
             this.discord = context.DiscordClient;
             MissAnalyzer = analyzer;
-            this.serverOptions = serverOptions;
+            this.serverOptions = serverOptions.Value;
             MissUrls = new string[analyzer.MissCount];
             CurrentMiss = null;
         }
