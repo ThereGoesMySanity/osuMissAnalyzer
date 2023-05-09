@@ -1,6 +1,7 @@
 using System;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using OsuMissAnalyzer.Server.Logging;
 using OsuMissAnalyzer.Server.Settings;
@@ -11,12 +12,14 @@ namespace OsuMissAnalyzer.Server
     {
         private readonly MemoryCache cachedMisses;
         private readonly IDataLogger dLog;
+        private readonly ILogger<ResponseCache> logger;
         private readonly ServerOptions options;
 
-        public ResponseCache(IOptions<ServerOptions> options, IDataLogger dLog)
+        public ResponseCache(IOptions<ServerOptions> options, IDataLogger dLog, ILogger<ResponseCache> logger)
         {
             this.cachedMisses = new MemoryCache(new MemoryCacheOptions { TrackStatistics = true });
             this.dLog = dLog;
+            this.logger = logger;
             this.options = options.Value;
         }
 
@@ -51,7 +54,14 @@ namespace OsuMissAnalyzer.Server
 
         public async void OnEvict(object key, object value, EvictionReason reason, object state)
         {
-            await (value as Response).OnExpired();
+            try
+            {
+                await (value as Response).OnExpired();
+            }
+            catch (Exception e)
+            {
+                logger.LogError(e, "Error modifying message {id}", (ulong)key);
+            }
         }
 
         public void Dispose()
