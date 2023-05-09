@@ -43,7 +43,7 @@ namespace OsuMissAnalyzer.Server
             dLog.LogAbsolute(DataPoint.CachedMessages, (int)cachedMisses.GetCurrentStatistics().CurrentEntryCount);
             return entry =>
             {
-                entry.SlidingExpiration = TimeSpan.FromSeconds(options.MessageExpiration);
+                entry.SlidingExpiration = TimeSpan.FromMinutes(options.MessageExpiration);
                 entry.RegisterPostEvictionCallback(OnEvict);
                 return Task.FromResult(response);
             };
