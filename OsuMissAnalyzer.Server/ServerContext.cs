@@ -209,8 +209,8 @@ namespace OsuMissAnalyzer.Server
             [OWO] = "owo",
             [BOATBOT] = "boatbot",
             [BISMARCK] = "bismarck",
-            [TINYBOT] = "tinybot",
-            [BATHBOT] = "bathbot",
+            // [TINYBOT] = "tinybot",
+            // [BATHBOT] = "bathbot",
         };
         Dictionary<ulong, BotCall> rsFunc = new Dictionary<ulong, BotCall>
         {
@@ -237,20 +237,20 @@ namespace OsuMissAnalyzer.Server
             //     }
             //     return false;
             // },
-            [BATHBOT] = (ServerReplayLoader replayLoader, MessageCreateEventArgs e) =>
-            {
-                if (e.Message.Embeds.Count > 0 && e.Message.Content.StartsWith("Try #"))
-                {
-                    string prefix = "https://osu.ppy.sh/users/";
-                    string url = e.Message.Embeds[0].Author.Url.AbsoluteUri;
-                    if (url.StartsWith(prefix) && url.EndsWith("osu"))
-                    {
-                        replayLoader.UserId = url.Substring(prefix.Length).Split('/')[0];
-                        return true;
-                    }
-                }
-                return false;
-            },
+            // [BATHBOT] = (ServerReplayLoader replayLoader, MessageCreateEventArgs e) =>
+            // {
+            //     if (e.Message.Embeds.Count > 0 && e.Message.Content.StartsWith("Try #"))
+            //     {
+            //         string prefix = "https://osu.ppy.sh/users/";
+            //         string url = e.Message.Embeds[0].Author.Url.AbsoluteUri;
+            //         if (url.StartsWith(prefix) && url.EndsWith("osu"))
+            //         {
+            //             replayLoader.UserId = url.Substring(prefix.Length).Split('/')[0];
+            //             return true;
+            //         }
+            //     }
+            //     return false;
+            // },
             [BISMARCK] = (ServerReplayLoader replayLoader, MessageCreateEventArgs e) =>
             {
                 if (e.Message.Content.Length == 0 && e.Message.Embeds.Count > 0)

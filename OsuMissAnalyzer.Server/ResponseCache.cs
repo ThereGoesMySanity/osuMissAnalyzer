@@ -60,6 +60,7 @@ namespace OsuMissAnalyzer.Server
             }
             catch (Exception e)
             {
+                dLog.Log(DataPoint.ErrorUnhandled);
                 logger.LogError(e, "Error modifying message {id}", (ulong)key);
             }
         }
