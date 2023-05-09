@@ -8,7 +8,7 @@ using DSharpPlus;
 using OsuMissAnalyzer.Server.Database;
 using DSharpPlus.SlashCommands;
 using Microsoft.AspNetCore.Hosting;
-using OsuMissAnalyzer.Server.Models;
+using OsuMissAnalyzer.Server.Api;
 using OsuMissAnalyzer.Server.Logging;
 using Microsoft.Extensions.Logging;
 using System.Linq;
@@ -24,11 +24,9 @@ namespace OsuMissAnalyzer.Server
         public static async Task Main(string[] args)
         {
             using IHost host = Host.CreateDefaultBuilder(args)
-                // .ConfigureLogging(logging =>
-                // {
-                //     logging.Services.TryAddEnumerable(ServiceDescriptor.Singleton<ILoggerProvider, DiscordLoggerProvider>());
-                //     LoggerProviderOptions.RegisterProviderOptions<DiscordLoggerConfiguration, DiscordLoggerProvider>(logging.Services);
-                // })
+#if DEBUG
+                .UseEnvironment(Environments.Development)
+#endif
                 .ConfigureServices((context, services) =>
                 {
                     IConfiguration configurationRoot = context.Configuration;
@@ -49,10 +47,16 @@ namespace OsuMissAnalyzer.Server
                     });
 
                     services.AddSingleton<IDataLogger, UnixNetdataLogger>();
+                    services.AddHostedService<IDataLogger>(provider => provider.GetRequiredService<IDataLogger>());
                     services.AddSingleton<GuildManager>();
                     services.AddSingleton<ResponseCache>();
 
                     services.AddHttpClient();
+                    if (context.HostingEnvironment.IsDevelopment())
+                    {
+                        services.AddEndpointsApiExplorer();
+                        services.AddSwaggerGen();
+                    }
 
                     services.AddSingleton<OsuApi>();
                     services.AddSingleton<ServerBeatmapDb>();
@@ -71,11 +75,17 @@ namespace OsuMissAnalyzer.Server
                 {
                     webBuilder.UseStartup<ApiStartup>();
                 })
+                .ConfigureLogging((hostBuilderContext, logging) =>
+                {
+                    logging.Services.AddSingleton<ILoggerProvider, DiscordLoggerProvider>();
+                    // logging.Services.Configure<DiscordLoggerConfiguration>(options => hostBuilderContext.Configuration
+                    //         .GetSection("Logging").GetSection("DiscordLog").GetSection("Options").Bind(options));
+                })
                 .Build();
             var slashSettings = host.Services.GetRequiredService<SlashCommandsConfiguration>();
             var slash = await host.Services.GetRequiredService<DiscordShardedClient>().UseSlashCommandsAsync(slashSettings);
             var settings = host.Services.GetRequiredService<IOptions<ServerOptions>>().Value;
-            if (settings.Test)
+            if (host.Services.GetRequiredService<IHostEnvironment>().IsDevelopment())
             {
                 slash.RegisterCommands<Commands>(settings.TestGuild);
             }

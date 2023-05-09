@@ -31,6 +31,7 @@ namespace OsuMissAnalyzer.Server
         private readonly HttpClient webClient;
         private readonly ResponseCache cachedMisses;
         private readonly IServiceScopeFactory scopeFactory;
+        private readonly IHostEnvironment env;
         private readonly ILogger<ServerContext> logger;
         private readonly IDataLogger dLog;
 
@@ -41,7 +42,7 @@ namespace OsuMissAnalyzer.Server
 
         public ServerContext(DiscordShardedClient discord, OsuApi api, HttpClient webClient,
                 ResponseCache cachedMisses, IOptions<ServerOptions> serverOptions, IServiceScopeFactory scopeFactory,
-                ILogger<ServerContext> logger, IDataLogger dLog)
+                IHostEnvironment env, ILogger<ServerContext> logger, IDataLogger dLog)
         {
             this.serverOptions = serverOptions.Value;
             this.discord = discord;
@@ -49,13 +50,14 @@ namespace OsuMissAnalyzer.Server
             this.webClient = webClient;
             this.cachedMisses = cachedMisses;
             this.scopeFactory = scopeFactory;
+            this.env = env;
             this.logger = logger;
             this.dLog = dLog;
         }
 
         public async Task StartAsync(CancellationToken cancellationToken)
         {
-            if (serverOptions.Test) logger.LogInformation("Started in test mode");
+            if (env.IsDevelopment()) logger.LogInformation("Started in test mode");
             string gitCommit;
             using (var stream = Assembly.GetEntryAssembly().GetManifestResourceStream("OsuMissAnalyzer.Server.Resources.GitCommit.txt"))
             using (var streamReader = new StreamReader(stream, Encoding.UTF8))
@@ -108,18 +110,10 @@ namespace OsuMissAnalyzer.Server
             await discord.StopAsync();
         }
 
-        public bool IsHelpRequest(MessageCreateEventArgs e, GuildOptions guildSettings)
-        {
-            return !e.Author.IsCurrent && (e.Message.Content.StartsWith(guildSettings.GetCommand("help"))
-                    || ((e.Message.Channel.IsPrivate || (e.MentionedUsers?.Any(u => u?.IsCurrent ?? false) ?? false))
-                            && e.Message.Content.IndexOf("help", StringComparison.InvariantCultureIgnoreCase) >= 0)
-                    || e.Message.Content == guildSettings.Prefix);
-        }
-
         public async Task HandleMessage(DiscordClient discord, MessageCreateEventArgs e)
         {
             dLog.Log(DataPoint.EventsHandled);
-            if (serverOptions.Test && e.Guild?.Id != serverOptions.TestGuild) return;
+            if (env.IsDevelopment() && e.Guild?.Id != serverOptions.TestGuild) return;
             _ = Task.Run(async () =>
             {
                 await using var scope = scopeFactory.CreateAsyncScope();
@@ -171,7 +165,7 @@ namespace OsuMissAnalyzer.Server
         public async Task HandleInteraction(DiscordClient discord, ComponentInteractionCreateEventArgs e)
         {
             dLog.Log(DataPoint.EventsHandled);
-            if (serverOptions.Test && e.Message.Channel.GuildId != serverOptions.TestGuild) return;
+            if (env.IsDevelopment() && e.Message.Channel.GuildId != serverOptions.TestGuild) return;
 
             Response response = null;
             if ((cachedMisses.TryGetResponse(e.Message.Id, out response)
@@ -188,7 +182,7 @@ namespace OsuMissAnalyzer.Server
         public async Task HandleReaction(DiscordClient discord, MessageReactionAddEventArgs e)
         {
             dLog.Log(DataPoint.EventsHandled);
-            if (serverOptions.Test && e.Message.Channel.GuildId != serverOptions.TestGuild) return;
+            if (env.IsDevelopment() && e.Message.Channel.GuildId != serverOptions.TestGuild) return;
             if (cachedMisses.TryGetResponse(e.Message.Id, out Response response) && !e.User.IsCurrent && !e.User.IsBot)
             {
                 var analyzer = response.Miss.MissAnalyzer;
@@ -267,7 +261,7 @@ namespace OsuMissAnalyzer.Server
                     string mapPrefix = "https://osu.ppy.sh/beatmapsets/";
                     if (url.StartsWith(prefix) && em.Description.Contains(mapPrefix))
                     {
-                        replayLoader.ScoreId = url.Substring(prefix.Length);
+                        replayLoader.ScoreId = ulong.Parse(url.Substring(prefix.Length));
                         string urlEnd = em.Description.Substring(em.Description.IndexOf(mapPrefix) + mapPrefix.Length);
                         var match = partialBeatmapRegex.Match(urlEnd);
                         var modMatch = modRegex.Match(urlEnd);

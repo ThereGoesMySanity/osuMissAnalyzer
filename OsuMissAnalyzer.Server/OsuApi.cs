@@ -133,7 +133,7 @@ namespace OsuMissAnalyzer.Server
             }
             return null;
         }
-        public async Task<JToken> GetScorev2(string scoreId)
+        public async Task<JToken> GetScorev2(ulong scoreId)
         {
             var req = $"scores/osu/{scoreId}";
             var res = await GetApiv2(req);
@@ -148,7 +148,7 @@ namespace OsuMissAnalyzer.Server
             res.EnsureSuccessStatusCode();
             return JToken.Parse(await res.Content.ReadAsStringAsync());
         }
-        public async Task<byte[]> DownloadReplayFromId(string onlineId)
+        public async Task<byte[]> DownloadReplayFromId(ulong onlineId)
         {
             dLog.Log(DataPoint.ApiGetReplayv1);
             while (replayDls.Count > 0 && (DateTime.Now - replayDls.Peek()).TotalSeconds > 60) replayDls.Dequeue();

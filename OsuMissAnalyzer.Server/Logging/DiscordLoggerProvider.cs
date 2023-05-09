@@ -9,15 +9,14 @@ namespace OsuMissAnalyzer.Server.Logging
     public class DiscordLoggerProvider : ILoggerProvider
     {
         private DiscordLogger logger;
+        private HttpClient httpClient;
         public DiscordLoggerConfiguration Config { get; set; }
 
-        private IDisposable onChange;
-
-        public DiscordLoggerProvider(HttpClient httpClient, IOptionsMonitor<DiscordLoggerConfiguration> config)
+        public DiscordLoggerProvider(IOptions<DiscordLoggerConfiguration> config)
         {
-            Config = config.CurrentValue;
-            onChange = config.OnChange(upd => Config = upd);
-            logger = new DiscordLogger(httpClient, () => Config);
+            Config = config.Value;
+            httpClient = new HttpClient();
+            logger = new DiscordLogger(httpClient, config.Value);
         }
 
         public ILogger CreateLogger(string categoryName)
@@ -27,7 +26,7 @@ namespace OsuMissAnalyzer.Server.Logging
 
         public void Dispose()
         {
-            onChange.Dispose();
+            httpClient.Dispose();
         }
     }
 }

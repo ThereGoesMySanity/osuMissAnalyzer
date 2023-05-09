@@ -27,7 +27,7 @@ namespace OsuMissAnalyzer.Server.Database
             Directory.CreateDirectory(Path.Combine(options.Value.ServerDir, "replays"));
         }
 
-        public async Task<Replay> GetReplayFromOnlineId(string onlineId, string mods, Beatmap beatmap)
+        public async Task<Replay> GetReplayFromOnlineId(ulong onlineId, string mods, Beatmap beatmap)
         {
             string file = Path.Combine(serverFolder, "replays", $"{onlineId}.osr");
             Replay replay = null;
@@ -48,7 +48,7 @@ namespace OsuMissAnalyzer.Server.Database
                         bw.Write(DateTime.UtcNow.Ticks);
                         bw.Write(data.Length);
                         bw.Write(data);
-                        bw.Write(ulong.Parse(onlineId));
+                        bw.Write(onlineId);
                         ms.Seek(0, SeekOrigin.Begin);
                         using (BinaryReader reader = new BinaryReader(ms))
                         {
@@ -75,7 +75,7 @@ namespace OsuMissAnalyzer.Server.Database
 
                 dLog.Log(DataPoint.ReplaysCacheMiss);
                 logger.LogInformation("replay not found, downloading...");
-                var replayDownload = api.DownloadReplayFromId((string)score["best_id"]);
+                var replayDownload = api.DownloadReplayFromId((ulong)score["best_id"]);
 
                 replay = new Replay();
                 replay.GameMode = (GameModes)((int)score["mode_int"]);

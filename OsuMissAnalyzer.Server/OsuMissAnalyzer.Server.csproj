@@ -3,7 +3,9 @@
   <ItemGroup>
     <PackageReference Include="DSharpPlus" Version="4.3.0" />
     <PackageReference Include="DSharpPlus.SlashCommands" Version="4.3.0" />
+    <PackageReference Include="IPAddressRange" Version="5.0.0" />
     <PackageReference Include="Mono.Posix.NETStandard" Version="5.20.1-preview" />
+    <PackageReference Include="Swashbuckle.AspNetCore" Version="6.5.0" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\OsuMissAnalyzer.Core\OsuMissAnalyzer.Core.csproj" />

@@ -1,6 +1,7 @@
 using System.IO;
 using System.Threading.Tasks;
 using BMAPI.v1;
+using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json.Linq;
 using osuDodgyMomentsFinder;
 using OsuMissAnalyzer.Core;
@@ -18,7 +19,7 @@ namespace OsuMissAnalyzer.Server
         public string Username;
         public string UserScores;
         public string BeatmapId;
-        public string ScoreId;
+        public ulong? ScoreId;
         public string Mods;
         public string ReplayFile;
         public bool FailedScores = false;
@@ -48,6 +49,8 @@ namespace OsuMissAnalyzer.Server
         {
             this.ColorScheme = ColorScheme.Parse(context.GuildOptions.ColorScheme);
         }
+
+        [ActivatorUtilitiesConstructor]
         public ServerReplayLoader(OsuApi api, ServerReplayDb replays, ServerBeatmapDb beatmaps)
         {
             this.api = api;
@@ -70,9 +73,9 @@ namespace OsuMissAnalyzer.Server
             else if (ScoreId != null)
             {
                 if (Mods == null || Beatmap == null)
-                    score = await api.GetScorev2(ScoreId);
+                    score = await api.GetScorev2(ScoreId.Value);
                 else
-                    _replay = await replays.GetReplayFromOnlineId(ScoreId, Mods, Beatmap);
+                    _replay = await replays.GetReplayFromOnlineId(ScoreId.Value, Mods, Beatmap);
             }
 
             if(_replay == null && PlayIndex.HasValue)
@@ -117,7 +120,7 @@ namespace OsuMissAnalyzer.Server
         }
         public override string ToString()
         {
-            return (Path.GetFileNameWithoutExtension(Replay.Filename) ?? ScoreId ?? Replay.OnlineId.ToString());
+            return (Path.GetFileNameWithoutExtension(Replay.Filename) ?? ScoreId?.ToString() ?? Replay.OnlineId.ToString());
         }
     }
 }

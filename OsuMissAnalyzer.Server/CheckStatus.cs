@@ -14,12 +14,12 @@ namespace OsuMissAnalyzer.Server
         private Timer status;
         private static TimeSpan statusRefreshRate = new TimeSpan(0, 5, 0);
         private readonly DiscordShardedClient discord;
-        private readonly ServerOptions settings;
+        private readonly IHostEnvironment env;
 
-        public CheckStatus(DiscordShardedClient discord, IOptions<ServerOptions> settings)
+        public CheckStatus(DiscordShardedClient discord, IHostEnvironment env)
         {
             this.discord = discord;
-            this.settings = settings.Value;
+            this.env = env;
         }
         public Task StartAsync(CancellationToken cancellationToken)
         {
@@ -33,7 +33,7 @@ namespace OsuMissAnalyzer.Server
         }
         public async void Check(Object e)
         {
-            string stat = settings.Test? "Down for maintenance - be back soon!"
+            string stat = env.IsDevelopment() ? "Down for maintenance - be back soon!"
                                         : "/help for help!";
             await discord.UpdateStatusAsync(new DiscordActivity(stat));
         }

@@ -10,17 +10,19 @@ namespace OsuMissAnalyzer.Server.Logging
     public class DiscordLogger : ILogger, IDisposable
     {
         private readonly HttpClient httpClient;
-        private readonly Func<DiscordLoggerConfiguration> getConfig;
+        private readonly DiscordLoggerConfiguration config;
         private Task logTask;
 
-        public DiscordLogger(HttpClient httpClient, Func<DiscordLoggerConfiguration> getConfig)
+        public DiscordLogger(HttpClient httpClient, DiscordLoggerConfiguration config)
         {
             this.httpClient = httpClient;
-            this.getConfig = getConfig;
+            this.config = config;
         }
 
-        public IDisposable BeginScope<TState>(TState state) where TState : notnull
-            => default!;
+        public IDisposable BeginScope<TState>(TState state)
+        {
+            return null;
+        }
 
         public void Dispose()
         {
@@ -34,7 +36,6 @@ namespace OsuMissAnalyzer.Server.Logging
 
         public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception exception, Func<TState, Exception, string> formatter)
         {
-            var config = getConfig();
             if(!IsEnabled(logLevel) || String.IsNullOrEmpty(config.WebHook)) return;
 
             logTask.Wait();

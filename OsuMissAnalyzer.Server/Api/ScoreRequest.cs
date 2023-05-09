@@ -1,9 +1,8 @@
-namespace OsuMissAnalyzer.Server.Models
+namespace OsuMissAnalyzer.Server.Api
 {
     public class ScoreRequest
     {
         public ulong GuildId { get; set; }
-        public ulong ChannelId { get; set; }
-        public string ScoreId { get; set; }
+        public ulong ScoreId { get; set; }
     }
 }

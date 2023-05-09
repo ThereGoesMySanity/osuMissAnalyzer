@@ -35,9 +35,9 @@ namespace OsuMissAnalyzer.Server
             {
                 foreach(var row in GetMissComponents())
                 {
-                    if (disabled) foreach (var b in row) (b as DiscordButtonComponent).Disable();
                     builder.AddComponents(row);
                 }
+                if (disabled) foreach (var r in builder.Components) foreach (var b in r.Components) (b as DiscordButtonComponent).Disable();
             }
             return builder;
         }
@@ -82,7 +82,7 @@ namespace OsuMissAnalyzer.Server
 
         public override async Task OnExpired()
         {
-            await ctx.EditResponseAsync(await BuildMessage<DiscordWebhookBuilder>());
+            await ctx.EditResponseAsync(await BuildMessage<DiscordWebhookBuilder>(disabled: true));
         }
 
         public override async Task<ulong?> UpdateResponse(object e, int index)

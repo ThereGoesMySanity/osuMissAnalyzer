@@ -3,7 +3,7 @@ using DSharpPlus;
 using DSharpPlus.Entities;
 using DSharpPlus.EventArgs;
 using DSharpPlus.SlashCommands;
-using OsuMissAnalyzer.Server.Models;
+using OsuMissAnalyzer.Server.Api;
 using OsuMissAnalyzer.Server.Settings;
 
 namespace OsuMissAnalyzer.Server
@@ -30,11 +30,6 @@ namespace OsuMissAnalyzer.Server
             this.discord = discord;
         }
 
-        public void LoadFrom(ScoreRequest req)
-        {
-            GuildId = req.GuildId;
-            ChannelId = req.ChannelId;
-        }
         public void LoadFrom(ScoreResponse res)
         {
             GuildId = res.GuildId;

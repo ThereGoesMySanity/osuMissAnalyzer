@@ -9,7 +9,6 @@ namespace OsuMissAnalyzer.Server.Settings
         public static GuildOptions Default = new GuildOptions(0);
         public ulong Id { get; private set; }
         public bool Compact { get; set; } = false;
-        public string Prefix { get; set; } = ">miss";
         public bool Tracking { get; set; } = false;
         public bool AutoResponses { get; set; } = true;
         public int MaxButtons { get; set; } = 10;
@@ -18,12 +17,6 @@ namespace OsuMissAnalyzer.Server.Settings
         public GuildOptions(ulong guildId)
         {
             Id = guildId;
-        }
-
-        public string GetCommand(string command)
-        {
-            if (char.IsLetter(Prefix.ToCharArray()[Prefix.Length-1])) return $"{Prefix} {command}";
-            else return $"{Prefix}{command}";
         }
 
         public Dictionary<string, string> GetSettings()
