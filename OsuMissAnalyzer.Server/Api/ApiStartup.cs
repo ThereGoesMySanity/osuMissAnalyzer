@@ -1,15 +1,24 @@
 using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using DSharpPlus;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
+using OsuMissAnalyzer.Server.Logging;
 
 namespace OsuMissAnalyzer.Server.Api
 {
     public class ApiStartup
     {
+        const ulong BATHBOT = 297073686916366336;
+
+        private Dictionary<ulong, string> directBotIds = new Dictionary<ulong, string>
+        {
+            [BATHBOT] = "bathbot"
+        };
         private readonly IHostEnvironment env;
 
         public ApiStartup(IHostEnvironment env)
@@ -38,7 +47,8 @@ namespace OsuMissAnalyzer.Server.Api
                 endpoints.MapPost("/api/scoreresponse", ScoreResponse);
             });
         }
-        public async Task<bool> ScoreRequest(ScoreRequest req, DiscordShardedClient discord, IServiceProvider serviceProvider)
+        public async Task<bool> ScoreRequest(ScoreRequest req, DiscordShardedClient discord, IServiceProvider serviceProvider,
+                IDataLogger dLog)
         {
             if (!discord.GetShard(req.GuildId).Guilds.ContainsKey(req.GuildId)) return false;
 
@@ -47,9 +57,13 @@ namespace OsuMissAnalyzer.Server.Api
             replayLoader.ScoreId = req.ScoreId;
             await replayLoader.Load();
 
-            return replayLoader.Loaded && replayLoader.ReplayAnalyzer.misses.Count > 0;
+            var ret = replayLoader.Loaded && replayLoader.ReplayAnalyzer.misses.Count > 0;
+            if (ret) dLog.Log(DataPoint.BotDirectReqTrue);
+            else dLog.Log(DataPoint.BotDirectReqFalse);
+            return ret;
         }
-        public async Task<ulong?> ScoreResponse(ScoreResponse res, DiscordShardedClient discord, IServiceScopeFactory serviceScopeFactory)
+        public async Task<ulong?> ScoreResponse(ScoreResponse res, DiscordShardedClient discord, IServiceScopeFactory serviceScopeFactory,
+                ILogger<ApiStartup> logger, IDataLogger dLog)
         {
             if (!discord.GetShard(res.GuildId).Guilds.ContainsKey(res.GuildId)) return null;
 
@@ -62,9 +76,12 @@ namespace OsuMissAnalyzer.Server.Api
             replayLoader.Source = Source.BOT;
             replayLoader.ScoreId = res.ScoreId;
 
-            var id = await scope.ServiceProvider.GetRequiredService<ResponseFactory>()
-                    .CreateMessageResponse(await context.GetMessageAsync());
+            var message = await context.GetMessageAsync();
+            logger.LogInformation("{bot} direct response", directBotIds[message.Author.Id]);
 
+            dLog.Log(DataPoint.BotDirectResponse);
+            var id = await scope.ServiceProvider.GetRequiredService<ResponseFactory>()
+                    .CreateMessageResponse(message);
             return id;
         }
     }

@@ -30,6 +30,9 @@ namespace OsuMissAnalyzer.Server.Logging
         MessageEdited,
         ErrorHandled,
         ErrorUnhandled,
+        BotDirectReqFalse,
+        BotDirectReqTrue,
+        BotDirectResponse,
     }
     public interface IDataLogger : IHostedService
     {
