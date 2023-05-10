@@ -28,16 +28,18 @@ CHARTS = {
     'calls': {
         'options': [None, 'Calls', 'Bot calls/min', 'missanalyzer', 'missanalyzer.calls', 'line'],
         'lines': [
-            ['BotDirectReqFalse', 'Requests denied', 'incremental', 60, 1],
-            ['BotDirectReqTrue', 'Requests accepted', 'incremental', 60, 1],
-            ['BotDirectResponse', 'Responses', 'incremental', 60, 1],
+            ['BotCalls', 'Bot', 'incremental', 60, 1],
+            ['AttachmentCalls', 'Attachments', 'incremental', 60, 1],
+            ['UserCalls', 'User calls', 'incremental', 60, 1],
+            ['ReactionCalls', 'Reactions', 'incremental', 60, 1],
         ]
     },
     'directCalls': {
         'options': [None, 'Calls', 'Direct calls/min', 'missanalyzer', 'missanalyzer.directCalls', 'line'],
         'lines': [
-            ['ErrorHandled', 'Handled', 'incremental', 60, 1],
-            ['ErrorUnhandled', 'Unhandled', 'incremental', 60, 1],
+            ['BotDirectReqFalse', 'Requests denied', 'incremental', 60, 1],
+            ['BotDirectReqTrue', 'Requests accepted', 'incremental', 60, 1],
+            ['BotDirectResponse', 'Responses', 'incremental', 60, 1],
         ]
     },
     'caches': {
