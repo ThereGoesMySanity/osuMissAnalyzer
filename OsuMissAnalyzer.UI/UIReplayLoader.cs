@@ -101,6 +101,7 @@ namespace OsuMissAnalyzer.UI
                             replaysEnumerable = replaysEnumerable.OrderByDescending(re => re.PlayTime);
 
                         var replays = await Task.WhenAll(replaysEnumerable.Select(async re => new ReplayListItem() { Replay = re, Beatmap = await LoadBeatmap(re, false) }));
+                        replays = replays.Where(re => re.Beatmap != null).ToArray();
                         var replayListForm = new ListMessageBox
                         {
                             DataContext = new ListMessageBoxViewModel
@@ -168,15 +169,21 @@ namespace OsuMissAnalyzer.UI
         public async Task<Beatmap> LoadBeatmap(Replay replay, bool dialog = true)
         {
             Beatmap beatmap = null;
-            if (Options.OsuDirAccessible)
+            try
             {
-                beatmap = Options.GetBeatmapFromHash(replay.MapHash);
+                if (Options.OsuDirAccessible)
+                {
+                    beatmap = Options.GetBeatmapFromHash(replay.MapHash);
+                }
+                //if (beatmap == null)
+                else
+                {
+                    beatmap = await GetBeatmapFromHash(Directory.GetCurrentDirectory(), false);
+                    if (Options.SongsFolder != null) beatmap ??= await GetBeatmapFromHash(Options.SongsFolder, true);
+                }
             }
-            //if (beatmap == null)
-            else
+            catch (Exception e)
             {
-                beatmap = await GetBeatmapFromHash(Directory.GetCurrentDirectory(), false);
-                if (Options.SongsFolder != null) beatmap ??= await GetBeatmapFromHash(Options.SongsFolder, true);
             }
             if (beatmap == null && dialog)
             {
