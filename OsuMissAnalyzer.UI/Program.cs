@@ -69,7 +69,7 @@ namespace OsuMissAnalyzer.UI
 
         // Avalonia configuration, don't remove; also used by visual designer.
         public static AppBuilder BuildAvaloniaApp(UIReplayLoader replayLoader)
-            => AppBuilder.Configure<App>(() => new App(replayLoader))
+            => AppBuilder.Configure(() => new App(replayLoader))
                 .UsePlatformDetect()
                 .UseReactiveUI()
                 .LogToTrace();

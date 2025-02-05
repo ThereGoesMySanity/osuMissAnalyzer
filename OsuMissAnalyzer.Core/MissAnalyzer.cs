@@ -30,10 +30,10 @@ namespace OsuMissAnalyzer.Core
         private bool drawAllHitObjects;
         private float scale = 0.8f;
 
-        public ColorScheme ColorScheme {get; set;}
+        public ColorScheme ColorScheme { get; set; } = ColorScheme.Default;
 
 
-        public MissAnalyzer(IReplayLoader replayLoader) : this(replayLoader.Replay, replayLoader.Beatmap, replayLoader.ReplayAnalyzer)
+        public MissAnalyzer(IReplayLoader replayLoader) : this(replayLoader.Replay!, replayLoader.Beatmap!, replayLoader.ReplayAnalyzer!)
         {
             ColorScheme = replayLoader.ColorScheme ?? ColorScheme.Default;
         }
@@ -99,13 +99,13 @@ namespace OsuMissAnalyzer.Core
                 bool isMiss = !drawAllHitObjects || ReplayAnalyzer.misses.Contains(hitObject);
                 float radius = (float)hitObject.Radius;
                 
-                Func<Color, Pen> circlePen = color => new Pen(color, radius * 2 / scale)
-                {
+                Func<Color, Pen> circlePen = color => new SolidPen(new PenOptions(color, radius * 2 / scale){
+                    
                     EndCapStyle = EndCapStyle.Round,
                     JointStyle = JointStyle.Round,
-                };
-
-                Func<Color, Pen> linePen = color => new Pen(color, 1.5f);
+                });
+                
+                Func<Color, Pen> linePen = color => new SolidPen(color, 1.5f);
 
                 RectangleF bounds = new RectangleF(PointF.Subtract(hitObject.Location.ToPointF(), Scale(area.Size, scale / 2)),
                     Scale(area.Size, scale));
@@ -142,7 +142,7 @@ namespace OsuMissAnalyzer.Core
                         PointF[] pt = slider.Curves.SelectMany(curve => curve.CurveSnapshots)
                             .Select(c => c.point + slider.StackOffset.ToVector2())
                             .Select(s => ScaleToRect(pSub(s.ToPointF(), bounds, hr), bounds, area)).ToArray();
-                        if (pt.Length > 1) g.DrawLines(circlePen(ColorScheme.SliderColor.WithAlpha(80 / 255f)), pt);
+                        if (pt.Length > 1) g.DrawLine(circlePen(ColorScheme.SliderColor.WithAlpha(80 / 255f)), pt);
                     }
 
                     var color = ColorScheme.GetCircleColor(Math.Abs(Beatmap.HitObjects[q].StartTime - hitObject.StartTime) / maxTime);
@@ -162,14 +162,14 @@ namespace OsuMissAnalyzer.Core
                 float distance = 10.0001f;
                 float? closestHit = null;
                 float closestDistance = 0;
-                string verdict = null;
+                string? verdict = null;
                 for (int k = replayFramesStart; k < replayFramesEnd - 2; k++)
                 {
                     PointF p1 = pSub(Replay.ReplayFrames[k].GetPointF(), bounds, hr);
                     PointF p2 = pSub(Replay.ReplayFrames[k + 1].GetPointF(), bounds, hr);
                     float hitAcc = Replay.ReplayFrames[k].Time - hitObject.StartTime;
                     var pen = linePen(GetHitColor(Beatmap.OverallDifficulty, hitAcc) ?? ColorScheme.LineColor);
-                    g.DrawLines(pen, ScaleToRect(p1, bounds, area), ScaleToRect(p2, bounds, area));
+                    g.DrawLine(pen, ScaleToRect(p1, bounds, area), ScaleToRect(p2, bounds, area));
                     if (distance > 10 && Math.Abs(hitObject.StartTime - Replay.ReplayFrames[k + 1].Time) > 50)
                     {
                         Point2 v1 = new Point2(p1.X - p2.X, p1.Y - p2.Y);
@@ -182,8 +182,8 @@ namespace OsuMissAnalyzer.Core
                             p2 = ScaleToRect(p2, bounds, area);
                             p3 = ScaleToRect(p3, bounds, area);
                             p4 = ScaleToRect(p4, bounds, area);
-                            g.DrawLines(pen, p2, p3);
-                            g.DrawLines(pen, p2, p4);
+                            g.DrawLine(pen, p2, p3);
+                            g.DrawLine(pen, p2, p4);
                         }
                         distance = 0;
                     }
@@ -226,7 +226,7 @@ namespace OsuMissAnalyzer.Core
                 int textSize = 16;
                 int textPadding = 3;
                 Font f = new Font(SystemFonts.Get("Segoe UI"), textSize);
-                var opts = new TextOptions(f)
+                var opts = new RichTextOptions(f)
                 {
                     WrappingLength = area.Width - 2 * textPadding,
                     Origin = new System.Numerics.Vector2(textPadding, textPadding),
@@ -243,7 +243,7 @@ namespace OsuMissAnalyzer.Core
                 if (Replay.Mods.HasFlag(Mods.DoubleTime)) time /= 1.5f;
                 else if (Replay.Mods.HasFlag(Mods.HalfTime)) time /= 0.75f;
                 TimeSpan ts = TimeSpan.FromMilliseconds(time);
-                opts = new TextOptions(f)
+                opts = new RichTextOptions(f)
                 {
                     VerticalAlignment = VerticalAlignment.Bottom,
                     Origin = new System.Numerics.Vector2(textPadding, area.Height - textPadding),
@@ -252,7 +252,7 @@ namespace OsuMissAnalyzer.Core
 
                 if (closestHit.HasValue && isMiss)
                 {
-                    opts = new TextOptions(f)
+                    opts = new RichTextOptions(f)
                     {
                         HorizontalAlignment = HorizontalAlignment.Right,
                         VerticalAlignment = VerticalAlignment.Bottom,

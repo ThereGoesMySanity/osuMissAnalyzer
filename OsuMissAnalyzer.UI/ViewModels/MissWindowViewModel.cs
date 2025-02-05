@@ -33,7 +33,7 @@ namespace OsuMissAnalyzer.UI.ViewModels
             this.WhenAnyValue(x => x.Bounds, x => x.Analyzer).Subscribe(((Rect, MissAnalyzer) _) => UpdateImage());
         }
 
-        internal void OnMouseReleased(object sender, PointerReleasedEventArgs e)
+        internal void OnMouseReleased(object? sender, PointerReleasedEventArgs e)
         {
             switch (e.InitialPressMouseButton)
             {
@@ -47,7 +47,7 @@ namespace OsuMissAnalyzer.UI.ViewModels
             UpdateImage();
         }
 
-        internal async void OnKeyDown(object source, KeyEventArgs e)
+        internal async void OnKeyDown(object? source, KeyEventArgs e)
         {
             switch (e.Key)
             {
@@ -70,7 +70,7 @@ namespace OsuMissAnalyzer.UI.ViewModels
                     int i = 0;
                     foreach (var img in Analyzer.DrawAllMisses(Area))
                     {
-                        string filename = $"{Path.GetFileNameWithoutExtension(Loader.Replay.Filename)}.{i++}.png";
+                        string filename = $"{Path.GetFileNameWithoutExtension(Loader.Replay!.Filename)}.{i++}.png";
                         await img.SaveAsPngAsync(filename);
                     }
                     break;
@@ -83,7 +83,7 @@ namespace OsuMissAnalyzer.UI.ViewModels
             }
             UpdateImage();
         }
-        internal void OnMouseWheel(object source, PointerWheelEventArgs e)
+        internal void OnMouseWheel(object? source, PointerWheelEventArgs e)
         {
             Analyzer.ScaleChange(-Math.Sign(e.Delta.Y));
             UpdateImage();

@@ -12,14 +12,16 @@ namespace OsuMissAnalyzer.UI
     {
         public bool SupportsRecycling => false;
 
-        public IControl Build(object data)
+        public Control? Build(object? param)
         {
-            var name = data.GetType().FullName.Replace("ViewModel", "View");
-            var type = Type.GetType(name);
+            var name = param?.GetType().FullName?.Replace("ViewModel", "View");
+
+            Type? type = null;
+            if (name != null) type = Type.GetType(name);
 
             if (type != null)
             {
-                return (Control)Activator.CreateInstance(type);
+                return (Control)Activator.CreateInstance(type)!;
             }
             else
             {
@@ -27,7 +29,7 @@ namespace OsuMissAnalyzer.UI
             }
         }
 
-        public bool Match(object data)
+        public bool Match(object? data)
         {
             return data is ViewModelBase;
         }

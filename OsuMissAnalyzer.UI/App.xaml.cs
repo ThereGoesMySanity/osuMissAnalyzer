@@ -11,6 +11,7 @@ using System.IO;
 using System.Threading.Tasks;
 using Avalonia.Threading;
 using Avalonia.Markup.Xaml.Styling;
+using Avalonia.Styling;
 
 namespace OsuMissAnalyzer.UI
 {
@@ -18,7 +19,8 @@ namespace OsuMissAnalyzer.UI
     {
         public static Window Window { get; private set; }
         public UIReplayLoader ReplayLoader { get; private set; }
-        public App() { }
+
+        public App() {}
         public App(UIReplayLoader replayLoader)
         {
             ReplayLoader = replayLoader;
@@ -27,22 +29,13 @@ namespace OsuMissAnalyzer.UI
         public override void Initialize()
         {
             AvaloniaXamlLoader.Load(this);
-            switch (ReplayLoader.ColorScheme.SchemeType)
+            if (ReplayLoader.ColorScheme.SchemeType == Core.ColorScheme.Type.Dark)
             {
-                case Core.ColorScheme.Type.Dark:
-                    var dark = new StyleInclude(new Uri("resm:Styles?assembly=ControlCatalog"))
-                    {
-                        Source = new Uri("resm:Avalonia.Themes.Default.Accents.BaseDark.xaml?assembly=Avalonia.Themes.Default")
-                    };
-                    Styles.Add(dark);
-                    break;
-                case Core.ColorScheme.Type.Light:
-                    var light = new StyleInclude(new Uri("resm:Styles?assembly=ControlCatalog"))
-                    {
-                        Source = new Uri("resm:Avalonia.Themes.Default.Accents.BaseLight.xaml?assembly=Avalonia.Themes.Default")
-                    };
-                    Styles.Add(light);
-                    break;
+                RequestedThemeVariant = ThemeVariant.Dark;
+            }
+            else
+            {
+                RequestedThemeVariant = ThemeVariant.Light;
             }
         }
 
@@ -70,7 +63,7 @@ namespace OsuMissAnalyzer.UI
             base.OnFrameworkInitializationCompleted();
         }
 
-        private void ReplayLoaderOnNewReplay(object sender, EventArgs e)
+        private void ReplayLoaderOnNewReplay(object? sender, EventArgs e)
         {
             _ = Load(ReplayLoader);
         }
@@ -82,7 +75,7 @@ namespace OsuMissAnalyzer.UI
                 await Dispatcher.UIThread.InvokeAsync(() => Load(loader));
                 return;
             }
-            string errorMessage, result = null;
+            string? errorMessage, result = null;
             do
             {
                 try
@@ -129,8 +122,8 @@ namespace OsuMissAnalyzer.UI
                 DataContext = new MessageBoxViewModel
                 {
                     Message = message,
+                    Options = buttons
                 },
-                Buttons = new List<string>(buttons),
             };
             return await window.ShowDialog<string>(Window);
         }

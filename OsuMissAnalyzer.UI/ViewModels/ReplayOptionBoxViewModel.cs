@@ -12,7 +12,7 @@ namespace OsuMissAnalyzer.UI.ViewModels
 
         public Options Options { get; }
 
-        public Action<bool> CloseAction { get; set; }
+        public Action<bool>? CloseAction { get; set; }
 
         public ReplayOptionBoxViewModel(Options options)
         {
@@ -20,10 +20,10 @@ namespace OsuMissAnalyzer.UI.ViewModels
         }
 
 
-        public void Close(ReplayFind? result)
+        public void Close(object? result)
         {
-            Result = result;
-            CloseAction(result != null);
+            Result = result as ReplayFind?;
+            CloseAction?.Invoke(result != null);
         }
     }
 }

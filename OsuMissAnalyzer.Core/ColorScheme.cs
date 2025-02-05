@@ -59,17 +59,17 @@ namespace OsuMissAnalyzer.Core
         public Color GetCircleColor(float time)
         {
             if (time == 0) return CircleSelectedColor;
-            Vector4 start = ((Vector4)CircleStartColor);
-            Vector4 end = ((Vector4)CircleEndColor);
+            Vector4 start = (Vector4)CircleStartColor;
+            Vector4 end = (Vector4)CircleEndColor;
             return new Color(Vector4.Lerp(start, end, time));
         }
 
-        public static ColorScheme Parse(string s) {
+        public static ColorScheme? Parse(string s) {
             foreach (var scheme in typeof(ColorScheme).GetFields(BindingFlags.Public | BindingFlags.Static)
                     .Where(f => f.FieldType == typeof(ColorScheme))
-                    .Select(f => (ColorScheme)f.GetValue(null)))
+                    .Select(f => (ColorScheme?)f.GetValue(null)))
             {
-                if (scheme.Name.Equals(s, StringComparison.OrdinalIgnoreCase)) return scheme;
+                if (scheme is not null && scheme.Name.Equals(s, StringComparison.OrdinalIgnoreCase)) return scheme;
             }
             return null;
         }

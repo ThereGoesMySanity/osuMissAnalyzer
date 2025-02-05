@@ -16,23 +16,24 @@ using OsuMissAnalyzer.UI.ViewModels;
 using OsuMissAnalyzer.UI.Views;
 using OsuMissAnalyzer.UI.Models;
 using System.Net.Http;
+using Avalonia.Platform.Storage;
 
 namespace OsuMissAnalyzer.UI
 {
     public class UIReplayLoader : IReplayLoader
     {
-        public Replay Replay { get; set; }
-        public Beatmap Beatmap { get; set; }
-        public ReplayAnalyzer ReplayAnalyzer { get; private set; }
-        public Options Options { get; set; }
-        public string ReplayFile { get; set; }
-        public string BeatmapFile { get; set; }
-        public event EventHandler NewReplay;
-        private FileSystemWatcher[] fileSystemWatchers;
+        public Replay? Replay { get; set; }
+        public Beatmap? Beatmap { get; set; }
+        public ReplayAnalyzer? ReplayAnalyzer { get; private set; }
+        public required Options Options { get; set; }
+        public string? ReplayFile { get; set; }
+        public string? BeatmapFile { get; set; }
+        public event EventHandler? NewReplay;
+        private FileSystemWatcher[]? fileSystemWatchers;
 
-        public ColorScheme ColorScheme => ColorScheme.Parse(Options.Settings.GetValueOrDefault("colorscheme", ""));
+        public ColorScheme ColorScheme => ColorScheme.Parse(Options.Settings.GetValueOrDefault("colorscheme", "")) ?? ColorScheme.Default;
 
-        public async Task<string> Load()
+        public async Task<string?> Load()
         {
             Debug.Print("Loading Replay file...");
 
@@ -75,9 +76,9 @@ namespace OsuMissAnalyzer.UI
             }
         }
 
-        public async Task<Replay> LoadReplay()
+        public async Task<Replay?> LoadReplay()
         {
-            Replay replay = null;
+            Replay? replay = null;
             var messageBox = new ReplayOptionBox
             {
                 DataContext = new ReplayOptionBoxViewModel(Options)
@@ -100,16 +101,24 @@ namespace OsuMissAnalyzer.UI
                         if (userResult != ReplayFind.WATCHDOG)
                             replaysEnumerable = replaysEnumerable.OrderByDescending(re => re.PlayTime);
 
-                        var replays = await Task.WhenAll(replaysEnumerable.Select(async re => new ReplayListItem() { Replay = re, Beatmap = await LoadBeatmap(re, false) }));
-                        replays = replays.Where(re => re.Beatmap != null).ToArray();
+                        var replays = (await Task.WhenAll(replaysEnumerable
+                                    .Select(async re =>
+                                    {
+                                        var map = await LoadBeatmap(re, false);
+                                        return map is not null?
+                                                new ReplayListItem { Replay = re, Beatmap = map }
+                                                : null;
+                                    })))
+                                    .Where(re => re != null).Select(re => re!)
+                                    .ToList();
                         var replayListForm = new ListMessageBox
                         {
                             DataContext = new ListMessageBoxViewModel
                             {
-                                Items = replays.ToList(),
+                                Items = replays,
                             },
                         };
-                        if (userResult == ReplayFind.WATCHDOG)
+                        if (userResult == ReplayFind.WATCHDOG && replays.Count > 0)
                         {
                             replay = replays[0].Replay;
                             Beatmap = replays[0].Beatmap;
@@ -143,22 +152,15 @@ namespace OsuMissAnalyzer.UI
                         }
                         break;
                     case ReplayFind.MANUAL:
-                        OpenFileDialog fd = new OpenFileDialog()
+                        var result = await App.Window.StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions()
                         {
                             Title = "Choose replay file",
-                            Filters = 
-                            {
-                                new FileDialogFilter
-                                {
-                                    Name = "osu! replay files (*.osr)",
-                                    Extensions = { "osr" },
-                                }
-                            }
-                        };
-                        string[] result = await fd.ShowAsync(App.Window);
-                        if (result != null && result.Length > 0)
+                            FileTypeFilter = [new FilePickerFileType("osu! replay files (*.osr)") { Patterns = ["*.osr"] }],
+                            AllowMultiple = false
+                        });
+                        if (result != null && result.Count > 0)
                         {
-                            replay = new Replay(result[0]);
+                            replay = new Replay(result[0].TryGetLocalPath());
                         }
                         break;
                 }
@@ -166,9 +168,9 @@ namespace OsuMissAnalyzer.UI
             return replay;
         }
 
-        public async Task<Beatmap> LoadBeatmap(Replay replay, bool dialog = true)
+        public async Task<Beatmap?> LoadBeatmap(Replay replay, bool dialog = true)
         {
-            Beatmap beatmap = null;
+            Beatmap? beatmap = null;
             try
             {
                 if (Options.OsuDirAccessible)
@@ -182,47 +184,42 @@ namespace OsuMissAnalyzer.UI
                     if (Options.SongsFolder != null) beatmap ??= await GetBeatmapFromHash(Options.SongsFolder, true);
                 }
             }
-            catch (Exception e)
+            catch (Exception)
             {
             }
             if (beatmap == null && dialog)
             {
                 await App.ShowMessageBox("Couldn't find beatmap automatically");
-                OpenFileDialog fd = new OpenFileDialog();
-                fd.Title = "Choose beatmap";
-                fd.Filters.Add(new FileDialogFilter
+                var result = await App.Window.StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions()
                 {
-                    Name = "osu! beatmaps",
-                    Extensions = { "osu" },
+                    Title = "Choose beatmap",
+                    FileTypeFilter = [new FilePickerFileType("osu! beatmap files") { Patterns = ["*.osu"] }],
+                    AllowMultiple = false
                 });
-                string[] d = await fd.ShowAsync(App.Window);
-                if (d != null && d.Length > 0)
+                if (result != null && result.Count > 0)
                 {
-                    beatmap = new Beatmap(d[0]);
+                    beatmap = new Beatmap(result[0].TryGetLocalPath());
                     if (beatmap.BeatmapHash != replay.MapHash)
                     {
-                        string dir = Path.GetDirectoryName(d[0]);
-                        beatmap = ReadFolder(dir, null);
+                        string? dir = Path.GetDirectoryName(result[0].TryGetLocalPath());
+                        if (dir is not null) beatmap = ReadFolder(dir, null);
                     }
                 }
             }
             return beatmap;
         }
 
-        private async Task<Beatmap> GetBeatmapFromHash(string dir, bool isSongsDir)
+        private async Task<Beatmap?> GetBeatmapFromHash(string dir, bool isSongsDir)
         {
             Debug.Print("\nChecking API Key...");
-            JArray j = JArray.Parse("[]");
-            if (Options.Settings.ContainsKey("apikey"))
+            JArray j = [];
+            if (Options.Settings.TryGetValue("apikey", out string? apikey))
             {
                 Debug.Print("Found API key, searching for beatmap...");
-
-                using (HttpClient http = new HttpClient())
-                {
-                    j = JArray.Parse(await (await http.GetAsync("https://osu.ppy.sh/api/get_beatmaps" +
-                                                            "?k=" + Options.Settings["apikey"] +
-                                                            "&h=" + Replay.MapHash)).Content.ReadAsStringAsync());
-                }
+                using HttpClient http = new();
+                j = JArray.Parse(await (await http.GetAsync("https://osu.ppy.sh/api/get_beatmaps" +
+                                                        "?k=" + apikey +
+                                                        "&h=" + Replay!.MapHash)).Content.ReadAsStringAsync());
             }
             else if(isSongsDir)
             {
@@ -240,46 +237,38 @@ namespace OsuMissAnalyzer.UI
 
                     foreach (string folder in folders)
                     {
-                        Beatmap map = ReadFolder(folder, j.Count > 0 ? (string)j[0]["beatmap_id"] : null);
+                        Beatmap? map = ReadFolder(folder, j.Count > 0 ? (string?)j[0]["beatmap_id"] : null);
                         if (map != null) return map;
                     }
                 }
                 else
                 {
-                    Beatmap map = ReadFolder(dir, j.Count > 0 ? (string)j[0]["beatmap_id"] : null);
+                    Beatmap? map = ReadFolder(dir, j.Count > 0 ? (string?)j[0]["beatmap_id"] : null);
                     if (map != null) return map;
                 }
                 return null;
             });
         }
 
-        private Beatmap ReadFolder(string folder, string id)
+        private Beatmap? ReadFolder(string folder, string? id)
         {
             foreach (string file in Directory.GetFiles(folder, "*.osu"))
             {
                 if (id != null)
                 {
-                    using (StreamReader f = new StreamReader(file))
+                    using StreamReader f = new(file);
+                    while (!f.EndOfStream)
                     {
-                        string line = f.ReadLine();
-                        if (line == null)
-                            continue;
-                        while (!f.EndOfStream
-                               && !line.StartsWith("BeatmapID"))
+                        var line = f.ReadLine();
+                        if (line is not null
+                            && line.StartsWith("BeatmapID")
+                            && line[10..] == id)
                         {
-                            line = f.ReadLine();
-                        }
-                        if (line.StartsWith("BeatmapID") && id != null)
-                        {
-                            if (line.Substring(10) == id)
-                            {
-                                return new Beatmap(file);
-                            }
+                            return new Beatmap(file);
                         }
                     }
-
                 }
-                else if (Replay.MapHash == Beatmap.MD5FromFile(file))
+                else if (Replay!.MapHash == Beatmap.MD5FromFile(file))
                 {
                     return new Beatmap(file);
                 }
@@ -291,7 +280,7 @@ namespace OsuMissAnalyzer.UI
         {
             if (fileSystemWatchers != null)
                 return;
-            fileSystemWatchers = new[] { new FileSystemWatcher(osuReplaysDir), new FileSystemWatcher(userReplaysDir) };
+            fileSystemWatchers = [new FileSystemWatcher(osuReplaysDir), new FileSystemWatcher(userReplaysDir)];
             foreach (var fileSystemWatcher in fileSystemWatchers)
             {
                 fileSystemWatcher.Filter = "*.osr";

@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net6.0</TargetFramework>
+    <TargetFramework>net9.0</TargetFramework>
     <PackageId>OsuMissAnalyzer.Core</PackageId>
     <PackageProjectUrl>https://github.com/ThereGoesMySanity/osuMissAnalyzer</PackageProjectUrl>
     <RepositoryUrl>https://github.com/ThereGoesMySanity/osuMissAnalyzer</RepositoryUrl>
@@ -10,12 +10,13 @@
     <Authors>Will Kennedy</Authors>
     <Company>Will Kennedy</Company>
     <Description>Analyze an osu! replay for misses</Description>
+    <Nullable>Enable</Nullable>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="SixLabors.Fonts" Version="1.0.0-beta17" />
-    <PackageReference Include="SixLabors.ImageSharp" Version="2.1.3" />
-    <PackageReference Include="SixLabors.ImageSharp.Drawing" Version="1.0.0-beta14" />
+    <PackageReference Include="SixLabors.Fonts" Version="2.1.2" />
+    <PackageReference Include="SixLabors.ImageSharp" Version="3.1.6" />
+    <PackageReference Include="SixLabors.ImageSharp.Drawing" Version="2.1.5" />
     <PackageReference Include="Teronis.MSBuild.Packaging.ProjectBuildInPackage" Version="1.0.0">
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       <PrivateAssets>all</PrivateAssets>

@@ -4,10 +4,22 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
         x:Class="OsuMissAnalyzer.UI.Views.MessageBox"
-        Title="MessageBox" Height="160" Width="240">
+        Title="MessageBox" Height="160" Width="240"
+        WindowStartupLocation="CenterOwner">
   <DockPanel>
-    <Panel Name="ButtonsOuter" HorizontalAlignment="Stretch" VerticalAlignment="Bottom" DockPanel.Dock="Bottom" Margin="12">
-      <StackPanel Name="Buttons" Orientation="Horizontal" Spacing="4" HorizontalAlignment="Center"/>
+    <Panel HorizontalAlignment="Stretch" VerticalAlignment="Bottom" DockPanel.Dock="Bottom" Margin="12">
+      <ItemsControl ItemsSource="{Binding Options}">
+        <ItemsControl.ItemsPanel>
+          <ItemsPanelTemplate>
+            <StackPanel Orientation="Horizontal" Spacing="4" HorizontalAlignment="Center" />
+          </ItemsPanelTemplate>
+        </ItemsControl.ItemsPanel>
+        <ItemsControl.ItemTemplate>
+          <DataTemplate>
+            <Button Content="{Binding}" HorizontalAlignment="Center" Click="ButtonClicked"/>
+          </DataTemplate>
+        </ItemsControl.ItemTemplate>
+      </ItemsControl>
     </Panel>
     <TextBlock Text="{Binding Message}" VerticalAlignment="Center" HorizontalAlignment="Center" TextAlignment="Center"/>
   </DockPanel>

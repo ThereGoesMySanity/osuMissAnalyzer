@@ -1,5 +1,6 @@
 ﻿using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Interactivity;
 using Avalonia.Markup.Xaml;
 using OsuMissAnalyzer.UI.ViewModels;
 using System;
@@ -10,38 +11,16 @@ using System.Reactive.Linq;
 
 namespace OsuMissAnalyzer.UI.Views
 {
-    public class MessageBox : Window
+    public partial class MessageBox : Window
     {
-        public List<string> Buttons {
-            set
-            {
-                var buttons = this.FindControl<StackPanel>("Buttons");
-                var panel = this.FindControl<Panel>("ButtonsOuter");
-                buttons.Children.AddRange(
-                    value.Select(v =>
-                    {
-                        var button = new Button
-                        {
-                            Content = v,
-                            HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Center,
-                        };
-                        button.Bind(WidthProperty, panel.GetObservable(BoundsProperty).Select(bounds => Math.Min(100, (bounds.Width - buttons.Spacing * (value.Count - 1)) / value.Count)));
-                        button.Click += (a, b) => this.Close(v);
-                        return button;
-                    }));
-            }
-        }
         public MessageBox()
         {
             InitializeComponent();
-#if DEBUG
-            this.AttachDevTools();
-#endif
         }
 
-        private void InitializeComponent()
+        private void ButtonClicked(object? sender, RoutedEventArgs args)
         {
-            AvaloniaXamlLoader.Load(this);
+            if (sender is Button b) Close(b.Content as string);
         }
     }
 }

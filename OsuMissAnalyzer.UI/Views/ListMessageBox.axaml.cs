@@ -1,39 +1,26 @@
-﻿using Avalonia;
-using Avalonia.Controls;
-using Avalonia.Markup.Xaml;
+﻿using Avalonia.Controls;
 using OsuMissAnalyzer.UI.Models;
 using OsuMissAnalyzer.UI.ViewModels;
-using System.Reactive.Linq;
-using System;
-using System.Linq;
 using Avalonia.Input;
+using Avalonia.Interactivity;
 
 namespace OsuMissAnalyzer.UI.Views
 {
-    public class ListMessageBox : Window
+    public partial class ListMessageBox : Window
     {
-        public ReplayListItem Result => (DataContext as ListMessageBoxViewModel).Result;
+        public ReplayListItem Result => (DataContext as ListMessageBoxViewModel)!.Result;
         public ListMessageBox()
         {
-            this.InitializeComponent();
-#if DEBUG
-            this.AttachDevTools();
-#endif
-        }
-
-        public void Close(bool ok)
-        {
-            base.Close(ok);
-        }
-
-        private void InitializeComponent()
-        {
-            AvaloniaXamlLoader.Load(this);
-            DataGrid d = this.FindControl<DataGrid>("Results");
-            d.LoadingRow += (_, e) =>
+            InitializeComponent();
+            Results.LoadingRow += (_, e) =>
             {
-                e.Row.DoubleTapped += (_, __) => Close(Result != null);
+                e.Row.DoubleTapped += (o, args) => Close(Result != null);
             };
+        }
+
+        public void ButtonClicked(object? sender, RoutedEventArgs args)
+        {
+            if (sender is Button b) Close((b.Content as string) == "Ok");
         }
 
         protected override void OnKeyDown(KeyEventArgs e)

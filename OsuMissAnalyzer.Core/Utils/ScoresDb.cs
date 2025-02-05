@@ -24,7 +24,7 @@ namespace OsuMissAnalyzer.Core
             fileReader.Dispose();
         }
 
-        private string readNullableString()
+        private string? ReadNullableString()
         {
             if(this.fileReader.ReadByte() != 0x0B)
             {
@@ -35,7 +35,7 @@ namespace OsuMissAnalyzer.Core
 
         public void ReadBeatmap()
         {
-            string hash = readNullableString();
+            string? hash = ReadNullableString();
             if (hash == null)
                 return;
             uint count = fileReader.ReadUInt32();
@@ -51,9 +51,9 @@ namespace OsuMissAnalyzer.Core
             Score score = new Score();
             score.mode = fileReader.ReadByte();
             score.version = fileReader.ReadUInt32();
-            score.beatmapHash = readNullableString();
-            score.playerName = readNullableString();
-            score.replayHash = readNullableString();
+            score.beatmapHash = ReadNullableString();
+            score.playerName = ReadNullableString();
+            score.replayHash = ReadNullableString();
             score.count300 = fileReader.ReadUInt16();
             score.count100 = fileReader.ReadUInt16();
             score.count50 = fileReader.ReadUInt16();
@@ -64,7 +64,7 @@ namespace OsuMissAnalyzer.Core
             score.maxCombo = fileReader.ReadUInt16();
             score.perfect = fileReader.ReadBoolean();
             score.mods = fileReader.ReadUInt32();
-            readNullableString();
+            ReadNullableString();
             score.timestamp = fileReader.ReadUInt64();
             fileReader.ReadInt32();
             score.onlineId = fileReader.ReadUInt64();
@@ -81,9 +81,9 @@ namespace OsuMissAnalyzer.Core
     {
         public byte mode;
         public uint version;
-        public string beatmapHash;
-        public string playerName;
-        public string replayHash;
+        public string? beatmapHash;
+        public string? playerName;
+        public string? replayHash;
         public ushort count300, count100, count50, countMiss, countGeki, countKatu;
         public uint score;
         public ushort maxCombo;

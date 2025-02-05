@@ -6,24 +6,16 @@ using System;
 
 namespace OsuMissAnalyzer.UI.Views
 {
-    public class ReplayOptionBox : Window
+    public partial class ReplayOptionBox : Window
     {
-        public ReplayFind Result => (DataContext as ReplayOptionBoxViewModel).Result.Value;
+        public ReplayFind? Result => (DataContext as ReplayOptionBoxViewModel)!.Result;
         public ReplayOptionBox()
         {
-            this.InitializeComponent();
-#if DEBUG
-            this.AttachDevTools();
-#endif
+            InitializeComponent();
             DataContextChanged += (a, b) =>
             {
-                if (DataContext != null) (DataContext as ReplayOptionBoxViewModel).CloseAction = (b) => Close(b);
+                if (DataContext != null) (DataContext as ReplayOptionBoxViewModel)!.CloseAction = (b) => Close(b);
             };
-        }
-
-        private void InitializeComponent()
-        {
-            AvaloniaXamlLoader.Load(this);
         }
     }
 }

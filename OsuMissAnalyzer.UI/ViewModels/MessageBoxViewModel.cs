@@ -10,7 +10,10 @@ namespace OsuMissAnalyzer.UI.ViewModels
     class MessageBoxViewModel : ViewModelBase
     {
         private string message;
+        private string[] options;
 
-        public string Message { get => message; set => this.RaiseAndSetIfChanged(ref message, value); }
+        public required string Message { get => message; set => this.RaiseAndSetIfChanged(ref message, value); }
+
+        public required string[] Options { get => options; set => this.RaiseAndSetIfChanged(ref options, value); }
     }
 }

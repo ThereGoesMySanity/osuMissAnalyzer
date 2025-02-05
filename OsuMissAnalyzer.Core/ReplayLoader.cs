@@ -5,9 +5,9 @@ namespace OsuMissAnalyzer.Core
 {
     public interface IReplayLoader
     {
-        Replay Replay { get; }
-        Beatmap Beatmap { get; }
-        ReplayAnalyzer ReplayAnalyzer { get; }
+        Replay? Replay { get; }
+        Beatmap? Beatmap { get; }
+        ReplayAnalyzer? ReplayAnalyzer { get; }
         ColorScheme ColorScheme { get; }
     }
 }
