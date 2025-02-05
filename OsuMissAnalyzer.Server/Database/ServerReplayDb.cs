@@ -27,88 +27,16 @@ namespace OsuMissAnalyzer.Server.Database
             Directory.CreateDirectory(Path.Combine(options.Value.ServerDir, "replays"));
         }
 
-        public async Task<Replay> GetReplayFromOnlineId(ulong onlineId, string mods, Beatmap beatmap)
+        public async Task<Replay?> GetReplayFromOnlineId(ulong onlineId)
         {
             string file = Path.Combine(serverFolder, "replays", $"{onlineId}.osr");
-            Replay replay = null;
+            Replay? replay = null;
             if (!File.Exists(file))
             {
                 dLog.Log(DataPoint.ReplaysCacheMiss);
                 logger.LogInformation("replay not found, downloading...");
-                var data = await api.DownloadReplayFromId(onlineId);
-                if (data != null)
-                {
-                    replay = new Replay();
-                    replay.Mods = ConvertMods.StringToMods(mods);
-                    replay.headerLoaded = true;
-                    using (MemoryStream ms = new MemoryStream())
-                    using (BinaryWriter bw = new BinaryWriter(ms))
-                    {
-                        bw.WriteNullableString(string.Empty);
-                        bw.Write(DateTime.UtcNow.Ticks);
-                        bw.Write(data.Length);
-                        bw.Write(data);
-                        bw.Write(onlineId);
-                        ms.Seek(0, SeekOrigin.Begin);
-                        using (BinaryReader reader = new BinaryReader(ms))
-                        {
-                            replay.replayReader = reader;
-                            replay.Load();
-                        }
-                    }
-                    replay.Save(file);
-                }
-            }
-            else
-            {
-                replay = new Replay(file);
-                dLog.Log(DataPoint.ReplaysCacheHit);
-            }
-            return replay;
-        }
-        public async Task<Replay> GetReplayFromScore(JToken score, Beatmap beatmap)
-        {
-            string file = Path.Combine(serverFolder, "replays", $"{(string)score["best_id"]}.osr");
-            Replay replay = null;
-            if (!File.Exists(file))
-            {
 
-                dLog.Log(DataPoint.ReplaysCacheMiss);
-                logger.LogInformation("replay not found, downloading...");
-                var replayDownload = api.DownloadReplayFromId((ulong)score["best_id"]);
-
-                replay = new Replay();
-                replay.GameMode = (GameModes)((int)score["mode_int"]);
-                replay.MapHash = (string)score["beatmap"]?["checksum"] ?? beatmap.BeatmapHash;
-                replay.PlayerName = (string)score["user"]["username"];
-                // r.ReplayHash = 
-                replay.Count300 = (ushort)score["statistics"]["count_300"];
-                replay.Count100 = (ushort)score["statistics"]["count_100"];
-                replay.Count50 = (ushort)score["statistics"]["count_50"];
-                replay.CountGeki = (ushort)score["statistics"]["count_geki"];
-                replay.CountKatu = (ushort)score["statistics"]["count_katu"];
-                replay.CountMiss = (ushort)score["statistics"]["count_miss"];
-                replay.TotalScore = (uint)score["score"];
-                replay.MaxCombo = (ushort)score["max_combo"];
-                replay.IsPerfect = (bool)score["perfect"];
-                replay.Mods = ConvertMods.StringToMods(score["mods"].Select(s => (string)s));
-                replay.headerLoaded = true;
-                using (MemoryStream ms = new MemoryStream())
-                using (BinaryWriter bw = new BinaryWriter(ms))
-                {
-                    bw.WriteNullableString(string.Empty);
-                    bw.Write(DateTime.Parse((string)score["created_at"]).ToUniversalTime().Ticks);
-                    byte[] data = await replayDownload;
-                    bw.Write(data.Length);
-                    bw.Write(data);
-                    bw.Write((ulong)score["best_id"]);
-                    ms.Seek(0, SeekOrigin.Begin);
-                    using (BinaryReader reader = new BinaryReader(ms))
-                    {
-                        replay.replayReader = reader;
-                        replay.Load();
-                    }
-                }
+                replay = await api.DownloadReplayFromId(onlineId);
                 replay.Save(file);
             }
             else
@@ -116,7 +44,11 @@ namespace OsuMissAnalyzer.Server.Database
                 replay = new Replay(file);
                 dLog.Log(DataPoint.ReplaysCacheHit);
             }
-            return replay;
+            return replay.fullLoaded? replay : null;
+        }
+        public Task<Replay?> GetReplayFromScore(JToken score)
+        {
+            return GetReplayFromOnlineId((ulong)score["best_id"]!);
         }
     }
 }

@@ -18,7 +18,7 @@ namespace OsuMissAnalyzer.Server.Database
         private readonly IDataLogger dLog;
         private readonly ILogger<ServerBeatmapDb> logger;
         string serverDir;
-        Dictionary<string, string> hashes;
+        Dictionary<string, string> hashes = [];
         public ServerBeatmapDb(OsuApi api, IOptions<ServerOptions> options, IConfiguration configuration, IDataLogger dLog, ILogger<ServerBeatmapDb> logger)
         {
             var reload = bool.Parse(configuration["ReloadDb"] ?? "false");
@@ -30,11 +30,7 @@ namespace OsuMissAnalyzer.Server.Database
             string db = Path.Combine(serverDir, "beatmaps.db");
             if (File.Exists(db) && !reload)
             {
-                hashes = JsonConvert.DeserializeObject<Dictionary<string, string>>(File.ReadAllText(db));
-            }
-            else
-            {
-                hashes = new Dictionary<string, string>();
+                hashes = JsonConvert.DeserializeObject<Dictionary<string, string>>(File.ReadAllText(db)) ?? [];
             }
             if (reload)
             {
@@ -48,14 +44,12 @@ namespace OsuMissAnalyzer.Server.Database
 
         public void Dispose()
         {
-            using (StreamWriter writer = File.CreateText(Path.Combine(serverDir, "beatmaps.db")))
-            {
-                JsonSerializer serializer = new JsonSerializer();
-                serializer.Serialize(writer, hashes);
-            }
+            using StreamWriter writer = File.CreateText(Path.Combine(serverDir, "beatmaps.db"));
+            JsonSerializer serializer = new();
+            serializer.Serialize(writer, hashes);
         }
 
-        public async Task<Beatmap> GetBeatmap(string mapHash)
+        public async Task<Beatmap?> GetBeatmap(string mapHash)
         {
             if (!string.IsNullOrEmpty(mapHash))
             {

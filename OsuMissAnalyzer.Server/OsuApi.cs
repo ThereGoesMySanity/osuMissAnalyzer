@@ -10,6 +10,7 @@ using Microsoft.Extensions.Options;
 using Newtonsoft.Json.Linq;
 using OsuMissAnalyzer.Server.Logging;
 using OsuMissAnalyzer.Server.Settings;
+using ReplayAPI;
 
 namespace OsuMissAnalyzer.Server
 {
@@ -22,7 +23,7 @@ namespace OsuMissAnalyzer.Server
         private Stopwatch tokenExpiry;
         private Queue<DateTime> replayDls;
         private int tokenTime;
-        private string token;
+        private string? token;
         private TimeSpan TokenTimeRemaining => TimeSpan.FromSeconds(tokenTime).Subtract(tokenExpiry.Elapsed);
         public OsuApi(HttpClient webClient, IOptions<OsuApiOptions> options, IDataLogger dLog, ILogger<OsuApi> logger)
         {
@@ -45,8 +46,8 @@ namespace OsuMissAnalyzer.Server
             tokenExpiry.Restart();
             HttpResponseMessage res = await webClient.PostAsync("https://osu.ppy.sh/oauth/token", postContent);
             JToken j = JToken.Parse(await res.Content.ReadAsStringAsync());
-            tokenTime = (int)j["expires_in"];
-            token = (string)j["access_token"];
+            tokenTime = (int)j["expires_in"]!;
+            token = (string)j["access_token"]!;
             dLog.UpdateLogs += () => dLog.LogAbsolute(DataPoint.TokenExpiry, (int)Math.Max(TokenTimeRemaining.TotalMinutes, 0));
         }
         private async Task CheckToken()
@@ -62,17 +63,17 @@ namespace OsuMissAnalyzer.Server
         public async Task<string> GetUserIdv1(string username)
         {
             dLog.Log(DataPoint.ApiGetUserv1);
-            var result = await ApiRequestv1("get_user", $"u={username}&type=string");
-            if ((result as JArray).Count == 0) throw new ArgumentException($"No user named {username}");
-            return (string)result[0]["user_id"];
+            var result = (await ApiRequestv1("get_user", $"u={username}&type=string") as JArray)!;
+            if (result.Count == 0) throw new ArgumentException($"No user named {username}");
+            return (string)result[0]["user_id"]!;
         }
-        public async Task<string> DownloadBeatmapFromHashv1(string mapHash, string destinationFolder)
+        public async Task<string?> DownloadBeatmapFromHashv1(string mapHash, string destinationFolder)
         {
             dLog.Log(DataPoint.ApiGetBeatmapsv1);
-            JArray j = (JArray)(await ApiRequestv1("get_beatmaps", $"h={mapHash}"));
+            JArray j = (JArray)await ApiRequestv1("get_beatmaps", $"h={mapHash}");
             if (j.Count > 0)
             {
-                string beatmapId = (string)j[0]["beatmap_id"];
+                string beatmapId = (string)j[0]["beatmap_id"]!;
                 await DownloadBeatmapFromId(beatmapId, destinationFolder, true);
                 return beatmapId;
             }
@@ -99,15 +100,15 @@ namespace OsuMissAnalyzer.Server
                 }
             }
         }
-        public async Task<JToken> GetUserScoresv2(string userId, string type, int index, bool failedScores)
+        public async Task<JToken?> GetUserScoresv2(string userId, string type, int index, bool failedScores)
         {
             dLog.Log(DataPoint.ApiGetUserScoresv2);
             var req = $"users/{userId}/scores/{type}?mode=osu&include_fails={(failedScores?1:0)}&limit=1&offset={index}";
-            var res = await GetApiv2(req);
+            var res = await GetApiv2Json(req);
             if (res is JArray arr && arr.Count > 0)
             {
                 var score = arr[0];
-                if ((bool)score["replay"] && !(bool)score["perfect"])
+                if ((bool)score["replay"]! && !(bool)score["perfect"]!)
                     return score;
             }
             else
@@ -117,11 +118,11 @@ namespace OsuMissAnalyzer.Server
             }
             return null;
         }
-        public async Task<JToken> GetBeatmapScoresv2(string beatmapId, int index)
+        public async Task<JToken?> GetBeatmapScoresv2(string beatmapId, int index)
         {
             dLog.Log(DataPoint.ApiGetBeatmapScoresv2);
             var req = $"beatmaps/{beatmapId}/scores";
-            var res = await GetApiv2(req);
+            var res = await GetApiv2Json(req);
             if (res["scores"] is JArray arr && arr.Count > index)
             {
                 return arr[index];
@@ -136,19 +137,41 @@ namespace OsuMissAnalyzer.Server
         public async Task<JToken> GetScorev2(ulong scoreId)
         {
             var req = $"scores/osu/{scoreId}";
-            var res = await GetApiv2(req);
+            var res = await GetApiv2Json(req);
             return res;
         }
-        public async Task<JToken> GetApiv2(string endpoint)
+        public async Task<JToken> GetApiv2Json(string endpoint)
+        {
+            return JToken.Parse(await (await GetApiv2(endpoint)).Content.ReadAsStringAsync());
+        }
+
+        public async Task<HttpResponseMessage> GetApiv2(string endpoint)
         {
             await CheckToken();
             var request = new HttpRequestMessage(HttpMethod.Get, $"https://osu.ppy.sh/api/v2/{endpoint}");
             request.Headers.Add("Authorization", $"Bearer {token}");
             var res = await webClient.SendAsync(request);
             res.EnsureSuccessStatusCode();
-            return JToken.Parse(await res.Content.ReadAsStringAsync());
+            return res;
         }
-        public async Task<byte[]> DownloadReplayFromId(ulong onlineId)
+        public async Task<Replay> DownloadReplayFromId(ulong onlineId)
+        {
+            while (replayDls.Count > 0 && (DateTime.Now - replayDls.Peek()).TotalSeconds > 60) replayDls.Dequeue();
+            if (replayDls.Count >= 10)
+            {
+                await Task.Delay(TimeSpan.FromMinutes(1).Subtract(DateTime.Now - replayDls.Peek()));
+            }
+            replayDls.Enqueue(DateTime.Now);
+            var res = await GetApiv2($"scores/osu/{onlineId}/download");
+            
+            var replay = new Replay();
+            using BinaryReader reader = new(await res.Content.ReadAsStreamAsync());
+            replay.replayReader = reader;
+            replay.Load();
+            return replay;
+        }
+
+        public async Task<byte[]?> DownloadReplayFromIdv1(ulong onlineId)
         {
             dLog.Log(DataPoint.ApiGetReplayv1);
             while (replayDls.Count > 0 && (DateTime.Now - replayDls.Peek()).TotalSeconds > 60) replayDls.Dequeue();
@@ -158,7 +181,7 @@ namespace OsuMissAnalyzer.Server
             }
             replayDls.Enqueue(DateTime.Now);
             var res = await ApiRequestv1("get_replay", $"s={onlineId}");
-            return res["content"] != null? Convert.FromBase64String((string)res["content"]) : null;
+            return res["content"] != null? Convert.FromBase64String((string)res["content"]!) : null;
         }
     }
 }

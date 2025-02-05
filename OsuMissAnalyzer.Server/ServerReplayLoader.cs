@@ -13,30 +13,30 @@ namespace OsuMissAnalyzer.Server
     public class ServerReplayLoader : IReplayLoader
     {
         public Source? Source = null;
-        public string ErrorMessage = null;
+        public string? ErrorMessage = null;
 
-        public string UserId;
-        public string Username;
-        public string UserScores;
-        public string BeatmapId;
+        public string? UserId;
+        public string? Username;
+        public string? UserScores;
+        public string? BeatmapId;
         public ulong? ScoreId;
-        public string Mods;
-        public string ReplayFile;
+        public string? Mods;
+        public string? ReplayFile;
         public bool FailedScores = false;
 
         public int? PlayIndex;
 
-        public Replay Replay => _replay;
-        private Replay _replay;
+        public Replay? Replay => _replay;
+        private Replay? _replay;
 
-        public Beatmap Beatmap => _beatmap;
-        private Beatmap _beatmap;
+        public Beatmap? Beatmap => _beatmap;
+        private Beatmap? _beatmap;
 
-        public ReplayAnalyzer ReplayAnalyzer => _analyzer;
+        public ReplayAnalyzer? ReplayAnalyzer => _analyzer;
 
         public bool Loaded { get; internal set; }
 
-        private ReplayAnalyzer _analyzer;
+        private ReplayAnalyzer? _analyzer;
 
         private readonly OsuApi api;
         private readonly ServerReplayDb replays;
@@ -47,7 +47,7 @@ namespace OsuMissAnalyzer.Server
         public ServerReplayLoader(RequestContext context, OsuApi api, ServerReplayDb replays, ServerBeatmapDb beatmaps)
             : this(api, replays, beatmaps)
         {
-            this.ColorScheme = ColorScheme.Parse(context.GuildOptions.ColorScheme);
+            this.ColorScheme = ColorScheme.Parse(context.GuildOptions.ColorScheme) ?? ColorScheme.Default;
         }
 
         [ActivatorUtilitiesConstructor]
@@ -57,11 +57,11 @@ namespace OsuMissAnalyzer.Server
             this.replays = replays;
             this.beatmaps = beatmaps;
         }
-        public async Task<string> Load()
+        public async Task<string?> Load()
         {
             if (Loaded) return null;
 
-            JToken score = null;
+            JToken? score = null;
             if (Username != null && UserId == null)
                 UserId = await api.GetUserIdv1(Username);
 
@@ -72,10 +72,7 @@ namespace OsuMissAnalyzer.Server
                 _replay = new Replay(ReplayFile);
             else if (ScoreId != null)
             {
-                if (Mods == null || Beatmap == null)
-                    score = await api.GetScorev2(ScoreId.Value);
-                else
-                    _replay = await replays.GetReplayFromOnlineId(ScoreId.Value, Mods, Beatmap);
+                _replay = await replays.GetReplayFromOnlineId(ScoreId.Value);
             }
 
             if(_replay == null && PlayIndex.HasValue)
@@ -90,11 +87,11 @@ namespace OsuMissAnalyzer.Server
 
             if (score != null)
             {
-                if (!(bool)score["replay"]) return "Replay not saved online";
-                if ((bool)score["perfect"]) return "No misses";
+                if (!(bool)score["replay"]!) return "Replay not saved online";
+                if ((bool)score["perfect"]!) return "No misses";
 
-                if (_beatmap == null) _beatmap = await beatmaps.GetBeatmapFromId((string)score["beatmap"]["id"]);
-                _replay = await replays.GetReplayFromScore(score, _beatmap);
+                if (_beatmap == null) _beatmap = await beatmaps.GetBeatmapFromId((string)score["beatmap"]!["id"]!);
+                _replay = await replays.GetReplayFromScore(score);
 
             }
 
@@ -102,7 +99,7 @@ namespace OsuMissAnalyzer.Server
                 _beatmap = await beatmaps.GetBeatmap(_replay.MapHash);
 
             if (_beatmap != null && _replay != null && _beatmap.BeatmapHash != _replay.MapHash)
-                _beatmap = await beatmaps.GetBeatmapFromId(_beatmap.BeatmapID.Value.ToString(), forceRedl: true);
+                _beatmap = await beatmaps.GetBeatmapFromId(_beatmap.BeatmapID!.Value.ToString(), forceRedl: true);
 
             if (_replay != null && !_replay.fullLoaded)
                 return "Replay does not contain any cursor data - can't analyze";
@@ -120,7 +117,7 @@ namespace OsuMissAnalyzer.Server
         }
         public override string ToString()
         {
-            return (Path.GetFileNameWithoutExtension(Replay.Filename) ?? ScoreId?.ToString() ?? Replay.OnlineId.ToString());
+            return Path.GetFileNameWithoutExtension(Replay?.Filename) ?? ScoreId?.ToString() ?? Replay?.OnlineId.ToString() ?? "unknown score";
         }
     }
 }

@@ -37,7 +37,7 @@ namespace OsuMissAnalyzer.Server.Settings
         {
             var file = Path.Combine(AppContext.BaseDirectory, "guildsettings.json");
             if (File.Exists(file)) 
-                guilds = JsonConvert.DeserializeObject<Dictionary<ulong, GuildOptions>>(File.ReadAllText(file));
+                guilds = JsonConvert.DeserializeObject<Dictionary<ulong, GuildOptions>>(File.ReadAllText(file)) ?? [];
         }
 
         public void Save()

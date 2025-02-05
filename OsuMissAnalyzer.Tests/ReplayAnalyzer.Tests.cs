@@ -60,7 +60,7 @@ namespace OsuMissAnalyzer.Tests
             Replay r = new Replay(replayFile);
             Beatmap b = beatmapFile != null ? new Beatmap(beatmapFile) : db.BeatmapsByHash[r.MapHash].Load("/home/will/A/osu!/Songs");
             MissAnalyzer analyzer = new MissAnalyzer(r, b);
-            Assert.AreEqual(missCount, analyzer.MissCount);
+            Assert.That(analyzer.MissCount, Is.EqualTo(missCount));
             // foreach(var m in analyzer.DrawAllMisses(new System.Drawing.Rectangle(0, 0, 320, 320)))
             //     m.Save($"miss{Path.GetFileName(replayFile)}{i++}.png", ImageFormat.Png);
         }
@@ -72,7 +72,7 @@ namespace OsuMissAnalyzer.Tests
             Replay r = new Replay(replayFile);
             Beatmap b = beatmapFile != null ? new Beatmap(beatmapFile) : db.BeatmapsByHash[r.MapHash].Load("/home/will/A/osu!/Songs");
             MissAnalyzer analyzer = new MissAnalyzer(r, b);
-            Assert.AreEqual(missCount, analyzer.MissCount);
+            Assert.That(analyzer.MissCount, Is.EqualTo(missCount));
         }
     }
 }

@@ -13,7 +13,7 @@ namespace OsuMissAnalyzer.Tests
         private static string calculatePath()
         {
             string pathName = GetSourceFilePathName();
-            Assert.IsTrue(pathName.EndsWith(myRelativePath, StringComparison.Ordinal));
+            Assert.That(pathName, Does.EndWith(myRelativePath));
             return pathName.Substring(0, pathName.Length - myRelativePath.Length);
         }
         public static string GetSourceFilePathName( [CallerFilePath] string callerFilePath = null ) //

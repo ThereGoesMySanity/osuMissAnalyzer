@@ -1,37 +1,37 @@
 using System;
+using System.Threading;
 using System.Threading.Tasks;
-using OsuMissAnalyzer.Server;
+using OsuMissAnalyzer.Server.Logging;
 
 namespace OsuMissAnalyzer.Tests
 {
-    public class TestLogger : ILogger
+    public class TestLogger : IDataLogger
     {
         public event Action UpdateLogs;
 
-        public void Close()
-        {
-        }
-
-        public void Log(Logging type, int count)
+        public void Log(DataPoint type, int count)
         {
             Console.WriteLine(type.ToString());
         }
 
-        public void LogAbsolute(Logging type, int value)
+        public void Log(DataPoint type)
+        {
+            Console.WriteLine(type.ToString());
+        }
+
+        public void LogAbsolute(DataPoint type, int value)
         {
             Console.WriteLine($"{type.ToString()} {value}");
         }
 
-        public async Task LogException(Exception exception, Logger.LogLevel level)
+        public Task StartAsync(CancellationToken cancellationToken)
         {
-            Console.WriteLine(exception);
-            await Task.CompletedTask;
+            throw new NotImplementedException();
         }
 
-        public async Task WriteLine(string line, Logger.LogLevel level)
+        public Task StopAsync(CancellationToken cancellationToken)
         {
-            Console.WriteLine(line);
-            await Task.CompletedTask;
+            throw new NotImplementedException();
         }
     }
 }
