@@ -57,7 +57,7 @@ namespace OsuMissAnalyzer.Server.Api
             replayLoader.ScoreId = req.ScoreId;
             await replayLoader.Load();
 
-            var ret = replayLoader.Loaded && replayLoader.ReplayAnalyzer.misses.Count > 0;
+            var ret = replayLoader.Loaded && replayLoader.ReplayAnalyzer!.misses.Count > 0;
             if (ret) dLog.Log(DataPoint.BotDirectReqTrue);
             else dLog.Log(DataPoint.BotDirectReqFalse);
             return ret;

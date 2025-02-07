@@ -11,7 +11,7 @@ namespace OsuMissAnalyzer.Server.Logging
     {
         private readonly HttpClient httpClient;
         private readonly DiscordLoggerConfiguration config;
-        private Task logTask;
+        private Task? logTask;
 
         public DiscordLogger(HttpClient httpClient, DiscordLoggerConfiguration config)
         {
@@ -19,14 +19,15 @@ namespace OsuMissAnalyzer.Server.Logging
             this.config = config;
         }
 
-        public IDisposable BeginScope<TState>(TState state)
+        IDisposable? ILogger.BeginScope<TState>(TState state)
         {
             return null;
         }
 
         public void Dispose()
         {
-            logTask.Dispose();
+            GC.SuppressFinalize(this);
+            logTask?.Dispose();
         }
 
         public bool IsEnabled(LogLevel logLevel)
@@ -34,30 +35,31 @@ namespace OsuMissAnalyzer.Server.Logging
             return logLevel != LogLevel.None;
         }
 
-        public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception exception, Func<TState, Exception, string> formatter)
+        void ILogger.Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception? exception, Func<TState, Exception?, string> formatter)
         {
-            if(!IsEnabled(logLevel) || String.IsNullOrEmpty(config.WebHook)) return;
+            if(!IsEnabled(logLevel) || string.IsNullOrEmpty(config.WebHook)) return;
 
-            logTask.Wait();
-            logTask.Dispose();
+            logTask?.Wait();
+            logTask?.Dispose();
 
             logTask = LogToDiscord(config, formatter(state, exception));
         }
 
         private async Task LogToDiscord(DiscordLoggerConfiguration config, string message)
         {
+            if (string.IsNullOrEmpty(config.WebHook)) return;
+
             int maxLength = 1000;
             if (message.Length > maxLength)
             {
-                List<string> parts = new List<string>();
-                var breaks = message.Split(new[] { '\n' }, StringSplitOptions.RemoveEmptyEntries);
+                var breaks = message.Split(['\n'], StringSplitOptions.RemoveEmptyEntries);
                 int i = 0;
                 while (i < breaks.Length)
                 {
-                    StringBuilder sb = new StringBuilder();
+                    StringBuilder sb = new();
                     if (breaks[i].Length > maxLength)
                     {
-                        breaks[i] = breaks[i].Substring(0, maxLength - 3) + "...";
+                        breaks[i] = string.Concat(breaks[i].AsSpan(0, maxLength - 3), "...");
                     }
                     while (i < breaks.Length && sb.Length + breaks[i].Length <= maxLength)
                     {
@@ -67,7 +69,7 @@ namespace OsuMissAnalyzer.Server.Logging
                     }
                     if (sb.Length != 0)
                     {
-                        var content = new FormUrlEncodedContent(new[] { new KeyValuePair<string, string>("content", sb.ToString()) });
+                        var content = new FormUrlEncodedContent([new KeyValuePair<string, string>("content", sb.ToString())]);
                         await httpClient.PostAsync(config.WebHook, content);
                     }
                     else
@@ -78,7 +80,7 @@ namespace OsuMissAnalyzer.Server.Logging
             }
             else
             {
-                var content = new FormUrlEncodedContent(new[] { new KeyValuePair<string, string>("content", message) });
+                var content = new FormUrlEncodedContent([new KeyValuePair<string, string>("content", message)]);
                 await httpClient.PostAsync(config.WebHook, content);
             }
         }

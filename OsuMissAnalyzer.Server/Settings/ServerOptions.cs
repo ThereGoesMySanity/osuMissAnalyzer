@@ -11,9 +11,9 @@ namespace OsuMissAnalyzer.Server.Settings
         public required int Size { get; set; }
         public required int MessageExpiration { get; set; }
         public ushort Port { get; set; }
-        public string[] IpWhitelist { get; set; }
+        public required string[] IpWhitelist { get; set; }
 
-        public Rectangle Area => new Rectangle(0, 0, Size, Size);
+        public Rectangle Area => new(0, 0, Size, Size);
         public string HelpMessage { get; set; } = @"osu! Miss Analyzer bot
 ```
 Usage:

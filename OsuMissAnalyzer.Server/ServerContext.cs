@@ -38,7 +38,7 @@ namespace OsuMissAnalyzer.Server
         private static string[] pfpPrefixes = { "https://a.ppy.sh/", "http://s.ppy.sh/a/" };
         private static Regex partialBeatmapRegex = new Regex("^\\d+#osu/(\\d+)");
         private static Regex modRegex = new Regex("](?: \\+([A-Z]+))?\\n");
-        public static DiscordEmoji[] numberEmojis;
+        public static DiscordEmoji[]? numberEmojis;
 
         public ServerContext(DiscordShardedClient discord, OsuApi api, HttpClient webClient,
                 ResponseCache cachedMisses, IOptions<ServerOptions> serverOptions, IServiceScopeFactory scopeFactory,
@@ -59,7 +59,7 @@ namespace OsuMissAnalyzer.Server
         {
             if (env.IsDevelopment()) logger.LogInformation("Started in test mode");
             string gitCommit;
-            using (var stream = Assembly.GetEntryAssembly().GetManifestResourceStream("OsuMissAnalyzer.Server.Resources.GitCommit.txt"))
+            using (var stream = Assembly.GetEntryAssembly()!.GetManifestResourceStream("OsuMissAnalyzer.Server.Resources.GitCommit.txt")!)
             using (var streamReader = new StreamReader(stream, Encoding.UTF8))
             {
                 gitCommit = streamReader.ReadToEnd();
@@ -167,14 +167,13 @@ namespace OsuMissAnalyzer.Server
             dLog.Log(DataPoint.EventsHandled);
             if (env.IsDevelopment() && e.Message.Channel.GuildId != serverOptions.TestGuild) return;
 
-            Response response = null;
-            if ((cachedMisses.TryGetResponse(e.Message.Id, out response)
+            if ((cachedMisses.TryGetResponse(e.Message.Id, out Response? response)
                 || (e.Message.Interaction != null && cachedMisses.TryGetResponse(e.Message.Interaction.Id, out response)))
                 && !e.User.IsCurrent && !e.User.IsBot)
             {
                 int index = int.Parse(e.Id) - 1;
                 dLog.Log(DataPoint.ReactionCalls);
-                _ = Task.Run(() => cachedMisses.UpdateResponse(e, response, index));
+                _ = Task.Run(() => cachedMisses.UpdateResponse(e, response!, index));
                 await Task.CompletedTask;
             }
         }
@@ -183,11 +182,11 @@ namespace OsuMissAnalyzer.Server
         {
             dLog.Log(DataPoint.EventsHandled);
             if (env.IsDevelopment() && e.Message.Channel.GuildId != serverOptions.TestGuild) return;
-            if (cachedMisses.TryGetResponse(e.Message.Id, out Response response) && !e.User.IsCurrent && !e.User.IsBot)
+            if (cachedMisses.TryGetResponse(e.Message.Id, out Response? response) && !e.User.IsCurrent && !e.User.IsBot)
             {
-                var analyzer = response.Miss.MissAnalyzer;
-                int index = Array.FindIndex(numberEmojis, t => t == e.Emoji) - 1;
-                if (index >= 0 && index < Math.Min(analyzer.MissCount, numberEmojis.Length - 1))
+                var analyzer = response!.Miss.MissAnalyzer;
+                int index = Array.FindIndex(numberEmojis!, t => t == e.Emoji) - 1;
+                if (index >= 0 && index < Math.Min(analyzer.MissCount, numberEmojis!.Length - 1))
                 {
                     dLog.Log(DataPoint.ReactionCalls);
                     _ = Task.Run(() => cachedMisses.UpdateResponse(e, response, index));
@@ -204,7 +203,7 @@ namespace OsuMissAnalyzer.Server
 
         delegate bool BotCall(ServerReplayLoader server, MessageCreateEventArgs e);
 
-        Dictionary<ulong, string> botIds = new Dictionary<ulong, string>
+        readonly Dictionary<ulong, string> botIds = new()
         {
             [OWO] = "owo",
             [BOATBOT] = "boatbot",
@@ -212,9 +211,9 @@ namespace OsuMissAnalyzer.Server
             // [TINYBOT] = "tinybot",
             // [BATHBOT] = "bathbot",
         };
-        Dictionary<ulong, BotCall> rsFunc = new Dictionary<ulong, BotCall>
+        readonly Dictionary<ulong, BotCall> rsFunc = new()
         {
-            [OWO] = (ServerReplayLoader replayLoader, MessageCreateEventArgs e) =>
+            [OWO] = (replayLoader, e) =>
             {
                 if (e.Message.Content != null && e.Message.Content.StartsWith("**Recent osu! Standard Play for") && e.Message.Embeds.Count > 0)
                 {
@@ -251,7 +250,7 @@ namespace OsuMissAnalyzer.Server
             //     }
             //     return false;
             // },
-            [BISMARCK] = (ServerReplayLoader replayLoader, MessageCreateEventArgs e) =>
+            [BISMARCK] = (replayLoader, e) =>
             {
                 if (e.Message.Content.Length == 0 && e.Message.Embeds.Count > 0)
                 {
@@ -277,7 +276,7 @@ namespace OsuMissAnalyzer.Server
                 }
                 return false;
             },
-            [BOATBOT] = (ServerReplayLoader replayLoader, MessageCreateEventArgs e) =>
+            [BOATBOT] = (replayLoader, e) =>
             {
                 if (e.Message.Content.StartsWith("Try #") && e.Message.Embeds.Count > 0)
                 {
@@ -287,10 +286,10 @@ namespace OsuMissAnalyzer.Server
                 return false;
             },
         };
-        private static string GetIdFromEmbed(DiscordEmbed embed)
+        private static string? GetIdFromEmbed(DiscordEmbed embed)
         {
             string url = embed.Author.IconUrl.ToString();
-            string prefixStr = null;
+            string? prefixStr = null;
             foreach (var s in pfpPrefixes)
             {
                 if (url.StartsWith(s)) prefixStr = s;

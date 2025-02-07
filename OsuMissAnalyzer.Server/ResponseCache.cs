@@ -25,7 +25,7 @@ namespace OsuMissAnalyzer.Server
 
         public async Task<Response> GetOrCreateResponse(ulong id, Response response)
         {
-            return await cachedMisses.GetOrCreateAsync(id, CreateResponse(response));
+            return (await cachedMisses.GetOrCreateAsync(id, CreateResponse(response)))!;
         }
 
         public async Task UpdateResponse(object e, Response response, int index)
@@ -35,7 +35,7 @@ namespace OsuMissAnalyzer.Server
             if (id.HasValue) await GetOrCreateResponse(id.Value, response);
         }
 
-        public bool TryGetResponse(ulong id, out Response response)
+        public bool TryGetResponse(ulong id, out Response? response)
         {
             return cachedMisses.TryGetValue(id, out response);
         }
@@ -43,7 +43,7 @@ namespace OsuMissAnalyzer.Server
         private Func<ICacheEntry, Task<Response>> CreateResponse(Response response)
         {
             dLog.Log(DataPoint.MessageCreated);
-            dLog.LogAbsolute(DataPoint.CachedMessages, (int)cachedMisses.GetCurrentStatistics().CurrentEntryCount);
+            dLog.LogAbsolute(DataPoint.CachedMessages, (int)cachedMisses.GetCurrentStatistics()!.CurrentEntryCount);
             return entry =>
             {
                 entry.SlidingExpiration = TimeSpan.FromMinutes(options.MessageExpiration);
@@ -52,16 +52,16 @@ namespace OsuMissAnalyzer.Server
             };
         }
 
-        public async void OnEvict(object key, object value, EvictionReason reason, object state)
+        public async void OnEvict(object? key, object? value, EvictionReason reason, object? state)
         {
             try
             {
-                await (value as Response).OnExpired();
+                await (value as Response)!.OnExpired();
             }
             catch (Exception e)
             {
                 dLog.Log(DataPoint.ErrorUnhandled);
-                logger.LogError(e, "Error modifying message {id}", (ulong)key);
+                logger.LogError(e, "Error modifying message {id}", (ulong)key!);
             }
         }
 

@@ -16,9 +16,9 @@ namespace OsuMissAnalyzer.Server
 {
     public class Commands : ApplicationCommandModule
     {
-        public ServerContext context { private get; set; }
-        public IOptions<ServerOptions> serverOpts { private get; set; }
-        public IDataLogger dLog { private get; set; }
+        public required ServerContext context { private get; set; }
+        public required IOptions<ServerOptions> serverOpts { private get; set; }
+        public required IDataLogger dLog { private get; set; }
 
         [SlashCommand("help", "Prints help message")]
         public async Task Help(InteractionContext ctx)
@@ -31,11 +31,11 @@ namespace OsuMissAnalyzer.Server
         [SlashCommandGroup("miss", "Analyze a score with MissAnalyzer")]
         public class MissCommands : ApplicationCommandModule
         {
-            public ServerContext context { private get; set; }
-            public ILogger<MissCommands> logger { private get; set; }
-            public IDataLogger dLog { private get; set; }
-            public GuildManager guildManager { private get; set; }
-            public IServiceScopeFactory scopeFactory { private get; set; }
+            public required ServerContext context { private get; set; }
+            public required ILogger<MissCommands> logger { private get; set; }
+            public required IDataLogger dLog { private get; set; }
+            public required GuildManager guildManager { private get; set; }
+            public required IServiceScopeFactory scopeFactory { private get; set; }
             public enum UserOptions
             {
                 [ChoiceName("Top Plays")]
@@ -109,8 +109,8 @@ namespace OsuMissAnalyzer.Server
         [SlashCommandGroup("settings", "Guild-specific settings for MissAnalyzer")]
         public class SettingsCommands : ApplicationCommandModule
         {
-            public ServerContext context { private get; set; }
-            public GuildManager guildManager {private get; set; }
+            public required ServerContext context { private get; set; }
+            public required GuildManager guildManager {private get; set; }
             public static bool CheckPermissions(DiscordMember user)
             {
                 return user.IsOwner || user.Permissions.HasFlag(Permissions.Administrator);
@@ -136,8 +136,8 @@ namespace OsuMissAnalyzer.Server
             {
                 if (CheckPermissions(ctx.Member))
                 {
-                    string response = null;
                     var guildSettings = guildManager.GetGuild(ctx.Guild.Id);
+                    string response;
                     try
                     {
                         response = guildSettings.SetSetting(setting, value) ? "Set successfully" : $"Setting {setting} does not exist";

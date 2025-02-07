@@ -24,7 +24,7 @@ namespace OsuMissAnalyzer.Server
             MissUrls = new string[analyzer.MissCount];
             CurrentMiss = null;
         }
-        public async Task<string> GetOrCreateMissMessage()
+        public async Task<string?> GetOrCreateMissMessage()
         {
             if (!CurrentMiss.HasValue) return null;
             MissUrls[CurrentMiss.Value] ??= await SendMissMessage(CurrentMiss.Value);

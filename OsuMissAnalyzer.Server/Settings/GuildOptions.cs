@@ -21,8 +21,8 @@ namespace OsuMissAnalyzer.Server.Settings
 
         public Dictionary<string, string> GetSettings()
         {
-            return this.GetType().GetProperties().Where(p => p.SetMethod.IsPublic)
-                .ToDictionary(p => p.Name.ToLower(), p => p.GetValue(this).ToString());
+            return this.GetType().GetProperties().Where(p => p.SetMethod?.IsPublic ?? false)
+                .ToDictionary(p => p.Name.ToLower(), p => p.GetValue(this)!.ToString()!);
         }
         public bool SetSetting(string setting, string value)
         {
@@ -30,7 +30,7 @@ namespace OsuMissAnalyzer.Server.Settings
             if (property != null)
             {
                 var parsedValue = property.PropertyType == typeof(string)? value
-                            : property.PropertyType.GetMethod("Parse", new[] {typeof(string)}).Invoke(null, new object[]{value});
+                            : property.PropertyType.GetMethod("Parse", [typeof(string)])!.Invoke(null, [value]);
                 property.SetValue(this, parsedValue);
                 return true;
             }

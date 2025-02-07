@@ -37,7 +37,7 @@ namespace OsuMissAnalyzer.Server
                 {
                     builder.AddComponents(row);
                 }
-                if (disabled) foreach (var r in builder.Components) foreach (var b in r.Components) (b as DiscordButtonComponent).Disable();
+                if (disabled) foreach (var r in builder.Components) foreach (var b in r.Components) (b as DiscordButtonComponent)!.Disable();
             }
             return builder;
         }
@@ -45,8 +45,8 @@ namespace OsuMissAnalyzer.Server
         public async Task<string> GetContent()
         {
             if (MissCount == 1) Miss.CurrentMiss = 0;
-            if (Miss.CurrentMiss.HasValue) return await Miss.GetOrCreateMissMessage();
-            else return $"Found **{MissCount}** misses";
+            return await Miss.GetOrCreateMissMessage()
+                    ?? $"Found **{MissCount}** misses";
         }
 
         protected IEnumerable<IEnumerable<DiscordComponent>> GetMissComponents() => 
@@ -97,7 +97,7 @@ namespace OsuMissAnalyzer.Server
     public class MessageResponse : Response
     {
         protected DiscordMessage source;
-        protected DiscordMessage response;
+        protected DiscordMessage? response;
         public MessageResponse(RequestContext request, DiscordMessage message) : base(request.GuildOptions)
         {
             source = message;
@@ -117,7 +117,8 @@ namespace OsuMissAnalyzer.Server
 
         public override async Task OnExpired()
         {
-            await response.ModifyAsync(await BuildMessage<DiscordMessageBuilder>(disabled: true));
+            if (response is not null)
+                await response.ModifyAsync(await BuildMessage<DiscordMessageBuilder>(disabled: true));
         }
 
         public override async Task<ulong?> UpdateResponse(object e, int index)
@@ -156,7 +157,7 @@ namespace OsuMissAnalyzer.Server
         }
         private async Task SendReactions(DiscordMessage message, int missCount)
         {
-            for (int i = 1; i < Math.Min(missCount + 1, ServerContext.numberEmojis.Length); i++)
+            for (int i = 1; i < Math.Min(missCount + 1, ServerContext.numberEmojis!.Length); i++)
             {
                 await message.CreateReactionAsync(ServerContext.numberEmojis[i]);
             }
@@ -164,7 +165,7 @@ namespace OsuMissAnalyzer.Server
 
         public override async Task OnExpired()
         {
-            for (int i = 1; i < Math.Min(MissCount + 1, ServerContext.numberEmojis.Length); i++)
+            for (int i = 1; i < Math.Min(MissCount + 1, ServerContext.numberEmojis!.Length); i++)
             {
                 await source.DeleteOwnReactionAsync(ServerContext.numberEmojis[i]);
             }

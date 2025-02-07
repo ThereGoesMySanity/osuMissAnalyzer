@@ -6,6 +6,7 @@ using System.Net.Sockets;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Mono.Unix;
 using Mono.Unix.Native;
@@ -26,17 +27,19 @@ namespace OsuMissAnalyzer.Server.Logging
         private StreamWriter file;
         private int[] counts;
 
-        private Socket socket;
-        private UnixEndPoint endpoint;
-        private HttpClient httpClient;
+        private Socket? socket;
+        private UnixEndPoint? endpoint;
+        private readonly HttpClient httpClient;
+        private readonly ILogger<UnixNetdataLogger> logger;
 
-        public event Action UpdateLogs;
+        public event Action? UpdateLogs;
 
-        public UnixNetdataLogger(HttpClient httpClient, IOptions<ServerOptions> options)
+        public UnixNetdataLogger(HttpClient httpClient, IOptions<ServerOptions> options, ILogger<UnixNetdataLogger> logger)
         {
             file = new StreamWriter(Path.Combine(options.Value.ServerDir, "log.csv"), true);
-            counts = new int[Enum.GetValues(typeof(DataPoint)).Length];
+            counts = new int[Enum.GetValues<DataPoint>().Length];
             this.httpClient = httpClient;
+            this.logger = logger;
         }
         public async Task StartAsync(CancellationToken cancellationToken)
         {
@@ -49,7 +52,7 @@ namespace OsuMissAnalyzer.Server.Logging
                 socket.Bind(endpoint);
                 socket.Listen(1);
                 socket.BeginAccept(new AsyncCallback(AcceptCallback), null);
-                var fileInfo = new Mono.Unix.UnixFileInfo(ENDPOINT);
+                var fileInfo = new UnixFileInfo(ENDPOINT);
                 Syscall.chown(ENDPOINT, Syscall.getuid(), Syscall.getgrnam("netdata").gr_gid);
                 Syscall.chmod(ENDPOINT, FilePermissions.S_IWGRP | FilePermissions.S_IWUSR | FilePermissions.S_IRGRP | FilePermissions.S_IRUSR);
             } catch (Exception) 
@@ -73,17 +76,22 @@ namespace OsuMissAnalyzer.Server.Logging
             // if (!socket.Connected) return;
             try
             {
-                Socket handler = socket.EndAccept(result);
+                Socket handler = socket!.EndAccept(result);
 
                 // Create the state object.
-                StateObject state = new StateObject();
-                state.workSocket = handler;
+                StateObject state = new()
+                {
+                    workSocket = handler
+                };
                 handler.BeginReceive(state.buffer, 0, StateObject.BufferSize, 0,
                     new AsyncCallback(ReadCallback), state);
 
                 socket.BeginAccept(new AsyncCallback(AcceptCallback), null);
             }
-            catch (Exception e) { if (!(e is Exception)) Console.WriteLine(e); }
+            catch (Exception e)
+            {
+                logger.LogError(e, "Exception on socket connection");
+            }
         }
         private void ReadCallback(IAsyncResult result)
         {
@@ -91,8 +99,8 @@ namespace OsuMissAnalyzer.Server.Logging
 
             // Retrieve the state object and the handler socket  
             // from the asynchronous state object.  
-            StateObject state = (StateObject)result.AsyncState;
-            Socket handler = state.workSocket;
+            StateObject state = (StateObject)result.AsyncState!;
+            Socket handler = state.workSocket!;
 
             // Read data from the client socket.
             int bytesRead = handler.EndReceive(result);
@@ -105,18 +113,17 @@ namespace OsuMissAnalyzer.Server.Logging
 
                 if (content.StartsWith("GET "))
                 {
-                    UpdateLogs();
+                    UpdateLogs?.Invoke();
 
-                    string[] opts = content.Substring(4).Split(' ');
-                    if (opts.Length == 1 && opts[0].ToLower() == "all")
+                    string[] opts = content[4..].Split(' ');
+                    Func<DataPoint, bool>? filter = null;
+                    if (opts.Length != 1 || !opts[0].Equals("all", StringComparison.CurrentCultureIgnoreCase))
                     {
-                        byte[] byteData = Encoding.ASCII.GetBytes(GetStats(Format.JSON));
-                        handler.BeginSend(byteData, 0, byteData.Length, 0, new AsyncCallback(SendCallback), handler);
+                        var points = opts.Select(TryParse).Where(e => e.HasValue).Select(e => e!.Value);
+                        filter = d => points.Contains(d);
                     }
-                    else
-                    {
-                        opts.Select(TryParse).Where(e => e.HasValue).Select(e => e.Value);
-                    }
+                    byte[] byteData = Encoding.ASCII.GetBytes(GetStats(Format.JSON, filter));
+                    handler.BeginSend(byteData, 0, byteData.Length, 0, new AsyncCallback(SendCallback), handler);
                     file.WriteLine(GetStats(Format.CSV));
                 }
 
@@ -125,20 +132,27 @@ namespace OsuMissAnalyzer.Server.Logging
         }
         private void SendCallback(IAsyncResult result)
         {
-            Socket handler = (Socket)result.AsyncState;
+            Socket handler = (Socket)result.AsyncState!;
 
             handler.EndSend(result);
         }
-        private string GetStats(Format format)
+        private string GetStats(Format format, Func<DataPoint, bool>? filter = null)
         {
-            switch (format)
+            if (!Enum.IsDefined(format))
+                throw new ArgumentException($"Invalid format {format}", nameof(format));
+            
+
+
+            var dataPoints = Enum.GetValues<DataPoint>();
+            if (filter is not null) dataPoints = [.. dataPoints.Where(filter)];
+
+#pragma warning disable CS8524
+            return format switch
             {
-                case Format.JSON:
-                    return new JObject(Enum.GetNames(typeof(DataPoint)).Zip(counts, (a, b) => new JProperty(a, b))).ToString(Formatting.None);
-                case Format.CSV:
-                    return $"{DateTime.UtcNow:O},{string.Join(",", counts)}";
-            }
-            return null;
+                Format.JSON => new JObject(dataPoints.Select(d => new JProperty(d.ToString(), counts[(int)d]))).ToString(Formatting.None),
+                Format.CSV => $"{DateTime.UtcNow:O},{string.Join(",", counts)}"
+            };
+#pragma warning restore CS8524
         }
         public void Log(DataPoint type) => Log(type, 1);
         public void Log(DataPoint type, int count)
@@ -150,15 +164,13 @@ namespace OsuMissAnalyzer.Server.Logging
             counts[(int)type] = value;
         }
 
-        private static DataPoint? TryParse(String s)
+        private static DataPoint? TryParse(string s)
         {
-            DataPoint logging;
-            DataPoint? var = null;
-            if (Enum.TryParse<DataPoint>(s, true, out logging))
+            if (Enum.TryParse(s, true, out DataPoint var))
             {
-                var = logging;
+                return var;
             }
-            return var;
+            return null;
         }
     }
     public class StateObject
@@ -170,6 +182,6 @@ namespace OsuMissAnalyzer.Server.Logging
         public byte[] buffer = new byte[BufferSize];
 
         // Client socket.
-        public Socket workSocket = null;
+        public Socket? workSocket = null;
     }
 }

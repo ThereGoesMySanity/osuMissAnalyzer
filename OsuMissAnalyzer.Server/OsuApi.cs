@@ -142,7 +142,9 @@ namespace OsuMissAnalyzer.Server
         }
         public async Task<JToken> GetApiv2Json(string endpoint)
         {
-            return JToken.Parse(await (await GetApiv2(endpoint)).Content.ReadAsStringAsync());
+            var res = await GetApiv2(endpoint);
+            res.EnsureSuccessStatusCode();
+            return JToken.Parse(await res.Content.ReadAsStringAsync());
         }
 
         public async Task<HttpResponseMessage> GetApiv2(string endpoint)
@@ -151,10 +153,9 @@ namespace OsuMissAnalyzer.Server
             var request = new HttpRequestMessage(HttpMethod.Get, $"https://osu.ppy.sh/api/v2/{endpoint}");
             request.Headers.Add("Authorization", $"Bearer {token}");
             var res = await webClient.SendAsync(request);
-            res.EnsureSuccessStatusCode();
             return res;
         }
-        public async Task<Replay> DownloadReplayFromId(ulong onlineId)
+        public async Task<Replay?> DownloadReplayFromId(ulong onlineId)
         {
             while (replayDls.Count > 0 && (DateTime.Now - replayDls.Peek()).TotalSeconds > 60) replayDls.Dequeue();
             if (replayDls.Count >= 10)
@@ -163,6 +164,7 @@ namespace OsuMissAnalyzer.Server
             }
             replayDls.Enqueue(DateTime.Now);
             var res = await GetApiv2($"scores/osu/{onlineId}/download");
+            if (!res.IsSuccessStatusCode) return null;
             
             var replay = new Replay();
             using BinaryReader reader = new(await res.Content.ReadAsStreamAsync());

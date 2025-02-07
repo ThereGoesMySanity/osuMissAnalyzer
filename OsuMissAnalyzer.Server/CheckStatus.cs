@@ -11,8 +11,8 @@ namespace OsuMissAnalyzer.Server
 {
     public class CheckStatus : IHostedService
     {
-        private Timer status;
-        private static TimeSpan statusRefreshRate = new TimeSpan(0, 5, 0);
+        private Timer? status;
+        private static readonly TimeSpan statusRefreshRate = new(0, 5, 0);
         private readonly DiscordShardedClient discord;
         private readonly IHostEnvironment env;
 
@@ -23,15 +23,16 @@ namespace OsuMissAnalyzer.Server
         }
         public Task StartAsync(CancellationToken cancellationToken)
         {
-            status = new Timer(this.Check, null, TimeSpan.Zero, statusRefreshRate);
+            status = new Timer(Check, null, TimeSpan.Zero, statusRefreshRate);
             return Task.CompletedTask;
         }
 
         public async Task StopAsync(CancellationToken cancellationToken)
         {
-            await status.DisposeAsync();
+            if (status is not null)
+                await status.DisposeAsync();
         }
-        public async void Check(Object e)
+        public async void Check(object? e)
         {
             string stat = env.IsDevelopment() ? "Down for maintenance - be back soon!"
                                         : "/help for help!";

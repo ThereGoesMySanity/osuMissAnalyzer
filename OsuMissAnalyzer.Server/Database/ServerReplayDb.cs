@@ -30,21 +30,21 @@ namespace OsuMissAnalyzer.Server.Database
         public async Task<Replay?> GetReplayFromOnlineId(ulong onlineId)
         {
             string file = Path.Combine(serverFolder, "replays", $"{onlineId}.osr");
-            Replay? replay = null;
+            Replay? replay;
             if (!File.Exists(file))
             {
                 dLog.Log(DataPoint.ReplaysCacheMiss);
                 logger.LogInformation("replay not found, downloading...");
 
                 replay = await api.DownloadReplayFromId(onlineId);
-                replay.Save(file);
+                replay?.Save(file);
             }
             else
             {
                 replay = new Replay(file);
                 dLog.Log(DataPoint.ReplaysCacheHit);
             }
-            return replay.fullLoaded? replay : null;
+            return (replay?.fullLoaded ?? false) ? replay : null;
         }
         public Task<Replay?> GetReplayFromScore(JToken score)
         {
