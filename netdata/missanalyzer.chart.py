@@ -76,6 +76,7 @@ CHARTS = {
         'lines': [
             ['ApiDownloadBeatmap', 'Beatmap', 'incremental', 60, 1],
             ['ApiGetReplayv1', 'Replay', 'incremental', 60, 1],
+            ['ApiGetReplayv2', 'Replay', 'incremental', 60, 1],
         ]
     },
     'events': {

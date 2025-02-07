@@ -157,6 +157,7 @@ namespace OsuMissAnalyzer.Server
         }
         public async Task<Replay?> DownloadReplayFromId(ulong onlineId)
         {
+            dLog.Log(DataPoint.ApiGetReplayv2);
             while (replayDls.Count > 0 && (DateTime.Now - replayDls.Peek()).TotalSeconds > 60) replayDls.Dequeue();
             if (replayDls.Count >= 10)
             {
