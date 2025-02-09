@@ -37,8 +37,8 @@ CHARTS = {
     'directCalls': {
         'options': [None, 'Calls', 'Direct calls/min', 'missanalyzer', 'missanalyzer.directCalls', 'line'],
         'lines': [
-            ['BotDirectReqFalse', 'Requests denied', 'incremental', 60, 1],
-            ['BotDirectReqTrue', 'Requests accepted', 'incremental', 60, 1],
+            ['BotDirectReqFalse', 'Denied', 'incremental', 60, 1],
+            ['BotDirectReqTrue', 'Accepted', 'incremental', 60, 1],
             ['BotDirectResponse', 'Responses', 'incremental', 60, 1],
         ]
     },
@@ -69,6 +69,8 @@ CHARTS = {
         'lines': [
             ['ApiGetUserScoresv2', 'User Scores', 'incremental', 60, 1],
             ['ApiGetBeatmapScoresv2', 'Beatmap Scores', 'incremental', 60, 1],
+            ['ApiGetScorev2', 'Score', 'incremental', 60, 1],
+            ['ApiGetBeatmapv2', 'Beatmap', 'incremental', 60, 1],
         ]
     },
     'downloads': {

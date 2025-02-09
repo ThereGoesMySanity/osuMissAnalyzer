@@ -63,7 +63,7 @@ public class OsuApiv2
     }
     public async Task<BeatmapExtended?> DownloadBeatmapFromHash(string mapHash, string destinationFolder)
     {
-        dLog.Log(DataPoint.ApiGetBeatmapsv2);
+        dLog.Log(DataPoint.ApiGetBeatmapv2);
         var beatmap = await GetApiv2<BeatmapExtended>($"beatmaps/lookup?checksum={mapHash}");
         if (beatmap is not null)
         {
