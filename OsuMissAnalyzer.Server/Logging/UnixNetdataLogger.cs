@@ -29,16 +29,14 @@ namespace OsuMissAnalyzer.Server.Logging
 
         private Socket? socket;
         private UnixEndPoint? endpoint;
-        private readonly HttpClient httpClient;
         private readonly ILogger<UnixNetdataLogger> logger;
 
         public event Action? UpdateLogs;
 
-        public UnixNetdataLogger(HttpClient httpClient, IOptions<ServerOptions> options, ILogger<UnixNetdataLogger> logger)
+        public UnixNetdataLogger(IOptions<ServerOptions> options, ILogger<UnixNetdataLogger> logger)
         {
             file = new StreamWriter(Path.Combine(options.Value.ServerDir, "log.csv"), true);
             counts = new int[Enum.GetValues<DataPoint>().Length];
-            this.httpClient = httpClient;
             this.logger = logger;
         }
         public async Task StartAsync(CancellationToken cancellationToken)

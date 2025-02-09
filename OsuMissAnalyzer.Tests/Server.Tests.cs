@@ -12,6 +12,7 @@ using OsuMissAnalyzer.Core;
 using OsuMissAnalyzer.Server;
 using OsuMissAnalyzer.Server.Database;
 using OsuMissAnalyzer.Server.Logging;
+using OsuMissAnalyzer.Server.OsuApi;
 using OsuMissAnalyzer.Server.Settings;
 using ReplayAPI;
 using SixLabors.ImageSharp;
@@ -22,7 +23,7 @@ namespace OsuMissAnalyzer.Tests
     public class ServerTests
     {
         private string root = ProjectSourcePath.Value;
-        private OsuApi api => serviceProvider.GetRequiredService<OsuApi>();
+        private OsuApiv2 api => serviceProvider.GetRequiredService<OsuApiv2>();
         private ServerReplayDb replays => serviceProvider.GetRequiredService<ServerReplayDb>();
         private ServerBeatmapDb beatmaps => serviceProvider.GetRequiredService<ServerBeatmapDb>();
         private ServiceProvider serviceProvider;
@@ -38,7 +39,7 @@ namespace OsuMissAnalyzer.Tests
             services.Configure<DiscordOptions>(configurationRoot.GetRequiredSection(nameof(DiscordOptions)));
             services.Configure<OsuApiOptions>(configurationRoot.GetRequiredSection(nameof(OsuApiOptions)));
             services.AddSingleton<IDataLogger, TestLogger>();
-            services.AddSingleton<OsuApi>();
+            services.AddSingleton<OsuApiv2>();
             services.AddSingleton<ServerBeatmapDb>();
             services.AddSingleton<ServerReplayDb>();
             services.AddSingleton<RequestContext, TestRequestContext>();
@@ -60,35 +61,36 @@ namespace OsuMissAnalyzer.Tests
         }
 
         [TestCase(3243485950UL, "replay-osu_1859001_3243485950.osr")]
-        public async Task TestApiDownload(ulong scoreId, string compareFile)
+        public async Task TestApiDownload(ulong legacyId, string compareFile)
         {
             Replay compare = new Replay($"Resources/{compareFile}");
             Beatmap b = await beatmaps.GetBeatmap(compare.MapHash);
-            if (File.Exists(Path.Combine(root, "serverdata", $"{scoreId}.osr")))
+            if (File.Exists(Path.Combine(root, "serverdata", $"{legacyId}.osr")))
             {
-                File.Delete(Path.Combine(root, "serverdata", $"{scoreId}.osr"));
+                File.Delete(Path.Combine(root, "serverdata", $"{legacyId}.osr"));
             }
-            Replay r = await replays.GetReplayFromOnlineId(scoreId);
+            Replay r = await replays.GetReplay(null, legacyId);
             Assert.That(r.ReplayFrames, Is.EqualTo(compare.ReplayFrames));
             Assert.That(r.Mods, Is.EqualTo(compare.Mods));
             Assert.That(r.OnlineId, Is.EqualTo(compare.OnlineId));
         }
 
-        [TestCase("3205642-old?.osu","3205642.osu","3205642","replay-osu_3205642_3960657933.osr")]
-        public async Task TestRedownload(string oldFile, string copyTo, string id, string replay)
+        [TestCase("3205642-old?.osu","3205642.osu",(ulong)3205642,"replay-osu_3205642_3960657933.osr")]
+        public async Task TestRedownload(string oldFile, string copyTo, ulong legacyId, string replay)
         {
             File.Copy(Path.Combine("Resources", oldFile), Path.Combine(root, "serverdata", "beatmaps", copyTo), true);
             Replay r = new Replay(Path.Combine("Resources", replay));
-            Beatmap old = await beatmaps.GetBeatmapFromId(id);
-            Beatmap newBeatmap = await beatmaps.GetBeatmapFromId(id, true);
+            Beatmap old = await beatmaps.GetBeatmapFromId(legacyId);
+            Beatmap newBeatmap = await beatmaps.GetBeatmapFromId(legacyId, true);
             Assert.That(old.BeatmapHash, Is.Not.EqualTo(newBeatmap.BeatmapHash));
         }
 
         [TestCase("3243485950")]
+        [TestCase("4322100722")]
         public async Task TestApiv2(string scoreId)
         {
-            JToken s = await api.GetApiv2Json($"scores/osu/{scoreId}");
-            Console.WriteLine(s);
+            var res = await api.GetApiv2($"scores/{scoreId}");
+            Console.WriteLine(JToken.Parse(await res.Content.ReadAsStringAsync()));
         }
 
         [TestCase("312b50442dd47de159257dfac2c8da50-133009249532585046.osr")]
@@ -103,10 +105,10 @@ namespace OsuMissAnalyzer.Tests
         }
         [TestCase(2283307549UL)]
         [TestCase(2040036498UL)]
-        public async Task TestReplayLoaderByScore(ulong scoreId)
+        public async Task TestReplayLoaderByScore(ulong legacyId)
         {
             ServerReplayLoader replayLoader = ActivatorUtilities.CreateInstance<ServerReplayLoader>(serviceProvider);
-            replayLoader.ScoreId = scoreId;
+            replayLoader.LegacyId = legacyId;
             await TestAnalyzer(replayLoader);
         }
         [TestCase("3534866519.osr")]
@@ -117,6 +119,12 @@ namespace OsuMissAnalyzer.Tests
             replayLoader.ReplayFile = Path.Combine("Resources", file);
             await TestAnalyzer(replayLoader);
         }
+        [TestCase((ulong)9367683)]
+        public async Task TestUserScores(ulong userId)
+        {
+            Console.WriteLine(await api.GetUserScoresv2(userId, "recent", 1, false));
+        }
+
         private async Task TestAnalyzer(ServerReplayLoader replayLoader)
         {
             Assert.That(await replayLoader.Load(), Is.Null);

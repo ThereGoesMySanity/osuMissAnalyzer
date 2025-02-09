@@ -16,6 +16,7 @@ using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Logging.Configuration;
 using Microsoft.Extensions.Options;
 using Microsoft.Extensions.Caching.Memory;
+using OsuMissAnalyzer.Server.OsuApi;
 
 namespace OsuMissAnalyzer.Server
 {
@@ -58,7 +59,8 @@ namespace OsuMissAnalyzer.Server
                         services.AddSwaggerGen();
                     }
 
-                    services.AddSingleton<OsuApi>();
+                    services.AddSingleton<OsuApiv1>();
+                    services.AddSingleton<OsuApiv2>();
                     services.AddSingleton<ServerBeatmapDb>();
                     services.AddSingleton<ServerReplayDb>();
 

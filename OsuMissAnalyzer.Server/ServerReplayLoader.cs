@@ -6,6 +6,7 @@ using Newtonsoft.Json.Linq;
 using osuDodgyMomentsFinder;
 using OsuMissAnalyzer.Core;
 using OsuMissAnalyzer.Server.Database;
+using OsuMissAnalyzer.Server.OsuApi;
 using ReplayAPI;
 
 namespace OsuMissAnalyzer.Server
@@ -15,10 +16,11 @@ namespace OsuMissAnalyzer.Server
         public Source? Source = null;
         public string? ErrorMessage = null;
 
-        public string? UserId;
+        public ulong? UserId;
         public string? Username;
         public string? UserScores;
-        public string? BeatmapId;
+        public ulong? BeatmapId;
+        public ulong? LegacyId;
         public ulong? ScoreId;
         public string? Mods;
         public string? ReplayFile;
@@ -38,20 +40,20 @@ namespace OsuMissAnalyzer.Server
 
         private ReplayAnalyzer? _analyzer;
 
-        private readonly OsuApi api;
+        private readonly OsuApiv2 api;
         private readonly ServerReplayDb replays;
         private readonly ServerBeatmapDb beatmaps;
 
         public ColorScheme ColorScheme { get; set; } = ColorScheme.Default;
 
-        public ServerReplayLoader(RequestContext context, OsuApi api, ServerReplayDb replays, ServerBeatmapDb beatmaps)
+        public ServerReplayLoader(RequestContext context, OsuApiv2 api, ServerReplayDb replays, ServerBeatmapDb beatmaps)
             : this(api, replays, beatmaps)
         {
             this.ColorScheme = ColorScheme.Parse(context.GuildOptions.ColorScheme) ?? ColorScheme.Default;
         }
 
         [ActivatorUtilitiesConstructor]
-        public ServerReplayLoader(OsuApi api, ServerReplayDb replays, ServerBeatmapDb beatmaps)
+        public ServerReplayLoader(OsuApiv2 api, ServerReplayDb replays, ServerBeatmapDb beatmaps)
         {
             this.api = api;
             this.replays = replays;
@@ -61,45 +63,47 @@ namespace OsuMissAnalyzer.Server
         {
             if (Loaded) return null;
 
-            JToken? score = null;
+            OsuApi.Score? score = null;
             if (Username != null && UserId == null)
-                UserId = await api.GetUserIdv1(Username);
+                UserId = (await api.GetUser(Username))?.Id;
 
-            if (BeatmapId != null)
-                _beatmap = await beatmaps.GetBeatmapFromId(BeatmapId);
+            if (BeatmapId.HasValue)
+                _beatmap = await beatmaps.GetBeatmapFromId(BeatmapId.Value);
 
             if (ReplayFile != null)
                 _replay = new Replay(ReplayFile);
-            else if (ScoreId != null)
+            else if (ScoreId.HasValue || LegacyId.HasValue)
             {
-                _replay = await replays.GetReplayFromOnlineId(ScoreId.Value);
+                _replay = await replays.GetReplay(ScoreId, LegacyId);
             }
 
             if(_replay == null && PlayIndex.HasValue)
             {
                 if (PlayIndex.Value < 0) return "Index value must be greater than 0";
 
-                if (UserId != null && UserScores != null)
-                    score = await api.GetUserScoresv2(UserId, UserScores, PlayIndex.Value, FailedScores);
-                else if (BeatmapId != null)
-                    score = await api.GetBeatmapScoresv2(BeatmapId, PlayIndex.Value);
+                if (UserId.HasValue && UserScores != null)
+                    score = await api.GetUserScoresv2(UserId.Value, UserScores, PlayIndex.Value, FailedScores);
+                else if (BeatmapId.HasValue)
+                    score = await api.GetBeatmapScoresv2(BeatmapId.Value, PlayIndex.Value);
             }
 
-            if (score != null)
+            if (score is not null)
             {
-                if (!(bool)score["replay"]!) return "Replay not saved online";
-                if ((bool)score["perfect"]!) return "No misses";
+                if (!score.HasReplay) return "Replay not saved online";
+                if (score.IsPerfectCombo) return "No misses";
 
-                if (_beatmap == null) _beatmap = await beatmaps.GetBeatmapFromId((string)score["beatmap"]!["id"]!);
-                _replay = await replays.GetReplayFromScore(score);
+                _beatmap ??= await beatmaps.GetBeatmapFromId(score.BeatmapId);
+                _replay = await replays.GetReplay(score.Id, score.LegacyScoreId);
 
             }
 
             if (_beatmap == null && _replay != null)
                 _beatmap = await beatmaps.GetBeatmap(_replay.MapHash);
 
-            if (_beatmap != null && _replay != null && _beatmap.BeatmapHash != _replay.MapHash)
-                _beatmap = await beatmaps.GetBeatmapFromId(_beatmap.BeatmapID!.Value.ToString(), forceRedl: true);
+            if (_beatmap != null && _replay != null 
+                    && _beatmap.BeatmapHash != _replay.MapHash
+                    && _beatmap.BeatmapID.HasValue)
+                _beatmap = await beatmaps.GetBeatmapFromId((ulong)_beatmap.BeatmapID.Value, forceRedl: true);
 
             if (_replay != null && !_replay.fullLoaded)
                 return "Replay does not contain any cursor data - can't analyze";

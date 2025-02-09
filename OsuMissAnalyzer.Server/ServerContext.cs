@@ -19,6 +19,7 @@ using OsuMissAnalyzer.Server.Logging;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Microsoft.Extensions.Caching.Memory;
+using OsuMissAnalyzer.Server.OsuApi;
 
 namespace OsuMissAnalyzer.Server
 {
@@ -27,7 +28,7 @@ namespace OsuMissAnalyzer.Server
     {
         private readonly ServerOptions serverOptions;
         private readonly DiscordShardedClient discord;
-        private readonly OsuApi api;
+        private readonly OsuApiv2 api;
         private readonly HttpClient webClient;
         private readonly ResponseCache cachedMisses;
         private readonly IServiceScopeFactory scopeFactory;
@@ -40,7 +41,7 @@ namespace OsuMissAnalyzer.Server
         private static Regex modRegex = new Regex("](?: \\+([A-Z]+))?\\n");
         public static DiscordEmoji[]? numberEmojis;
 
-        public ServerContext(DiscordShardedClient discord, OsuApi api, HttpClient webClient,
+        public ServerContext(DiscordShardedClient discord, OsuApiv2 api, HttpClient webClient,
                 ResponseCache cachedMisses, IOptions<ServerOptions> serverOptions, IServiceScopeFactory scopeFactory,
                 IHostEnvironment env, ILogger<ServerContext> logger, IDataLogger dLog)
         {
@@ -260,13 +261,13 @@ namespace OsuMissAnalyzer.Server
                     string mapPrefix = "https://osu.ppy.sh/beatmapsets/";
                     if (url.StartsWith(prefix) && em.Description.Contains(mapPrefix))
                     {
-                        replayLoader.ScoreId = ulong.Parse(url.Substring(prefix.Length));
+                        replayLoader.LegacyId = ulong.Parse(url.Substring(prefix.Length));
                         string urlEnd = em.Description.Substring(em.Description.IndexOf(mapPrefix) + mapPrefix.Length);
                         var match = partialBeatmapRegex.Match(urlEnd);
                         var modMatch = modRegex.Match(urlEnd);
                         if (match.Success && modMatch.Success)
                         {
-                            replayLoader.BeatmapId = match.Groups[1].Value;
+                            replayLoader.BeatmapId = ulong.Parse(match.Groups[1].Value);
                             replayLoader.Mods = modMatch.Groups[1].Value;
                             return true;
                         }
@@ -286,7 +287,7 @@ namespace OsuMissAnalyzer.Server
                 return false;
             },
         };
-        private static string? GetIdFromEmbed(DiscordEmbed embed)
+        private static ulong? GetIdFromEmbed(DiscordEmbed embed)
         {
             string url = embed.Author.IconUrl.ToString();
             string? prefixStr = null;
@@ -296,7 +297,7 @@ namespace OsuMissAnalyzer.Server
             }
             if (prefixStr != null)
             {
-                return url.Substring(prefixStr.Length).Split('?')[0];
+                return ulong.Parse(url.Substring(prefixStr.Length).Split('?')[0]);
             }
             return null;
         }

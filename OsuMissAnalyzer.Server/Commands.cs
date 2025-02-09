@@ -89,7 +89,7 @@ namespace OsuMissAnalyzer.Server
                 var bmMatch = beatmapRegex.Match(beatmap);
                 if (bmMatch.Success)
                 {
-                    replayLoader.BeatmapId = bmMatch.Groups[1].Value;
+                    replayLoader.BeatmapId = ulong.Parse(bmMatch.Groups[1].Value);
                 }
                 else
                 {

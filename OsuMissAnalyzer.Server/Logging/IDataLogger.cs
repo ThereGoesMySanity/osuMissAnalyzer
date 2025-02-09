@@ -34,6 +34,7 @@ namespace OsuMissAnalyzer.Server.Logging
         BotDirectReqTrue,
         BotDirectResponse,
         ApiGetReplayv2,
+        ApiGetBeatmapsv2,
     }
     public interface IDataLogger : IHostedService
     {
